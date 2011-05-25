@@ -730,6 +730,9 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
             return error("AcceptToMemoryPool() : ConnectInputs failed %s", hash.ToString().substr(0,10).c_str());
         }
 
+        if (!IsFromMe())
+        {
+
         // Don't accept it if it can't get into a block
         if (nFees < GetMinFee(1000, true, 0))
             return error("AcceptToMemoryPool() : not enough fees");
@@ -757,6 +760,8 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
                     printf("Rate limit dFreeCount: %g => %g\n", dFreeCount, dFreeCount+nSize);
                 dFreeCount += nSize;
             }
+        }
+
         }
     }
 
