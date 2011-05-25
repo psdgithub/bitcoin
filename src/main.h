@@ -539,7 +539,6 @@ public:
         unsigned int nNewBlockSize = nBlockSize + nBytes;
         int64 nMinFeeAlt;
 
-        if (mode == GMF_RELAY)
         {
             // Base fee is 0.00004096 BTC per 512 bytes
             bool fTinyOutput = false;
@@ -599,8 +598,7 @@ public:
                 if (txout.nValue < CENT)
                     nMinFee = nBaseFee;
 
-        if (mode == GMF_RELAY)
-            nMinFee = std::min(nMinFee, nMinFeeAlt);
+        nMinFee = std::min(nMinFee, nMinFeeAlt);
 
         // Raise the price as the block approaches full
         if (nBlockSize != 1 && nNewBlockSize >= MAX_BLOCK_SIZE_GEN/2)
