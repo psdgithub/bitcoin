@@ -291,6 +291,9 @@ Value getinfo(const Array& params, bool fHelp)
     obj.push_back(Pair("keypoololdest", (boost::int64_t)GetOldestKeyPoolTime()));
     obj.push_back(Pair("paytxfee",      ValueFromAmount(nTransactionFee)));
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
+    obj.push_back(Pair("pooledtx",      (uint64_t)mapTransactions.size()));
+    obj.push_back(Pair("currentblocktx",(uint64_t)nLastBlockTx));
+    obj.push_back(Pair("currentblocksize",(uint64_t)nLastBlockSize));
     return obj;
 }
 

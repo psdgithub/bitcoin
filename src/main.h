@@ -2054,6 +2054,8 @@ public:
 
 
 
+extern uint64 nLastBlockTx;
+extern uint64 nLastBlockSize;
 extern std::map<uint256, CTransaction> mapTransactions;
 extern std::map<uint256, CWalletTx> mapWallet;
 extern std::vector<uint256> vWalletUpdated;
