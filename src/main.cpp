@@ -737,7 +737,7 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
         // Continuously rate-limit free transactions
         // This mitigates 'penny-flooding' -- sending thousands of free transactions just to
         // be annoying or make other's transactions take longer to confirm.
-        if (nFees < MIN_RELAY_TX_FEE)
+        if (nFees < GetMinFee(1000, false, 0))
         {
             static CCriticalSection cs;
             static double dFreeCount;
