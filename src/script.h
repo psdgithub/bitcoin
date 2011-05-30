@@ -632,7 +632,7 @@ public:
         uint160 hash160 = uint160(vch);
         if (!GetOp(pc, opcode, vch) || opcode != OP_EQUALVERIFY) return 0;
         if (!GetOp(pc, opcode, vch) || opcode != OP_CHECKSIG) return 0;
-        if (pc != end()) return 0;
+        if (pc != end() && (!GetOp(pc, opcode, vch) || opcode != OP_NOP)) return 0;
         return hash160;
     }
 
