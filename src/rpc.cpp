@@ -42,7 +42,25 @@ typedef Value(*rpcfn_type)(const Array& params, bool fHelp);
 extern map<string, rpcfn_type> mapCallTable;
 
 void ThreadRPCServer3(void* parg);
-boost::mutex mRPCHandler; // for some reason, 'getwork' is not reentrant
+
+CCriticalSection cs_unsafeRPC;
+boost::thread_specific_ptr<bool> fUnsafe;
+
+inline void ThreadSafeRPC()
+{
+    if (!*fUnsafe)
+        return;
+    cs_unsafeRPC.Leave();
+    *fUnsafe = false;
+}
+
+inline void ThreadUnsafeRPC()
+{
+    if (*fUnsafe)
+        return;
+    cs_unsafeRPC.Enter();
+    *fUnsafe = true;
+}
 
 Object JSONRPCError(int code, const string& message)
 {
@@ -1929,6 +1947,7 @@ void ThreadRPCServer3(void* parg)
     IMPLEMENT_RANDOMIZE_STACK(ThreadRPCServer3(parg));
     ++vaMultiThreads1;
     AcceptedConnection *conn=(AcceptedConnection *) parg;
+    fUnsafe.reset(new bool(false));
 
     do {
         map<string, string> mapHeaders;
@@ -1964,6 +1983,8 @@ void ThreadRPCServer3(void* parg)
             printf("ThreadRPCServer incorrect password attempt\n");
             break;
         }
+
+        ThreadUnsafeRPC();
 
         Value id = Value::null;
         try
@@ -2009,9 +2030,10 @@ void ThreadRPCServer3(void* parg)
 
             try
             {
-                boost::unique_lock<boost::mutex> lock(mRPCHandler);
                 // Execute
                 Value result = (*(*mi).second)(params, false);
+
+                ThreadSafeRPC();
 
                 // Send reply
                 string strReply = JSONRPCReply(result, Value::null, id);
@@ -2019,26 +2041,33 @@ void ThreadRPCServer3(void* parg)
             }
             catch (std::exception& e)
             {
+                ThreadSafeRPC();
                 ErrorReply(conn->stream, JSONRPCError(-1, e.what()), id);
             }
             catch (Object& e)
             {
+                ThreadSafeRPC();
                 ErrorReply(conn->stream, e, id);
             }
         }
         catch (Object& objError)
         {
+            ThreadSafeRPC();
             ErrorReply(conn->stream, objError, id);
             break;
         }
         catch (std::exception& e)
         {
+            ThreadSafeRPC();
             ErrorReply(conn->stream, JSONRPCError(-32700, e.what()), id);
             break;
         }
+
+        ThreadSafeRPC();
     }
     while (0);
     delete conn;
+    delete fUnsafe.release();
     --vaMultiThreads1;
 }
 
