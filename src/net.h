@@ -7,6 +7,7 @@
 
 #include <deque>
 #include <boost/array.hpp>
+#include <boost/detail/atomic_count.hpp>
 #include <boost/foreach.hpp>
 #include <openssl/rand.h>
 
@@ -76,6 +77,7 @@ extern uint64 nLocalServices;
 extern CAddress addrLocalHost;
 extern uint64 nLocalHostNonce;
 extern boost::array<int, 10> vnThreadsRunning;
+extern boost::detail::atomic_count vaMultiThreads1;
 
 extern std::vector<CNode*> vNodes;
 extern CCriticalSection cs_vNodes;
