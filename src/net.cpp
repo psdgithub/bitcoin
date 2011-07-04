@@ -38,6 +38,7 @@ CAddress addrLocalHost("0.0.0.0", 0, false, nLocalServices);
 CNode* pnodeLocalHost = NULL;
 uint64 nLocalHostNonce = 0;
 array<int, 10> vnThreadsRunning;
+boost::detail::atomic_count vaMultiThreads1(0);
 SOCKET hListenSocket = INVALID_SOCKET;
 
 vector<CNode*> vNodes;
@@ -1703,6 +1704,7 @@ bool StopNode()
     nTransactionsUpdated++;
     int64 nStart = GetTime();
     while (vnThreadsRunning[0] > 0 || vnThreadsRunning[2] > 0 || vnThreadsRunning[3] > 0 || vnThreadsRunning[4] > 0
+        || vaMultiThreads1 > 0
 #ifdef USE_UPNP
         || vnThreadsRunning[5] > 0
 #endif
@@ -1716,7 +1718,8 @@ bool StopNode()
     if (vnThreadsRunning[1] > 0) printf("ThreadOpenConnections still running\n");
     if (vnThreadsRunning[2] > 0) printf("ThreadMessageHandler still running\n");
     if (vnThreadsRunning[3] > 0) printf("ThreadBitcoinMiner still running\n");
-    if (vnThreadsRunning[4] > 0) printf("ThreadRPCServer still running\n");
+    if (vnThreadsRunning[4] > 0) printf("ThreadRPCListener still running\n");
+    if (vaMultiThreads1 > 0) printf("ThreadsRPCServer still running\n");
     if (fHaveUPnP && vnThreadsRunning[5] > 0) printf("ThreadMapPort still running\n");
     while (vnThreadsRunning[2] > 0 || vnThreadsRunning[4] > 0)
         Sleep(20);

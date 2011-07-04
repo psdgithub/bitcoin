@@ -6,6 +6,7 @@
 
 #include <deque>
 #include <boost/array.hpp>
+#include <boost/detail/atomic_count.hpp>
 #include <openssl/rand.h>
 
 #ifndef __WXMSW__
@@ -474,6 +475,7 @@ extern CAddress addrLocalHost;
 extern CNode* pnodeLocalHost;
 extern uint64 nLocalHostNonce;
 extern boost::array<int, 10> vnThreadsRunning;
+extern boost::detail::atomic_count vaMultiThreads1;
 extern SOCKET hListenSocket;
 
 extern std::vector<CNode*> vNodes;
