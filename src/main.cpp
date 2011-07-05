@@ -664,12 +664,15 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
     if (IsCoinBase())
         return error("AcceptToMemoryPool() : coinbase as individual tx");
 
+#if 0
     // To help v0.1.5 clients who would see it as a negative number
     if ((int64)nLockTime > INT_MAX)
         return error("AcceptToMemoryPool() : not accepting nLockTime beyond 2038 yet");
 
     // Safety limits
+#endif
     unsigned int nSize = ::GetSerializeSize(*this, SER_NETWORK);
+#if 0
     // Checking ECDSA signatures is a CPU bottleneck, so to avoid denial-of-service
     // attacks disallow transactions with more than one SigOp per 34 bytes.
     // 34 bytes because a TxOut is:
@@ -680,6 +683,7 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
     // Rather not work on nonstandard transactions (unless -testnet)
     if (!fTestNet && !IsStandard())
         return error("AcceptToMemoryPool() : nonstandard transaction type");
+#endif
 
     // Do we already have it?
     uint256 hash = GetHash();
@@ -730,6 +734,7 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
             return error("AcceptToMemoryPool() : ConnectInputs failed %s", hash.ToString().substr(0,10).c_str());
         }
 
+#if 0
         // Don't accept it if it can't get into a block
         if (nFees < GetMinFee(1000, true, true))
             return error("AcceptToMemoryPool() : not enough fees");
@@ -758,6 +763,7 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
                 dFreeCount += nSize;
             }
         }
+#endif
     }
 
     // Store transaction in memory
@@ -3908,6 +3914,7 @@ bool CreateTransaction(const vector<pair<CScript, int64> >& vecSend, CWalletTx& 
                     return false;
                 dPriority /= nBytes;
 
+#if 0
                 // Check that enough fee is included
                 int64 nPayFee = nTransactionFee * (1 + (int64)nBytes / 1000);
                 bool fAllowFree = CTransaction::AllowFree(dPriority);
@@ -3917,6 +3924,7 @@ bool CreateTransaction(const vector<pair<CScript, int64> >& vecSend, CWalletTx& 
                     nFeeRet = max(nPayFee, nMinFee);
                     continue;
                 }
+#endif
 
                 // Fill vtxPrev by copying from previous transactions vtxPrev
                 wtxNew.AddSupportingTransactions(txdb);
