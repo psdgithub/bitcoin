@@ -3337,6 +3337,10 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
             bool fAllowFree = (nBlockSize + nTxSize < 4000 || CTransaction::AllowFree(dPriority));
             int64 nMinFee = tx.GetMinFee(nBlockSize, fAllowFree, true);
 
+            // If our wallet has a key for one of the outputs >= nMinFee, allow it without a fee
+            if (tx.IsFromMe() || tx.GetCredit() > nMinFee || mapWallet.count(tx.GetHash()))
+                nMinFee = 0;
+
             // Connecting shouldn't fail due to dependency on other memory pool transactions
             // because we're already processing them in order of dependency
             map<uint256, CTxIndex> mapTestPoolTmp(mapTestPool);
