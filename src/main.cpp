@@ -58,6 +58,7 @@ int64 nHPSTimerStart;
 // Settings
 int fGenerateBitcoins = false;
 int64 nTransactionFee = 0;
+bool fForceFee = false;
 CAddress addrIncoming;
 int fLimitProcessors = false;
 int nLimitProcessors = 1;
@@ -3824,7 +3825,7 @@ bool SelectCoins(int64 nTargetValue, set<pair<CWalletTx*,unsigned int> >& setCoi
 
 
 
-bool CreateTransaction(const vector<pair<CScript, int64> >& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet)
+bool CreateTransaction(const vector<pair<CScript, int64> >& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet, bool fForceFee)
 {
     int64 nValue = 0;
     BOOST_FOREACH (const PAIRTYPE(CScript, int64)& s, vecSend)
@@ -3922,12 +3923,17 @@ bool CreateTransaction(const vector<pair<CScript, int64> >& vecSend, CWalletTx& 
 
                 // Check that enough fee is included
                 int64 nPayFee = nTransactionFee * (1 + (int64)nBytes / 1000);
+                if (!fForceFee)
+                {
+
                 bool fAllowFree = CTransaction::AllowFree(dPriority);
                 int64 nMinFee = wtxNew.GetMinFee(1, fAllowFree);
                 if (nFeeRet < max(nPayFee, nMinFee))
                 {
                     nFeeRet = max(nPayFee, nMinFee);
                     continue;
+                }
+
                 }
 
                 // Fill vtxPrev by copying from previous transactions vtxPrev
@@ -3941,11 +3947,11 @@ bool CreateTransaction(const vector<pair<CScript, int64> >& vecSend, CWalletTx& 
     return true;
 }
 
-bool CreateTransaction(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet)
+bool CreateTransaction(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet, bool fForceFee)
 {
     vector< pair<CScript, int64> > vecSend;
     vecSend.push_back(make_pair(scriptPubKey, nValue));
-    return CreateTransaction(vecSend, wtxNew, reservekey, nFeeRet);
+    return CreateTransaction(vecSend, wtxNew, reservekey, nFeeRet, fForceFee);
 }
 
 // Call after CreateTransaction unless you want to abort
@@ -4000,11 +4006,11 @@ bool CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey)
 
 
 // requires cs_main lock
-string SendMoney(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, bool fAskFee)
+string SendMoney(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, bool fAskFee, bool fForceFee)
 {
     CReserveKey reservekey;
     int64 nFeeRequired;
-    if (!CreateTransaction(scriptPubKey, nValue, wtxNew, reservekey, nFeeRequired))
+    if (!CreateTransaction(scriptPubKey, nValue, wtxNew, reservekey, nFeeRequired, fForceFee))
     {
         string strError;
         if (nValue + nFeeRequired > GetBalance())
@@ -4016,7 +4022,7 @@ string SendMoney(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, bool fAs
     }
 
     if (fAskFee && !ThreadSafeAskFee(nFeeRequired, _("Sending..."), NULL))
-        return "ABORTED";
+        return strprintf(_("Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds  "), FormatMoney(nFeeRequired).c_str());
 
     if (!CommitTransaction(wtxNew, reservekey))
         return _("Error: The transaction was rejected.  This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.");
@@ -4028,7 +4034,7 @@ string SendMoney(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, bool fAs
 
 
 // requires cs_main lock
-string SendMoneyToBitcoinAddress(string strAddress, int64 nValue, CWalletTx& wtxNew, bool fAskFee)
+string SendMoneyToBitcoinAddress(string strAddress, int64 nValue, CWalletTx& wtxNew, bool fAskFee, bool fForceFee)
 {
     // Check amount
     if (nValue <= 0)
@@ -4041,5 +4047,5 @@ string SendMoneyToBitcoinAddress(string strAddress, int64 nValue, CWalletTx& wtx
     if (!scriptPubKey.SetBitcoinAddress(strAddress))
         return _("Invalid bitcoin address");
 
-    return SendMoney(scriptPubKey, nValue, wtxNew, fAskFee);
+    return SendMoney(scriptPubKey, nValue, wtxNew, fAskFee, fForceFee);
 }
