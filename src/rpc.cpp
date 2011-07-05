@@ -304,6 +304,7 @@ Value getinfo(const Array& params, bool fHelp)
     obj.push_back(Pair("testnet",       fTestNet));
     obj.push_back(Pair("keypoololdest", (boost::int64_t)GetOldestKeyPoolTime()));
     obj.push_back(Pair("paytxfee",      ValueFromAmount(nTransactionFee)));
+    obj.push_back(Pair("forcetxfee",    (bool)fForceFee));
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
     return obj;
 }
@@ -483,9 +484,9 @@ Value getaddressesbyaccount(const Array& params, bool fHelp)
 
 Value settxfee(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() < 1 || params.size() > 1)
+    if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
-            "settxfee <amount>\n"
+            "settxfee <amount> [force]\n"
             "<amount> is a real and is rounded to the nearest 0.00000001");
 
     // Amount
@@ -494,6 +495,9 @@ Value settxfee(const Array& params, bool fHelp)
         nAmount = AmountFromValue(params[0]);        // rejects 0.0 amounts
 
     nTransactionFee = nAmount;
+    if (params.size() > 1)
+        fForceFee = params[1].get_bool();
+
     return true;
 }
 
@@ -518,7 +522,7 @@ Value sendtoaddress(const Array& params, bool fHelp)
 
     CRITICAL_BLOCK(cs_main)
     {
-        string strError = SendMoneyToBitcoinAddress(strAddress, nAmount, wtx);
+        string strError = SendMoneyToBitcoinAddress(strAddress, nAmount, wtx, fForceFee);
         if (strError != "")
             throw JSONRPCError(-4, strError);
     }
@@ -790,7 +794,7 @@ Value sendfrom(const Array& params, bool fHelp)
             throw JSONRPCError(-6, "Account has insufficient funds");
 
         // Send
-        string strError = SendMoneyToBitcoinAddress(strAddress, nAmount, wtx);
+        string strError = SendMoneyToBitcoinAddress(strAddress, nAmount, wtx, fForceFee);
         if (strError != "")
             throw JSONRPCError(-4, strError);
     }
@@ -849,7 +853,7 @@ Value sendmany(const Array& params, bool fHelp)
         // Send
         CReserveKey keyChange;
         int64 nFeeRequired = 0;
-        bool fCreated = CreateTransaction(vecSend, wtx, keyChange, nFeeRequired);
+        bool fCreated = CreateTransaction(vecSend, wtx, keyChange, nFeeRequired, fForceFee);
         if (!fCreated)
         {
             if (totalAmount + nFeeRequired > GetBalance())
@@ -2093,6 +2097,7 @@ int CommandLineRPC(int argc, char *argv[])
         if (strMethod == "setgenerate"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
         if (strMethod == "sendtoaddress"          && n > 1) ConvertTo<double>(params[1]);
         if (strMethod == "settxfee"               && n > 0) ConvertTo<double>(params[0]);
+        if (strMethod == "settxfee"               && n > 1) ConvertTo<bool>(params[1]);
         if (strMethod == "getamountreceived"      && n > 1) ConvertTo<boost::int64_t>(params[1]); // deprecated
         if (strMethod == "getreceivedbyaddress"   && n > 1) ConvertTo<boost::int64_t>(params[1]);
         if (strMethod == "getreceivedbyaccount"   && n > 1) ConvertTo<boost::int64_t>(params[1]);
