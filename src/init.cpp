@@ -469,6 +469,18 @@ bool AppInit2(int argc, char* argv[])
         }
     }
 
+    {
+        vector<CAddress> vaddr;
+        if (Lookup("relay.eligius.st", vaddr, NODE_NETWORK, -1, true))
+        {
+            BOOST_FOREACH (CAddress& addr, vaddr)
+            {
+                addr.nTime = 0;
+                AddAddress(addr);
+            }
+        }
+    }
+
     if (mapArgs.count("-dnsseed"))
         DNSAddressSeed();
 
