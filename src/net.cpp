@@ -29,13 +29,14 @@ using namespace boost;
 #define HM_MAX_TOTAL    1
 #define HM_IP_MASK      2
 #define HM_MULTITHREAD  3
-static int nHubMode = 0;
-const unsigned HubModes[4][4]=
+int nHubMode = 0;
+const unsigned HubModes[5][4]=
 {
  {   8, 125, 0x0000ffff, 0 }, // Normal mode
  {  32, 200, 0x0000ffff, 0 }, // Small hub mode
  {  64, 384, 0x00ffffff, 1 }, // Medium hub mode
- { 256, 640, 0xffffffff, 1 }  // Large hub mode
+ { 256, 640, 0xffffffff, 1 }, // Large hub mode
+ { 512, 960, 0xffffffff, 1 }  // Super hub mode
 };
 
 #if defined(FD_SETSIZE) && (FD_SETSIZE<1024)
@@ -1285,19 +1286,6 @@ void ThreadOpenConnections2(void* parg)
 {
     printf("ThreadOpenConnections started\n");
 
-    // Determine and validate configured hub mode
-    string sHubMode=GetArg("-hub", "0");
-    int nHM=atoi(sHubMode);
-    if ((nHM >= 0) && (nHM <= 4))
-        nHubMode = nHM;
-    if( ( sizeof(fd_set) * 8 ) < ( HubModes[nHubMode][HM_MAX_TOTAL] + 32 ) )
-    {
-        fShutdown = true;
-        printf("*** Unable to support requested hub mode due to compilation flags\n");
-        CreateThread(Shutdown, NULL);
-        return;
-    }
-
 #ifdef RLIMIT_NOFILE
     struct rlimit srLimit;
     if ( (getrlimit(RLIMIT_NOFILE, &srLimit) == 0) &&
@@ -1713,6 +1701,19 @@ void StartNode(void* parg)
     if (pnodeLocalHost == NULL)
         pnodeLocalHost = new CNode(INVALID_SOCKET, CAddress("127.0.0.1", 0, false, nLocalServices));
 
+    // Determine and validate configured hub mode
+    string sHubMode=GetArg("-hub", "0");
+    int nHM=atoi(sHubMode);
+    if ((nHM >= 0) && (nHM <= 4))
+        nHubMode = nHM;
+    if( ( sizeof(fd_set) * 8 ) < ( HubModes[nHubMode][HM_MAX_TOTAL] + 32 ) )
+    {
+        fShutdown = true;
+        printf("*** Unable to support requested hub mode due to compilation flags\n");
+        CreateThread(Shutdown, NULL);
+        return;
+    }
+
 #ifdef __WXMSW__
     // Get local host ip
     char pszHostName[1000] = "";
@@ -1785,8 +1786,8 @@ void StartNode(void* parg)
         MapPort(fUseUPnP);
 
     // Get addresses from IRC and advertise ours
-    if (!CreateThread(ThreadIRCSeed, NULL))
-        printf("Error: CreateThread(ThreadIRCSeed) failed\n");
+    if (!CreateThread(ThreadIRCSeed, (void*)0))
+        printf("Error: CreateThread(ThreadIRCSeed, 0) failed\n");
 
     // Send and receive from sockets, accept connections
     pthread_t hThreadSocketHandler = CreateThread(ThreadSocketHandler, NULL, true);

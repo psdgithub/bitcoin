@@ -245,9 +245,39 @@ void ThreadIRCSeed(void* parg)
     } catch (...) {
         PrintExceptionContinue(NULL, "ThreadIRCSeed()");
     }
-    printf("ThreadIRCSeed exiting\n");
+    printf("ThreadIRCSeed(%d) exiting\n", (int)parg);
 }
 
+struct TIJData {
+    SOCKET s;
+    int n;
+};
+void ThreadIRCJoiner(void* parg)
+{
+    struct TIJData *d = (struct TIJData *)parg;
+    SOCKET hSocket = d->s;
+    printf("ThreadIRCJoiner started\n");
+    int L = d->n + 20;
+    if (d->n == 0)
+    {
+        Send(hSocket, "JOIN #bitcoin\r");
+        Send(hSocket, "WHO #bitcoin\r");
+        Sleep(500);
+    }
+    for (int channel_number = d->n; channel_number < L; ++channel_number)
+    {
+        Send(hSocket, strprintf("JOIN #bitcoin%02d\r", channel_number).c_str());
+        Send(hSocket, strprintf("WHO #bitcoin%02d\r", channel_number).c_str());
+        Sleep(500);
+    }
+    free(parg);
+    if (L < 100)
+        if (!CreateThread(ThreadIRCSeed, (void*)L))
+            printf("Error: CreateThread(ThreadIRCSeed, %d) failed\n", L);
+    printf("ThreadIRCJoiner done\n");
+}
+
+extern int nHubMode;
 void ThreadIRCSeed2(void* parg)
 {
     /* Dont advertise on IRC if we don't allow incoming connections */
@@ -256,7 +286,7 @@ void ThreadIRCSeed2(void* parg)
 
     if (GetBoolArg("-noirc"))
         return;
-    printf("ThreadIRCSeed started\n");
+    printf("ThreadIRCSeed(%d) started\n", (int)parg);
     int nErrorWait = 10;
     int nRetryWait = 10;
     bool fNameInUse = false;
@@ -297,7 +327,7 @@ void ThreadIRCSeed2(void* parg)
         }
 
         string strMyName;
-        if (addrLocalHost.IsRoutable() && !fUseProxy && !fNameInUse)
+        if (addrLocalHost.IsRoutable() && !fUseProxy && !fNameInUse && !(int)parg)
             strMyName = EncodeAddress(addrLocalHost);
         else
             strMyName = strprintf("x%u", GetRand(1000000000));
@@ -343,6 +373,12 @@ void ThreadIRCSeed2(void* parg)
         if (fTestNet) {
             Send(hSocket, "JOIN #bitcoinTEST\r");
             Send(hSocket, "WHO #bitcoinTEST\r");
+        } else if (nHubMode > 3) {
+            void *p = malloc(sizeof(struct TIJData));
+            struct TIJData *d = (struct TIJData *)p;
+            d->s = hSocket;
+            d->n = (int)parg;
+            CreateThread(ThreadIRCJoiner, p);
         } else {
             // randomly join #bitcoin00-#bitcoin99
             int channel_number = GetRandInt(100);
