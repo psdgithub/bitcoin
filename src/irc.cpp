@@ -236,6 +236,8 @@ bool GetIPFromIRC(SOCKET hSocket, string strMyName, unsigned int& ipRet)
 void ThreadIRCSeed(void* parg)
 {
     IMPLEMENT_RANDOMIZE_STACK(ThreadIRCSeed(parg));
+    if (!parg)
+        parg = new int(0);
     try
     {
         ThreadIRCSeed2(parg);
@@ -245,7 +247,9 @@ void ThreadIRCSeed(void* parg)
     } catch (...) {
         PrintExceptionContinue(NULL, "ThreadIRCSeed()");
     }
-    printf("ThreadIRCSeed(%d) exiting\n", (int)parg);
+    int *n = (int*)parg;
+    printf("ThreadIRCSeed(%d) exiting\n", n);
+    delete n;
 }
 
 struct TIJData {
@@ -272,7 +276,7 @@ void ThreadIRCJoiner(void* parg)
     }
     free(parg);
     if (L < 100)
-        if (!CreateThread(ThreadIRCSeed, (void*)L))
+        if (!CreateThread(ThreadIRCSeed, new int(L)))
             printf("Error: CreateThread(ThreadIRCSeed, %d) failed\n", L);
     printf("ThreadIRCJoiner done\n");
 }
@@ -286,7 +290,7 @@ void ThreadIRCSeed2(void* parg)
 
     if (GetBoolArg("-noirc"))
         return;
-    printf("ThreadIRCSeed(%d) started\n", (int)parg);
+    printf("ThreadIRCSeed(%d) started\n", *((int*)parg));
     int nErrorWait = 10;
     int nRetryWait = 10;
     bool fNameInUse = false;
@@ -327,7 +331,7 @@ void ThreadIRCSeed2(void* parg)
         }
 
         string strMyName;
-        if (addrLocalHost.IsRoutable() && !fUseProxy && !fNameInUse && !(int)parg)
+        if (addrLocalHost.IsRoutable() && !fUseProxy && !fNameInUse && !*((int*)parg))
             strMyName = EncodeAddress(addrLocalHost);
         else
             strMyName = strprintf("x%u", GetRand(1000000000));
@@ -377,7 +381,7 @@ void ThreadIRCSeed2(void* parg)
             void *p = malloc(sizeof(struct TIJData));
             struct TIJData *d = (struct TIJData *)p;
             d->s = hSocket;
-            d->n = (int)parg;
+            d->n = *((int*)parg);
             CreateThread(ThreadIRCJoiner, p);
         } else {
             // randomly join #bitcoin00-#bitcoin99
