@@ -1329,8 +1329,10 @@ Value getwork(const Array& params, bool fHelp)
         static CBlockIndex* pindexPrev;
         static int64 nStart;
         static CBlock* pblock;
+        int64 nNow = GetTime();
         if (pindexPrev != pindexBest ||
-            (nTransactionsUpdated != nTransactionsUpdatedLast && GetTime() - nStart > 60))
+            nNow - nStart > 60 ||
+            (nTransactionsUpdated != nTransactionsUpdatedLast && nNow - nStart > 15))
         {
             if (pindexPrev != pindexBest)
             {
