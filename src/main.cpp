@@ -665,12 +665,15 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
     if (IsCoinBase())
         return error("AcceptToMemoryPool() : coinbase as individual tx");
 
+#if 0
     // To help v0.1.5 clients who would see it as a negative number
     if ((int64)nLockTime > INT_MAX)
         return error("AcceptToMemoryPool() : not accepting nLockTime beyond 2038 yet");
 
     // Safety limits
+#endif
     unsigned int nSize = ::GetSerializeSize(*this, SER_NETWORK);
+#if 0
     // Checking ECDSA signatures is a CPU bottleneck, so to avoid denial-of-service
     // attacks disallow transactions with more than one SigOp per 34 bytes.
     // 34 bytes because a TxOut is:
@@ -681,6 +684,7 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
     // Rather not work on nonstandard transactions (unless -testnet)
     if (!fTestNet && !IsStandard())
         return error("AcceptToMemoryPool() : nonstandard transaction type");
+#endif
 
     // Do we already have it?
     uint256 hash = GetHash();
@@ -731,6 +735,7 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
             return error("AcceptToMemoryPool() : ConnectInputs failed %s", hash.ToString().substr(0,10).c_str());
         }
 
+#if 0
         if (!IsFromMe())
         {
 
@@ -764,6 +769,7 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
         }
 
         }
+#endif
     }
 
     // Store transaction in memory
@@ -3469,6 +3475,10 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
             bool fAllowFree = (nBlockSize + nTxSize < 4000 || CTransaction::AllowFree(dPriority));
             int64 nMinFee = tx.GetMinFee(nBlockSize, fAllowFree, 2);
 
+            // If our wallet has a key for one of the outputs >= nMinFee, allow it without a fee
+            if (tx.IsFromMe() || tx.GetCredit() > nMinFee || mapWallet.count(tx.GetHash()))
+                nMinFee = 0;
+
             // Connecting shouldn't fail due to dependency on other memory pool transactions
             // because we're already processing them in order of dependency
             map<uint256, CTxIndex> mapTestPoolTmp(mapTestPool);
@@ -4059,6 +4069,7 @@ bool CreateTransaction(const vector<pair<CScript, int64> >& vecSend, CWalletTx& 
                     return false;
                 dPriority /= nBytes;
 
+#if 0
                 // Check that enough fee is included
                 int64 nPayFee = nTransactionFee * (1 + (int64)nBytes / 1000);
                 if (!fForceFee)
@@ -4073,6 +4084,7 @@ bool CreateTransaction(const vector<pair<CScript, int64> >& vecSend, CWalletTx& 
                 }
 
                 }
+#endif
 
                 // Fill vtxPrev by copying from previous transactions vtxPrev
                 wtxNew.AddSupportingTransactions(txdb);
