@@ -993,10 +993,16 @@ bool Solver(const CScript& scriptPubKey, vector<pair<opcodetype, valtype> >& vSo
                 reverse(vSolutionRet.begin(), vSolutionRet.end());
                 return true;
             }
+            do
             if (!script1.GetOp(pc1, opcode1, vch1))
                 break;
+            while (opcode1 == OP_NOP)
+                ;
+            do
             if (!script2.GetOp(pc2, opcode2, vch2))
                 break;
+            while (opcode2 == OP_NOP)
+                ;
             if (opcode2 == OP_PUBKEY)
             {
                 if (vch1.size() < 33 || vch1.size() > 120)
