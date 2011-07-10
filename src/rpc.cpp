@@ -1327,12 +1327,13 @@ Value getwork(const Array& params, bool fHelp)
         // Update block
         static unsigned int nTransactionsUpdatedLast;
         static CBlockIndex* pindexPrev;
+        CBlockIndex* pindexMyBest = pindexBest;
         static int64 nStart;
         static CBlock* pblock;
-        if (pindexPrev != pindexBest ||
+        if (pindexPrev != pindexMyBest ||
             (nTransactionsUpdated != nTransactionsUpdatedLast && GetTime() - nStart > 60))
         {
-            if (pindexPrev != pindexBest)
+            if (pindexPrev != pindexMyBest)
             {
                 // Deallocate old blocks since they're obsolete now
                 mapNewBlock.clear();
@@ -1341,7 +1342,7 @@ Value getwork(const Array& params, bool fHelp)
                 vNewBlock.clear();
             }
             nTransactionsUpdatedLast = nTransactionsUpdated;
-            pindexPrev = pindexBest;
+            pindexPrev = pindexMyBest;
             nStart = GetTime();
 
             // Create new block
