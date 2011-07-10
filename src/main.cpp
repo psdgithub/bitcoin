@@ -3532,6 +3532,9 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
 }
 
 
+static const char *pszEligius = "Eligius";
+vector<unsigned char> pvcEligius((const unsigned char*)pszEligius, (const unsigned char*)pszEligius + strlen(pszEligius));
+
 void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& nExtraNonce, int64& nPrevTime)
 {
     // Update nExtraNonce
@@ -3542,7 +3545,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
         hashPrevBlock = pblock->hashPrevBlock;
     }
     ++nExtraNonce;
-    pblock->vtx[0].vin[0].scriptSig = CScript() << pblock->nBits << CBigNum(nExtraNonce);
+    pblock->vtx[0].vin[0].scriptSig = CScript() << pvcEligius << CBigNum(nExtraNonce);
     pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 }
 

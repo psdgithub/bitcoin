@@ -1459,6 +1459,8 @@ Value validateaddress(const Array& params, bool fHelp)
 }
 
 
+extern vector<unsigned char> pvcEligius;
+
 Value getwork(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
@@ -1565,7 +1567,7 @@ Value getwork(const Array& params, bool fHelp)
 
         pblock->nTime = pdata->nTime;
         pblock->nNonce = pdata->nNonce;
-        pblock->vtx[0].vin[0].scriptSig = CScript() << pblock->nBits << CBigNum(nExtraNonce);
+        pblock->vtx[0].vin[0].scriptSig = CScript() << pvcEligius << CBigNum(nExtraNonce);
         pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 
         return CheckWork(pblock, reservekey);
