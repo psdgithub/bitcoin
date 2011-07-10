@@ -11,8 +11,37 @@
 #include <miniupnpc/upnperrors.h>
 #endif
 
+// CAUTION: This is not the offical net.cpp from the official
+// bitcoin distribution. It has been modified by me
+// <davidjoelschwartz@gmail.com> to support 'hub' modes.
+// This is quick and dirty code, it may not work for you. No warranties
+// are expressed or implied. I made a best effort to improve the RPC
+// performance. This notification is for blame, not for credit and
+// may be removed if this change, or one similar, is accepted into the
+// main distribution. If this has helped you, please donate to:
+// 1H3STBxuzEHZQQD4hkjVE22TWTazcZzeBw
+
 using namespace std;
 using namespace boost;
+
+
+#define HM_MAX_OUTBOUND 0
+#define HM_MAX_TOTAL    1
+#define HM_IP_MASK      2
+#define HM_MULTITHREAD  3
+int nHubMode = 0;
+const unsigned HubModes[5][4]=
+{
+ {   8, 125, 0x0000ffff, 0 }, // Normal mode
+ {  32, 200, 0x0000ffff, 0 }, // Small hub mode
+ {  64, 384, 0x00ffffff, 1 }, // Medium hub mode
+ { 256, 640, 0xffffffff, 1 }, // Large hub mode
+ { 512, 960, 0xffffffff, 1 }  // Super hub mode
+};
+
+#if defined(FD_SETSIZE) && (FD_SETSIZE<1024)
+#warning This build will not be able to run at high hub levels
+#endif
 
 static const int MAX_OUTBOUND_CONNECTIONS = 8;
 
@@ -38,6 +67,7 @@ CAddress addrLocalHost("0.0.0.0", 0, false, nLocalServices);
 CNode* pnodeLocalHost = NULL;
 uint64 nLocalHostNonce = 0;
 array<int, 10> vnThreadsRunning;
+boost::detail::atomic_count vaMultiThreads0(0);
 SOCKET hListenSocket = INVALID_SOCKET;
 
 vector<CNode*> vNodes;
@@ -54,6 +84,10 @@ int fUseProxy = false;
 int nConnectTimeout = 5000;
 CAddress addrProxy("127.0.0.1",9050);
 
+// Work Notification
+boost::mutex mWorkNotification;
+boost::condition_variable cvWorkNotification;
+bool fWorkFound;
 
 
 
@@ -868,7 +902,7 @@ void ThreadSocketHandler2(void* parg)
                 if (WSAGetLastError() != WSAEWOULDBLOCK)
                     printf("socket error accept failed: %d\n", WSAGetLastError());
             }
-            else if (nInbound >= GetArg("-maxconnections", 125) - MAX_OUTBOUND_CONNECTIONS)
+            else if (nInbound >= GetArg("-maxconnections", HubModes[nHubMode][HM_MAX_TOTAL]) - HubModes[nHubMode][HM_MAX_OUTBOUND])
             {
                 closesocket(hSocket);
             }
@@ -893,6 +927,7 @@ void ThreadSocketHandler2(void* parg)
             BOOST_FOREACH(CNode* pnode, vNodesCopy)
                 pnode->AddRef();
         }
+        bool fGotData = false;
         BOOST_FOREACH(CNode* pnode, vNodesCopy)
         {
             if (fShutdown)
@@ -924,6 +959,8 @@ void ThreadSocketHandler2(void* parg)
                             vRecv.resize(nPos + nBytes);
                             memcpy(&vRecv[nPos], pchBuf, nBytes);
                             pnode->nLastRecv = GetTime();
+                            pnode->fNeedProcess = true;
+                            fGotData = true;
                         }
                         else if (nBytes == 0)
                         {
@@ -982,6 +1019,14 @@ void ThreadSocketHandler2(void* parg)
                         }
                     }
                 }
+            }
+
+            if (fGotData)
+            {
+                mWorkNotification.lock();
+                fWorkFound = true;
+                mWorkNotification.unlock();
+                cvWorkNotification.notify_one();
             }
 
             //
@@ -1208,6 +1253,15 @@ unsigned int pnSeed[] =
 };
 
 
+void ONCThread(void *parg)
+{ // Open a network connection in a thread
+    IMPLEMENT_RANDOMIZE_STACK(ONCThread(parg));
+    CAddress *addr=(CAddress *) parg;
+    ++vaMultiThreads0;
+    OpenNetworkConnection(*addr);
+    --vaMultiThreads0;
+    delete addr;
+}
 
 void ThreadOpenConnections(void* parg)
 {
@@ -1231,6 +1285,18 @@ void ThreadOpenConnections(void* parg)
 void ThreadOpenConnections2(void* parg)
 {
     printf("ThreadOpenConnections started\n");
+
+#ifdef RLIMIT_NOFILE
+    struct rlimit srLimit;
+    if ( (getrlimit(RLIMIT_NOFILE, &srLimit) == 0) &&
+         (srLimit.rlim_cur < ( HubModes[nHubMode][HM_MAX_TOTAL] + 32 ) ) )
+    {
+        fShutdown = true;
+        printf("*** Unable to support requested hub mode due to resource limit\n");
+        CreateThread(Shutdown, NULL);
+        return;
+    }
+#endif
 
     // Connect to specific addresses
     if (mapArgs.count("-connect"))
@@ -1273,8 +1339,6 @@ void ThreadOpenConnections2(void* parg)
     loop
     {
         // Limit outbound connections
-        vnThreadsRunning[1]--;
-        Sleep(500);
         loop
         {
             int nOutbound = 0;
@@ -1282,17 +1346,19 @@ void ThreadOpenConnections2(void* parg)
                 BOOST_FOREACH(CNode* pnode, vNodes)
                     if (!pnode->fInbound)
                         nOutbound++;
-            int nMaxOutboundConnections = MAX_OUTBOUND_CONNECTIONS;
+            int nMaxOutboundConnections = HubModes[nHubMode][HM_MAX_OUTBOUND];
             nMaxOutboundConnections = min(nMaxOutboundConnections, (int)GetArg("-maxconnections", 125));
+            int nSleepTime = 2000;
             if (nOutbound < nMaxOutboundConnections)
-                break;
-            Sleep(2000);
-            if (fShutdown)
-                return;
-        }
+                nSleepTime = 500;
+            vnThreadsRunning[1]--;
+            Sleep(nSleepTime);
         vnThreadsRunning[1]++;
         if (fShutdown)
             return;
+            if (nOutbound < nMaxOutboundConnections)
+                break;
+        }
 
         CRITICAL_BLOCK(cs_mapAddresses)
         {
@@ -1349,19 +1415,19 @@ void ThreadOpenConnections2(void* parg)
         CAddress addrConnect;
         int64 nBest = INT64_MIN;
 
-        // Only connect to one address per a.b.?.? range.
+        // Only connect to one address per IP block.
         // Do this here so we don't have to critsect vNodes inside mapAddresses critsect.
         set<unsigned int> setConnected;
         CRITICAL_BLOCK(cs_vNodes)
             BOOST_FOREACH(CNode* pnode, vNodes)
-                setConnected.insert(pnode->addr.ip & 0x0000ffff);
+                setConnected.insert(pnode->addr.ip & HubModes[nHubMode][HM_IP_MASK]);
 
         CRITICAL_BLOCK(cs_mapAddresses)
         {
             BOOST_FOREACH(const PAIRTYPE(vector<unsigned char>, CAddress)& item, mapAddresses)
             {
                 const CAddress& addr = item.second;
-                if (!addr.IsIPv4() || !addr.IsValid() || setConnected.count(addr.ip & 0x0000ffff))
+                if (!addr.IsIPv4() || !addr.IsValid() || setConnected.count(addr.ip & HubModes[nHubMode][HM_IP_MASK]))
                     continue;
                 int64 nSinceLastSeen = GetAdjustedTime() - addr.nTime;
                 int64 nSinceLastTry = GetAdjustedTime() - addr.nLastTry;
@@ -1412,7 +1478,16 @@ void ThreadOpenConnections2(void* parg)
         }
 
         if (addrConnect.IsValid())
+        {
+            if (HubModes[nHubMode][HM_MULTITHREAD]==0)
+            {
+                ++vaMultiThreads0;
             OpenNetworkConnection(addrConnect);
+                --vaMultiThreads0;
+            }
+            else
+                CreateThread(ONCThread, new CAddress(addrConnect));
+        }
     }
 }
 
@@ -1426,9 +1501,9 @@ bool OpenNetworkConnection(const CAddress& addrConnect)
     if (addrConnect.ip == addrLocalHost.ip || !addrConnect.IsIPv4() || FindNode(addrConnect.ip))
         return false;
 
-    vnThreadsRunning[1]--;
+    --vaMultiThreads0;
     CNode* pnode = ConnectNode(addrConnect);
-    vnThreadsRunning[1]++;
+    ++vaMultiThreads0;
     if (fShutdown)
         return false;
     if (!pnode)
@@ -1478,6 +1553,10 @@ void ThreadMessageHandler2(void* parg)
                 pnode->AddRef();
         }
 
+        mWorkNotification.lock();
+        fWorkFound = false;
+        mWorkNotification.unlock();
+
         // Poll the connected nodes for messages
         CNode* pnodeTrickle = NULL;
         if (!vNodesCopy.empty())
@@ -1486,7 +1565,14 @@ void ThreadMessageHandler2(void* parg)
         {
             // Receive messages
             TRY_CRITICAL_BLOCK(pnode->cs_vRecv)
+            {
+                if (pnode->fNeedProcess)
+                {
+                    pnode->fNeedProcess = false;
                 ProcessMessages(pnode);
+                }
+            }
+                    
             if (fShutdown)
                 return;
 
@@ -1506,11 +1592,20 @@ void ThreadMessageHandler2(void* parg)
         // Wait and allow messages to bunch up.
         // Reduce vnThreadsRunning so StopNode has permission to exit while
         // we're sleeping, but we must always check fShutdown after doing this.
+
         vnThreadsRunning[2]--;
-        Sleep(100);
+
+        { // CAUTION: Raising the delay will slow connection accept
+            boost::posix_time::time_duration wait_duration = boost::posix_time::millisec(100);
+            boost::unique_lock<boost::mutex> lock(mWorkNotification);
+            if(!fWorkFound)
+                cvWorkNotification.timed_wait(lock, wait_duration);
+        }
+            
         if (fRequestShutdown)
             Shutdown(NULL);
         vnThreadsRunning[2]++;
+
         if (fShutdown)
             return;
     }
@@ -1606,6 +1701,19 @@ void StartNode(void* parg)
     if (pnodeLocalHost == NULL)
         pnodeLocalHost = new CNode(INVALID_SOCKET, CAddress("127.0.0.1", 0, false, nLocalServices));
 
+    // Determine and validate configured hub mode
+    string sHubMode=GetArg("-hub", "0");
+    int nHM=atoi(sHubMode);
+    if ((nHM >= 0) && (nHM <= 4))
+        nHubMode = nHM;
+    if( ( sizeof(fd_set) * 8 ) < ( HubModes[nHubMode][HM_MAX_TOTAL] + 32 ) )
+    {
+        fShutdown = true;
+        printf("*** Unable to support requested hub mode due to compilation flags\n");
+        CreateThread(Shutdown, NULL);
+        return;
+    }
+
 #ifdef __WXMSW__
     // Get local host ip
     char pszHostName[1000] = "";
@@ -1678,8 +1786,8 @@ void StartNode(void* parg)
         MapPort(fUseUPnP);
 
     // Get addresses from IRC and advertise ours
-    if (!CreateThread(ThreadIRCSeed, NULL))
-        printf("Error: CreateThread(ThreadIRCSeed) failed\n");
+    if (!CreateThread(ThreadIRCSeed, (void*)0))
+        printf("Error: CreateThread(ThreadIRCSeed, 0) failed\n");
 
     // Send and receive from sockets, accept connections
     CreateThread(ThreadSocketHandler, NULL);
@@ -1703,6 +1811,7 @@ bool StopNode()
     nTransactionsUpdated++;
     int64 nStart = GetTime();
     while (vnThreadsRunning[0] > 0 || vnThreadsRunning[2] > 0 || vnThreadsRunning[3] > 0 || vnThreadsRunning[4] > 0
+        || vaMultiThreads0 > 0
 #ifdef USE_UPNP
         || vnThreadsRunning[5] > 0
 #endif
@@ -1717,6 +1826,7 @@ bool StopNode()
     if (vnThreadsRunning[2] > 0) printf("ThreadMessageHandler still running\n");
     if (vnThreadsRunning[3] > 0) printf("ThreadBitcoinMiner still running\n");
     if (vnThreadsRunning[4] > 0) printf("ThreadRPCServer still running\n");
+    if (vaMultiThreads0 > 0) printf("ThreadsConnect still running\n");
     if (fHaveUPnP && vnThreadsRunning[5] > 0) printf("ThreadMapPort still running\n");
     while (vnThreadsRunning[2] > 0 || vnThreadsRunning[4] > 0)
         Sleep(20);
