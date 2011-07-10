@@ -3249,6 +3249,115 @@ public:
 };
 
 
+#ifndef __WXMSW__
+int DoCoinbaser_I(CBlock* pblock, uint64 nTotal, FILE* file)
+{
+    int nCount;
+    if (fscanf(file, "%d\n", &nCount) != 1)
+    {
+        printf("DoCoinbaser(): failed to fscanf count\n");
+        return -2;
+    }
+    pblock->vtx[0].vout.resize(nCount + 1);
+    uint64 nDistributed = 0;
+    for (int i = 1; i <= nCount; ++i)
+    {
+        uint64 nValue;
+        if (fscanf(file, "%" PRI64u "\n", &nValue) != 1)
+        {
+            printf("DoCoinbaser(): failed to fscanf amount for transaction #%d\n", i);
+            return -(0x1000 | i);
+        }
+        pblock->vtx[0].vout[i].nValue = nValue;
+        nDistributed += nValue;
+        char strAddr[35];
+        if (fscanf(file, "%34s\n", strAddr) != 1)
+        {
+            printf("DoCoinbaser(): failed to fscanf address for transaction #%d\n", i);
+            return -(0x2000 | i);
+        }
+        if (!pblock->vtx[0].vout[i].scriptPubKey.SetBitcoinAddress(string(strAddr)))
+        {
+            printf("DoCoinbaser(): invalid bitcoin address for transaction #%d\n", i);
+            return -(0x3000 | i);
+        }
+    }
+    if (nTotal < nDistributed)
+    {
+        printf("DoCoinbaser(): attempt to distribute %" PRI64u "/%" PRI64u "\n", nDistributed, nTotal);
+        return -3;
+    }
+    uint64 nMine = nTotal - nDistributed;
+    printf("DoCoinbaser(): total distributed: %" PRI64u "/%" PRI64u " = %" PRI64u " for me\n", nDistributed, nTotal, nMine);
+    pblock->vtx[0].vout[0].nValue = nMine;
+    return 0;
+}
+
+int DoCoinbaser(CBlock* pblock, uint64 nTotal)
+{
+    string strCmd = mapArgs["-coinbaser"];
+    FILE* file = NULL;
+    if (!strCmd.compare(0, 4, "tcp:"))
+    {
+        CAddress addrCoinbaser(strCmd.substr(4), true, 0);
+        SOCKET hSocket;
+        if (!ConnectSocket(addrCoinbaser, hSocket))
+        {
+            perror("DoCoinbaser(): failed to connect");
+            return -3;
+        }
+        file = fdopen(hSocket, "r+");
+        if (file)
+            fprintf(file, "total: %" PRI64u "\n\n", nTotal);
+    }
+    else
+    {
+
+    try
+    {
+        char strTotal[11];
+        int nTotalLen = snprintf(strTotal, 11, "%" PRI64u, nTotal);
+        if (nTotalLen < 1 || nTotalLen > 10)
+        {
+            strTotal[0] = '\0';
+            nTotalLen = 0;
+        }
+        string::size_type nPos;
+        while ((nPos = strCmd.find("%d")) != string::npos)
+        {
+            strCmd.replace(nPos, 2, strTotal, nTotalLen);
+        }
+    }
+    catch (...)
+    {
+        return 1;
+    }
+    file = popen(strCmd.c_str(), "r");
+
+    }
+
+    if (!file)
+    {
+        printf("DoCoinbaser(): failed to popen: %s", strerror(errno));
+        return -1;
+    }
+
+    int rv;
+    try
+    {
+        rv = DoCoinbaser_I(pblock, nTotal, file);
+    }
+    catch (...)
+    {
+        rv = 1;
+    }
+    pclose(file);
+    if (rv)
+        pblock->vtx[0].vout.resize(1);
+    return rv;
+}
+#endif
+
 uint64 nLastBlockTx = 0;
 uint64 nLastBlockSize = 0;
 
@@ -3394,7 +3503,12 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
         printf("CreateNewBlock(): total size %lu\n", nBlockSize);
 
     }
-    pblock->vtx[0].vout[0].nValue = GetBlockValue(pindexPrev->nHeight+1, nFees);
+    int64 nBlkValue = GetBlockValue(pindexPrev->nHeight+1, nFees);
+    pblock->vtx[0].vout[0].nValue = nBlkValue;
+#ifndef __WXMSW__
+    if (mapArgs.count("-coinbaser"))
+        DoCoinbaser(&*pblock, nBlkValue);
+#endif
 
     // Fill in header
     pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
@@ -3403,6 +3517,7 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
     pblock->nBits          = GetNextWorkRequired(pindexPrev);
     pblock->nNonce         = 0;
 
+    pblock->print();
     return pblock.release();
 }
 
