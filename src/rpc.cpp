@@ -2,6 +2,16 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
+// CAUTION: This is not the offical rpc.cpp from the official
+// bitcoin distribution. It has been modified by me
+// <davidjoelschwartz@gmail.com> to support multi-threaded RPC.
+// This is quick and dirty code, it may not work for you. No warranties
+// are expressed or implied. I made a best effort to improve the RPC
+// performance. This notification is for blame, not for credit and
+// may be removed if this change, or one similar, is accepted into the
+// main distribution. If this has helped you, please donate to:
+// 1H3STBxuzEHZQQD4hkjVE22TWTazcZzeBw
+
 #include "headers.h"
 #include "cryptopp/sha.h"
 #undef printf
@@ -12,6 +22,7 @@
 #include <boost/asio/ssl.hpp> 
 typedef boost::asio::ssl::stream<boost::asio::ip::tcp::socket> SSLStream;
 #endif
+#define BOOST_SPIRIT_THREADSAFE
 #include "json/json_spirit_reader_template.h"
 #include "json/json_spirit_writer_template.h"
 #include "json/json_spirit_utils.h"
@@ -30,6 +41,26 @@ void ThreadRPCServer2(void* parg);
 typedef Value(*rpcfn_type)(const Array& params, bool fHelp);
 extern map<string, rpcfn_type> mapCallTable;
 
+void ThreadRPCServer3(void* parg);
+
+CCriticalSection cs_unsafeRPC;
+boost::thread_specific_ptr<bool> fUnsafe;
+
+inline void ThreadSafeRPC()
+{
+    if (!*fUnsafe)
+        return;
+    cs_unsafeRPC.Leave();
+    *fUnsafe = false;
+}
+
+inline void ThreadUnsafeRPC()
+{
+    if (*fUnsafe)
+        return;
+    cs_unsafeRPC.Enter();
+    *fUnsafe = true;
+}
 
 Object JSONRPCError(int code, const string& message)
 {
@@ -1446,6 +1477,7 @@ Value getwork(const Array& params, bool fHelp)
     if (IsInitialBlockDownload())
         throw JSONRPCError(-10, "Bitcoin is downloading blocks...");
 
+    // Umm, why is this static and not protected by a mutex?
     static map<uint256, pair<CBlock*, unsigned int> > mapNewBlock;
     static vector<CBlock*> vNewBlock;
     static CReserveKey reservekey;
@@ -1470,15 +1502,20 @@ Value getwork(const Array& params, bool fHelp)
                     delete pblock;
                 vNewBlock.clear();
             }
+
+            // Create new block
+            CBlock* pNewBlock;
+            ThreadSafeRPC();
+            pNewBlock = CreateNewBlock(reservekey);
+            ThreadUnsafeRPC();
+            if (!pNewBlock)
+                throw JSONRPCError(-7, "Out of memory");
+            vNewBlock.push_back(pNewBlock);
+            pblock = pNewBlock;
+
             nTransactionsUpdatedLast = nTransactionsUpdated;
             pindexPrev = pindexBest;
             nStart = GetTime();
-
-            // Create new block
-            pblock = CreateNewBlock(reservekey);
-            if (!pblock)
-                throw JSONRPCError(-7, "Out of memory");
-            vNewBlock.push_back(pblock);
         }
 
         // Update nExtraNonce
@@ -1917,6 +1954,28 @@ private:
 };
 #endif
 
+class AcceptedConnection
+{
+    public:
+#ifdef USE_SSL
+    SSLStream sslStream;
+    SSLIOStreamDevice d;
+    iostreams::stream<SSLIOStreamDevice> stream;
+#else
+    ip::tcp::iostream stream;
+#endif
+
+    ip::tcp::endpoint peer;
+
+#ifdef USE_SSL
+    AcceptedConnection(asio::io_service &io_service, ssl::context &context,
+     bool fUseSSL) : sslStream(io_service, context), d(sslStream, fUseSSL),
+     stream(d) { ; }
+#else
+    AcceptedConnection(void) { ; }
+#endif
+};
+
 void ThreadRPCServer(void* parg)
 {
     IMPLEMENT_RANDOMIZE_STACK(ThreadRPCServer(parg));
@@ -1992,44 +2051,63 @@ void ThreadRPCServer2(void* parg)
     {
         // Accept connection
 #ifdef USE_SSL
-        SSLStream sslStream(io_service, context);
-        SSLIOStreamDevice d(sslStream, fUseSSL);
-        iostreams::stream<SSLIOStreamDevice> stream(d);
+        AcceptedConnection *conn=new AcceptedConnection(io_service, context, fUseSSL);
 #else
-        ip::tcp::iostream stream;
+        AcceptedConnection *conn=new AcceptedConnection();
 #endif
 
-        ip::tcp::endpoint peer;
         vnThreadsRunning[4]--;
 #ifdef USE_SSL
-        acceptor.accept(sslStream.lowest_layer(), peer);
+        acceptor.accept(conn->sslStream.lowest_layer(), conn->peer);
 #else
-        acceptor.accept(*stream.rdbuf(), peer);
+        acceptor.accept(*conn->stream.rdbuf(), conn->peer);
 #endif
         vnThreadsRunning[4]++;
+
         if (fShutdown)
+        {
+            delete conn;
             return;
+        }
 
         // Restrict callers by IP
-        if (!ClientAllowed(peer.address().to_string()))
-            continue;
+        if (!ClientAllowed(conn->peer.address().to_string()))
+            delete conn;
+        else
+            CreateThread(ThreadRPCServer3, (void *) conn);
+    }
+}
 
+void ThreadRPCServer3(void* parg)
+{
+    IMPLEMENT_RANDOMIZE_STACK(ThreadRPCServer3(parg));
+    ++vaMultiThreads1;
+    AcceptedConnection *conn=(AcceptedConnection *) parg;
+    fUnsafe.reset(new bool(false));
+
+    do {
         map<string, string> mapHeaders;
         string strRequest;
 
-        boost::thread api_caller(ReadHTTP, boost::ref(stream), boost::ref(mapHeaders), boost::ref(strRequest));
+#if 0
+        boost::thread api_caller(ReadHTTP, boost::ref(conn->stream), boost::ref(mapHeaders), boost::ref(strRequest));
         if (!api_caller.timed_join(boost::posix_time::seconds(GetArg("-rpctimeout", 30))))
         {   // Timed out:
-            acceptor.cancel();
             printf("ThreadRPCServer ReadHTTP timeout\n");
-            continue;
+            conn->stream.close(); // This doesn't work
+            api_caller.join();
+            delete conn;
+            --vaMultiThreads1;
+            return;
         }
+#endif
+        ReadHTTP(conn->stream, mapHeaders, strRequest);
 
         // Check authorization
         if (mapHeaders.count("authorization") == 0)
         {
-            stream << HTTPReply(401, "") << std::flush;
-            continue;
+            conn->stream << HTTPReply(401, "") << std::flush;
+            break;
         }
         if (!HTTPAuthorized(mapHeaders))
         {
@@ -2037,10 +2115,12 @@ void ThreadRPCServer2(void* parg)
             if (mapArgs["-rpcpassword"].size() < 15)
                 Sleep(50);
 
-            stream << HTTPReply(401, "") << std::flush;
+            conn->stream << HTTPReply(401, "") << std::flush;
             printf("ThreadRPCServer incorrect password attempt\n");
-            continue;
+            break;
         }
+
+        ThreadUnsafeRPC();
 
         Value id = Value::null;
         try
@@ -2089,24 +2169,42 @@ void ThreadRPCServer2(void* parg)
                 // Execute
                 Value result = (*(*mi).second)(params, false);
 
+                ThreadSafeRPC();
+
                 // Send reply
                 string strReply = JSONRPCReply(result, Value::null, id);
-                stream << HTTPReply(200, strReply) << std::flush;
+                conn->stream << HTTPReply(200, strReply) << std::flush;
             }
             catch (std::exception& e)
             {
-                ErrorReply(stream, JSONRPCError(-1, e.what()), id);
+                ThreadSafeRPC();
+                ErrorReply(conn->stream, JSONRPCError(-1, e.what()), id);
+            }
+            catch (Object& e)
+            {
+                ThreadSafeRPC();
+                ErrorReply(conn->stream, e, id);
             }
         }
         catch (Object& objError)
         {
-            ErrorReply(stream, objError, id);
+            ThreadSafeRPC();
+            ErrorReply(conn->stream, objError, id);
+            break;
         }
         catch (std::exception& e)
         {
-            ErrorReply(stream, JSONRPCError(-32700, e.what()), id);
+            ThreadSafeRPC();
+            ErrorReply(conn->stream, JSONRPCError(-32700, e.what()), id);
+            break;
         }
+
+        ThreadSafeRPC();
     }
+    while (0);
+    delete conn;
+    delete fUnsafe.release();
+    --vaMultiThreads1;
 }
 
 

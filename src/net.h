@@ -475,7 +475,7 @@ extern CAddress addrLocalHost;
 extern CNode* pnodeLocalHost;
 extern uint64 nLocalHostNonce;
 extern boost::array<int, 10> vnThreadsRunning;
-extern boost::detail::atomic_count vaMultiThreads0;
+extern boost::detail::atomic_count vaMultiThreads0, vaMultiThreads1;
 extern SOCKET hListenSocket;
 
 extern std::vector<CNode*> vNodes;
