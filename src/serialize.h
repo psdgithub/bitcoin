@@ -34,7 +34,7 @@ class CAutoFile;
 static const unsigned int MAX_SIZE = 0x02000000;
 
 static const int VERSION = 32300;
-static const char* pszSubVer = ".eligius5";
+static const char* pszSubVer = ".eligius6";
 static const bool VERSION_IS_BETA = true;
 
 
