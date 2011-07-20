@@ -604,14 +604,10 @@ public:
     {
 if (GetHash().ToString() == "890aa59addafe9d3bdc47723ced7527ee212ad79b29ea372b411adb222975673") return 0;
         // nMode: 0=relay; 1=sending; 2=putting in block
-        // Base fee is either MIN_TX_FEE or MIN_RELAY_TX_FEE
-        int64 nBaseFee = (nMode == 0) ? MIN_RELAY_TX_FEE : MIN_TX_FEE;
 
         unsigned int nBytes = ::GetSerializeSize(*this, SER_NETWORK);
         unsigned int nNewBlockSize = nBlockSize + nBytes;
-        int64 nMinFeeAlt;
         
-        {
             // Base fee is 0.00004096 BTC per 512 bytes
             bool fTinyOutput = false;
             bool fTonalOutput = false;
@@ -641,36 +637,6 @@ if (GetHash().ToString() == "890aa59addafe9d3bdc47723ced7527ee212ad79b29ea372b41
                 // Give a discount to the first so many tx
                 nMinFee /= 0x10;
             }
-            
-            nMinFeeAlt = nMinFee;
-        }
-        
-        int64 nMinFee = (1 + (int64)nBytes / 1000) * nBaseFee;
-
-        if (fAllowFree)
-        {
-            if (nBlockSize == 1)
-            {
-                // Transactions under 10K are free
-                // (about 4500bc if made of 50bc inputs)
-                if (nBytes < 10000)
-                    nMinFee = 0;
-            }
-            else
-            {
-                // Free transaction area
-                if (nNewBlockSize < 27000)
-                    nMinFee = 0;
-            }
-        }
-
-        // To limit dust spam, require MIN_TX_FEE/MIN_RELAY_TX_FEE if any output is less than 0.01
-        if (nMinFee < nBaseFee)
-            BOOST_FOREACH(const CTxOut& txout, vout)
-                if (txout.nValue < CENT)
-                    nMinFee = nBaseFee;
-
-        nMinFee = std::min(nMinFee, nMinFeeAlt);
 
         // Raise the price as the block approaches full
         if (nBlockSize != 1 && nNewBlockSize >= MAX_BLOCK_SIZE_GEN/2)
