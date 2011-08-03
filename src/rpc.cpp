@@ -1459,7 +1459,26 @@ Value validateaddress(const Array& params, bool fHelp)
 }
 
 
-extern vector<unsigned char> pvcEligius;
+Value setworkaux(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 2)
+        throw runtime_error(
+            "setworkaux <id> [data]\n"
+            "If [data] is not specified, deletes aux.\n"
+        );
+
+    std::string strId = params[0].get_str();
+    if (params.size() > 1)
+    {
+        std::vector<unsigned char> vchData = ParseHex(params[1].get_str());
+        mapAuxCoinbases[strId] = CScript(vchData);
+    }
+    else
+        mapAuxCoinbases.erase(strId);
+
+    return true;
+}
+
 
 Value getwork(const Array& params, bool fHelp)
 {
@@ -1480,7 +1499,8 @@ Value getwork(const Array& params, bool fHelp)
         throw JSONRPCError(-10, "Bitcoin is downloading blocks...");
 
     // Umm, why is this static and not protected by a mutex?
-    static map<uint256, pair<CBlock*, unsigned int> > mapNewBlock;
+    typedef map<uint256, pair<CBlock*, CScript> > mapNewBlock_t;
+    static mapNewBlock_t mapNewBlock;
     static vector<CBlock*> vNewBlock;
     static CReserveKey reservekey;
 
@@ -1531,7 +1551,7 @@ Value getwork(const Array& params, bool fHelp)
         pblock->nNonce = 0;
 
         // Save
-        mapNewBlock[pblock->hashMerkleRoot] = make_pair(pblock, nExtraNonce);
+        mapNewBlock[pblock->hashMerkleRoot] = make_pair(pblock, pblock->vtx[0].vin[0].scriptSig);
 
         // Prebuild hash buffers
         char pmidstate[32];
@@ -1564,11 +1584,10 @@ Value getwork(const Array& params, bool fHelp)
         if (!mapNewBlock.count(pdata->hashMerkleRoot))
             return false;
         CBlock* pblock = mapNewBlock[pdata->hashMerkleRoot].first;
-        unsigned int nExtraNonce = mapNewBlock[pdata->hashMerkleRoot].second;
 
         pblock->nTime = pdata->nTime;
         pblock->nNonce = pdata->nNonce;
-        pblock->vtx[0].vin[0].scriptSig = CScript() << pvcEligius << CBigNum(nExtraNonce);
+        pblock->vtx[0].vin[0].scriptSig = mapNewBlock[pdata->hashMerkleRoot].second;
         pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 
         return CheckWork(pblock, reservekey);
@@ -1627,6 +1646,7 @@ pair<string, rpcfn_type> pCallTable[] =
     make_pair("sendmany",              &sendmany),
     make_pair("gettransaction",        &gettransaction),
     make_pair("listtransactions",      &listtransactions),
+    make_pair("setworkaux",            &setworkaux),
     make_pair("getwork",               &getwork),
     make_pair("listaccounts",          &listaccounts),
     make_pair("settxfee",              &settxfee),

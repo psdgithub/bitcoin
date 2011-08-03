@@ -3534,6 +3534,7 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
 
 static const char *pszEligius = "Eligius";
 vector<unsigned char> pvcEligius((const unsigned char*)pszEligius, (const unsigned char*)pszEligius + strlen(pszEligius));
+std::map<std::string, CScript> mapAuxCoinbases;
 
 void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& nExtraNonce, int64& nPrevTime)
 {
@@ -3545,7 +3546,16 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
         hashPrevBlock = pblock->hashPrevBlock;
     }
     ++nExtraNonce;
-    pblock->vtx[0].vin[0].scriptSig = CScript() << pvcEligius << CBigNum(nExtraNonce);
+
+    CScript &scriptSig = pblock->vtx[0].vin[0].scriptSig;
+    scriptSig = CScript() << pvcEligius;
+
+    map<std::string, CScript>::iterator it;
+    for (it = mapAuxCoinbases.begin() ; it != mapAuxCoinbases.end(); ++it)
+        scriptSig += (*it).second;
+
+    scriptSig << CBigNum(nExtraNonce);
+
     pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 }
 
