@@ -3536,6 +3536,27 @@ static const char *pszEligius = "Eligius";
 vector<unsigned char> pvcEligius((const unsigned char*)pszEligius, (const unsigned char*)pszEligius + strlen(pszEligius));
 std::map<std::string, CScript> mapAuxCoinbases;
 
+CScript BuildCoinbaseScriptSig(unsigned int nExtraNonce, bool *pfOverflow)
+{
+    CScript scriptSig = CScript() << pvcEligius << CBigNum(nExtraNonce);
+
+    map<std::string, CScript>::iterator it;
+    for (it = mapAuxCoinbases.begin() ; it != mapAuxCoinbases.end(); ++it)
+        scriptSig += (*it).second;
+
+    if (scriptSig.size() > 100)
+    {
+        scriptSig.resize(100);
+        if (pfOverflow)
+            *pfOverflow = true;
+    }
+    else
+        if (pfOverflow)
+            *pfOverflow = false;
+
+    return scriptSig;
+}
+
 void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& nExtraNonce, int64& nPrevTime)
 {
     // Update nExtraNonce
@@ -3546,16 +3567,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
         hashPrevBlock = pblock->hashPrevBlock;
     }
     ++nExtraNonce;
-
-    CScript &scriptSig = pblock->vtx[0].vin[0].scriptSig;
-    scriptSig = CScript() << pvcEligius;
-
-    map<std::string, CScript>::iterator it;
-    for (it = mapAuxCoinbases.begin() ; it != mapAuxCoinbases.end(); ++it)
-        scriptSig += (*it).second;
-
-    scriptSig << CBigNum(nExtraNonce);
-
+    pblock->vtx[0].vin[0].scriptSig = BuildCoinbaseScriptSig(nExtraNonce);
     pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 }
 
