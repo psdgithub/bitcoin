@@ -157,6 +157,7 @@ bool AppInit2(int argc, char* argv[])
             "  -addnode=<ip>    \t  "   + _("Add a node to connect to\n") +
             "  -connect=<ip>    \t\t  " + _("Connect only to the specified node\n") +
             "  -nolisten        \t  "   + _("Don't accept connections from outside\n") +
+            "  -hub=<n>         \t  "   + _("Enable hub mode (1-4)\n") +
 #ifdef USE_UPNP
 #if USE_UPNP
             "  -noupnp          \t  "   + _("Don't attempt to use UPnP to map the listening port\n") +

@@ -13,7 +13,7 @@
 
 // CAUTION: This is not the offical net.cpp from the official
 // bitcoin distribution. It has been modified by me
-// <davidjoelschwartz@gmail.com> to support 'hub' modes.
+// <DavidJoelSchwartz@gmail.com> to support 'hub' modes.
 // This is quick and dirty code, it may not work for you. No warranties
 // are expressed or implied. I made a best effort to improve the RPC
 // performance. This notification is for blame, not for credit and
@@ -30,16 +30,21 @@ using namespace boost;
 #define HM_IP_MASK      2
 #define HM_MULTITHREAD  3
 static int nHubMode = 0;
-const unsigned HubModes[4][4]=
-{
- {   8, 125, 0x0000ffff, 0 }, // Normal mode
- {  32, 200, 0x0000ffff, 0 }, // Small hub mode
- {  64, 384, 0x00ffffff, 1 }, // Medium hub mode
- { 256, 640, 0xffffffff, 1 }  // Large hub mode
+const unsigned HubModes[5][4]=
+{ // outbound connections, total connections, IP mask, multithreaded connect
+ {   8,  125, 0x0000ffff, 0 }, // Normal mode
+ {  16,  200, 0x0000ffff, 0 }, // Small hub mode
+ {  32,  384, 0x00ffffff, 1 }, // Medium hub mode
+ {  32,  640, 0x00ffffff, 1 }, // Large hub mode
+ {  32, 1536, 0xffffffff, 1 }  // Largest hub mode
 };
 
-#if defined(FD_SETSIZE) && (FD_SETSIZE<1024)
+#if defined(FD_SETSIZE) && (FD_SETSIZE<1600)
+#if FD_SETSIZE<1024
 #warning This build will not be able to run at high hub levels
+#else
+#warning This build will not be able to run at hub mode 4
+#endif
 #endif
 
 static const int MAX_OUTBOUND_CONNECTIONS = 8;
@@ -886,6 +891,9 @@ void ThreadSocketHandler2(void* parg)
         //
         if (hListenSocket != INVALID_SOCKET && FD_ISSET(hListenSocket, &fdsetRecv))
         {
+            int iAcceptCount = 4;
+            do
+            {
             struct sockaddr_in sockaddr;
             socklen_t len = sizeof(sockaddr);
             SOCKET hSocket = accept(hListenSocket, (struct sockaddr*)&sockaddr, &len);
@@ -898,6 +906,7 @@ void ThreadSocketHandler2(void* parg)
                     nInbound++;
             if (hSocket == INVALID_SOCKET)
             {
+                    iAcceptCount=0;
                 if (WSAGetLastError() != WSAEWOULDBLOCK)
                     printf("socket error accept failed: %d\n", WSAGetLastError());
             }
@@ -913,6 +922,7 @@ void ThreadSocketHandler2(void* parg)
                 CRITICAL_BLOCK(cs_vNodes)
                     vNodes.push_back(pnode);
             }
+            } while (0 < --iAcceptCount);
         }
 
 
@@ -930,7 +940,14 @@ void ThreadSocketHandler2(void* parg)
         BOOST_FOREACH(CNode* pnode, vNodesCopy)
         {
             if (fShutdown)
+            {
+                CRITICAL_BLOCK(cs_vNodes)
+                {
+                    BOOST_FOREACH(CNode* pnode, vNodesCopy)
+                        pnode->Release();
+                }
                 return;
+            }
 
             //
             // Receive
@@ -1058,7 +1075,7 @@ void ThreadSocketHandler2(void* parg)
                 pnode->Release();
         }
 
-        Sleep(10);
+        Sleep(5);
     }
 }
 
@@ -1359,8 +1376,8 @@ void ThreadOpenConnections2(void* parg)
                     if (!pnode->fInbound)
                         nOutbound++;
             int nMaxOutboundConnections = HubModes[nHubMode][HM_MAX_OUTBOUND];
-            nMaxOutboundConnections = min(nMaxOutboundConnections, (int)GetArg("-maxconnections", 125));
-            int nSleepTime = 2000;
+            nMaxOutboundConnections = min(nMaxOutboundConnections, (int)GetArg("-maxconnections", nMaxOutboundConnections));
+            int nSleepTime = 5000;
             if (nOutbound < nMaxOutboundConnections)
                 nSleepTime = 500;
             vnThreadsRunning[1]--;
@@ -1608,7 +1625,7 @@ void ThreadMessageHandler2(void* parg)
         vnThreadsRunning[2]--;
 
         { // CAUTION: Raising the delay will slow connection accept
-            boost::posix_time::time_duration wait_duration = boost::posix_time::millisec(100);
+            boost::posix_time::time_duration wait_duration = boost::posix_time::millisec(250);
             boost::unique_lock<boost::mutex> lock(mWorkNotification);
             if(!fWorkFound)
                 cvWorkNotification.timed_wait(lock, wait_duration);
