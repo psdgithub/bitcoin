@@ -2,6 +2,10 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <sstream>
+
+#include <QApplication>
+
 #include "guiutil.h"
 
 #include "bitcoinaddressvalidator.h"
@@ -112,6 +116,52 @@ void setupAmountWidget(QLineEdit *widget, QWidget *parent)
     widget->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
 }
 
+qint64 URIParseAmount(std::string strAmount)
+{
+    bool ok;
+    qint64 nAmount = 0;
+    bool fHex = false;
+    if (strAmount[0] == 'x' || strAmount[0] == 'X')
+    {
+        fHex = true;
+        strAmount = strAmount.substr(1);
+    }
+    size_t nPosX = strAmount.find('X', 1);
+    if (nPosX == std::string::npos)
+        nPosX = strAmount.find('x', 1);
+    int nExponent = 0;
+    if (nPosX != std::string::npos)
+    {
+        nExponent = QString::fromStdString(strAmount.substr(nPosX + 1)).toInt(&ok, fHex ? 0x10 : 10);
+        if (!ok)
+            return -1;
+    }
+    else
+    {
+        // Non-compliant URI, assume standard units
+        nExponent = fHex ? 4 : 8;
+        nPosX = strAmount.size();
+    }
+    size_t nPosP = strAmount.find('.');
+    size_t nFractionLen = 0;
+    if (nPosP == std::string::npos)
+        nPosP = nPosX;
+    else
+        nFractionLen = (nPosX - nPosP) - 1;
+    nExponent -= nFractionLen;
+    strAmount = strAmount.substr(0, nPosP) + (nFractionLen ? strAmount.substr(nPosP + 1, nFractionLen) : "");
+    if (nExponent > 0)
+        strAmount.append(nExponent, '0');
+    else
+    if (nExponent < 0)
+        // WTF? truncate I guess
+        strAmount = strAmount.substr(0, strAmount.size() + nExponent);
+    nAmount = QString::fromStdString(strAmount).toLongLong(&ok, fHex ? 0x10 : 10);
+    if (!ok)
+        return -1;
+    return nAmount;
+}
+
 bool parseBitcoinURI(const QUrl &uri, SendCoinsRecipient *out)
 {
     // return if URI is not valid or is no bitcoin: URI
@@ -151,10 +201,9 @@ bool parseBitcoinURI(const QUrl &uri, SendCoinsRecipient *out)
         {
             if(!i->second.isEmpty())
             {
-                if(!BitcoinUnits::parse(BitcoinUnits::BTC, i->second, &rv.amount))
-                {
+                rv.amount = URIParseAmount((i->second).toStdString());
+                if (rv.amount < 0)
                     return false;
-                }
             }
             fShouldReturnFalse = false;
         }
