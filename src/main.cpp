@@ -342,7 +342,7 @@ int64 CTxIn::GetDebit() const
 
 int64 CWalletTx::GetTxTime() const
 {
-    if (!fTimeReceivedIsTxTime && hashBlock != 0)
+    if (!fTimeReceivedIsTxTime)
     {
         // If we did not receive the transaction directly, we rely on the block's
         // time to figure out when it happened.  We use the median over a range
