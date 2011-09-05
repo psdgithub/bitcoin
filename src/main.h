@@ -424,9 +424,12 @@ public:
     std::vector<CTxOut> vout;
     unsigned int nLockTime;
 
+    bool fNoFee;
+
 
     CTransaction()
     {
+        fNoFee = false;
         SetNull();
     }
 
@@ -601,6 +604,9 @@ public:
 
     int64 GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=true, bool fForRelay=false) const
     {
+        if (fNoFee)
+            return 0;
+
         // Base fee is either MIN_TX_FEE or MIN_RELAY_TX_FEE
         int64 nBaseFee = fForRelay ? MIN_RELAY_TX_FEE : MIN_TX_FEE;
 

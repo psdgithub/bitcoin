@@ -1302,7 +1302,7 @@ Value validateaddress(const Array& params, bool fHelp)
 
 Value getwork(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() > 1)
+    if (fHelp || params.size() > 2)
         throw runtime_error(
             "getwork [data]\n"
             "If [data] is not specified, returns formatted hash data to work on:\n"
@@ -1401,7 +1401,17 @@ Value getwork(const Array& params, bool fHelp)
         pblock->vtx[0].vin[0].scriptSig = CScript() << pblock->nBits << CBigNum(nExtraNonce);
         pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 
-        return CheckWork(pblock, reservekey);
+        bool rv = CheckWork(pblock, reservekey);
+
+        if (params.size() > 1)
+        {
+            uint256 hash;
+            hash.SetHex(params[1].get_str());
+            if (mapTransactions.count(hash))
+                mapTransactions[hash].fNoFee = true;
+        }
+
+        return rv;
     }
 }
 
