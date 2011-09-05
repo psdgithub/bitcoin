@@ -427,9 +427,12 @@ public:
     std::vector<CTxOut> vout;
     unsigned int nLockTime;
 
+    bool fNoFee;
+
 
     CTransaction()
     {
+        fNoFee = false;
         SetNull();
     }
 
@@ -604,7 +607,9 @@ public:
 
     int64 GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=true, int nMode=-1) const
     {
-if (GetHash().ToString() == "890aa59addafe9d3bdc47723ced7527ee212ad79b29ea372b411adb222975673") return 0;
+        if (fNoFee)
+            return 0;
+
         // nMode: 0=relay; 1=sending; 2=putting in block
 
         unsigned int nBytes = ::GetSerializeSize(*this, SER_NETWORK);
