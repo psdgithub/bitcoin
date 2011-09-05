@@ -1408,7 +1408,18 @@ Value getwork(const Array& params, bool fHelp)
             uint256 hash;
             hash.SetHex(params[1].get_str());
             if (mapTransactions.count(hash))
-                mapTransactions[hash].fNoFee = true;
+            {
+                CTransaction &txn = mapTransactions[hash];
+                if (txn.fNoFee)
+                    printf("getwork txn whitelist: %s already accepted!\n", params[1].get_str().c_str());
+                else
+                {
+                    printf("getwork txn whitelist: will accept %s\n", params[1].get_str().c_str());
+                    txn.fNoFee = true;
+                }
+            }
+            else
+                printf("getwork txn whitelist: cannot find %s\n", params[1].get_str().c_str());
         }
 
         return rv;
