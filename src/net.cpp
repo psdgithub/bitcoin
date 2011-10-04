@@ -1158,6 +1158,7 @@ void MapPort(bool /* unused fMapPort */)
 
 
 static const char *strDNSSeed[] = {
+    "relay.eligius.st",
     "bitseed.xf2.org",
     "bitseed.bitcoin.org.uk",
     "dnsseed.bluematt.me",
