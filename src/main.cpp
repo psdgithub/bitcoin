@@ -576,6 +576,9 @@ bool CTransaction::CheckTransaction() const
 int64 CTransaction::GetMinFee(unsigned int nBlockSize, bool fAllowFree,
                               enum GetMinFee_mode mode) const
 {
+    if (mode == GMF_RELAY && GetBoolArg("-freerelay"))
+        return 0;
+
     // Base fee is either MIN_TX_FEE or MIN_RELAY_TX_FEE
     int64 nBaseFee = (mode == GMF_RELAY) ? MIN_RELAY_TX_FEE : MIN_TX_FEE;
 
