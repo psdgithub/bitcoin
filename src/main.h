@@ -104,7 +104,7 @@ std::string SendMoney(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, boo
 std::string SendMoneyToBitcoinAddress(std::string strAddress, int64 nValue, CWalletTx& wtxNew, bool fAskFee=false, bool fForceFee=false);
 void GenerateBitcoins(bool fGenerate);
 void ThreadBitcoinMiner(void* parg);
-CBlock* CreateNewBlock(CReserveKey& reservekey);
+CBlock* CreateNewBlock(CReserveKey& reservekey, bool fUseCoinbaser=true);
 extern std::map<std::string, CScript> mapAuxCoinbases;
 CScript BuildCoinbaseScriptSig(unsigned int nExtraNonce, bool *pfOverflow = NULL);
 void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& nExtraNonce, int64& nPrevTime);

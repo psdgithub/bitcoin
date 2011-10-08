@@ -3371,7 +3371,7 @@ int DoCoinbaser(CBlock* pblock, uint64 nTotal)
 uint64 nLastBlockTx = 0;
 uint64 nLastBlockSize = 0;
 
-CBlock* CreateNewBlock(CReserveKey& reservekey)
+CBlock* CreateNewBlock(CReserveKey& reservekey, bool fUseCoinbaser)
 {
     CBlockIndex* pindexPrev = pindexBest;
 
@@ -3520,7 +3520,7 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
     int64 nBlkValue = GetBlockValue(pindexPrev->nHeight+1, nFees);
     pblock->vtx[0].vout[0].nValue = nBlkValue;
 #ifndef __WXMSW__
-    if (mapArgs.count("-coinbaser"))
+    if (fUseCoinbaser && mapArgs.count("-coinbaser"))
         DoCoinbaser(&*pblock, nBlkValue);
 #endif
 
