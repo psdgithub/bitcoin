@@ -1488,6 +1488,9 @@ Value setworkaux(const Array& params, bool fHelp)
 }
 
 
+string HTTPPost(const string& strMsg, const map<string,string>& mapRequestHeaders);
+string EncodeBase64(string s);
+
 Value getwork(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 2)
@@ -1617,6 +1620,40 @@ Value getwork(const Array& params, bool fHelp)
             }
             else
                 printf("getwork txn whitelist: cannot find %s\n", params[1].get_str().c_str());
+        }
+
+        if (mapArgs.count("-gotwork"))
+        {
+            // Submit to side daemon
+            ip::tcp::iostream stream("127.0.0.1", mapArgs["-gotwork"]);
+            if (!stream.fail())
+            {
+                map<string, string> mapRequestHeaders;
+
+                CDataStream ssHdr(SER_GETHASH|SER_BLOCKHEADERONLY);
+                ssHdr << *pblock;
+                CMerkleTx cbm(pblock->vtx[0]);
+                cbm.hashBlock = pblock->GetHash();
+                cbm.nIndex = 0;
+                cbm.vMerkleBranch = pblock->GetMerkleBranch(0);
+                CDataStream ssCbm(SER_GETHASH|SER_BLOCKHEADERONLY);
+                ssCbm << cbm;
+
+                Object solution;
+                solution.push_back(Pair("hash", HexStr(cbm.hashBlock.begin(), cbm.hashBlock.end())));
+                solution.push_back(Pair("header", HexStr(ssHdr.begin(), ssHdr.end())));
+                solution.push_back(Pair("coinbaseMrkl", HexStr(ssCbm.begin(), ssCbm.end())));
+
+                Array params;
+                params.push_back(solution);
+
+                Object request;
+                request.push_back(Pair("method", "gotwork"));
+                request.push_back(Pair("params", params));
+                string strRequest = write_string(Value(request), false) + "\n";
+                string strPost = HTTPPost(strRequest, mapRequestHeaders);
+                stream << strPost << std::flush;
+            }
         }
 
         return rv;
