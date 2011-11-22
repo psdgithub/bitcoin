@@ -1398,7 +1398,9 @@ Value getwork(const Array& params, bool fHelp)
 
         pblock->nTime = pdata->nTime;
         pblock->nNonce = pdata->nNonce;
-        pblock->vtx[0].vin[0].scriptSig = CScript() << pblock->nBits << CBigNum(nExtraNonce);
+        const char* pOpEvalName = GetOpName(OP_EVAL);
+        pblock->vtx[0].vin[0].scriptSig = CScript() << pblock->nBits << CBigNum(nExtraNonce) <<
+            std::vector<unsigned char>(pOpEvalName, pOpEvalName+strlen(pOpEvalName));
         pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 
         return CheckWork(pblock, reservekey);
