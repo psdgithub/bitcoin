@@ -1295,8 +1295,25 @@ bool CTransaction::ConnectInputs(CTxDB& txdb, map<uint256, CTxIndex>& mapTestPoo
                     if (pindex->nBlockPos == txindex.pos.nBlockPos && pindex->nFile == txindex.pos.nFile)
                         return error("ConnectInputs() : tried to spend coinbase at depth %d", pindexBlock->nHeight - pindex->nHeight);
 
+            bool fStrictOpEval = true;
+            // This code should be removed when OP_EVAL has
+            // a majority of hashing power on the network.
+            if (fBlock)
+            {
+                // To avoid being on the short end of a block-chain split,
+                // interpret OP_EVAL as a NO_OP until blocks with timestamps
+                // after opevaltime:
+                int64 nEvalSwitchTime = GetArg("opevaltime", 1328054400); // Feb 1, 2012
+                fStrictOpEval = (pindexBlock->nTime >= nEvalSwitchTime);
+            }
+            // if !fBlock, then always be strict-- don't accept
+            // invalid-under-new-rules OP_EVAL transactions into
+            // our memory pool (don't relay them, don't include them
+            // in blocks we mine).
+
             // Verify signature
-            if (!VerifySignature(txPrev, *this, i))
+            int nSigOps = 0;
+            if (!VerifySignature(txPrev, *this, i, nSigOps, fStrictOpEval))
                 return error("ConnectInputs() : %s VerifySignature failed", GetHash().ToString().substr(0,10).c_str());
 
             // Check for conflicts
@@ -1374,7 +1391,8 @@ bool CTransaction::ClientConnectInputs()
                 return false;
 
             // Verify signature
-            if (!VerifySignature(txPrev, *this, i))
+            int nSigOps = 0;
+            if (!VerifySignature(txPrev, *this, i, nSigOps, false))
                 return error("ConnectInputs() : VerifySignature failed");
 
             ///// this is redundant with the mapNextTx stuff, not sure which I want to get rid of
