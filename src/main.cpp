@@ -2563,7 +2563,7 @@ bool ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             pfrom->AddInventoryKnown(inv);
 
             bool fAlreadyHave = AlreadyHave(txdb, inv);
-            printf("  got inventory: %s  %s\n", inv.ToString().c_str(), fAlreadyHave ? "have" : "new");
+            printf("  got inventory: %s  %s (from %s at " PRI64d ")\n", inv.ToString().c_str(), fAlreadyHave ? "have" : "new", pfrom->addr.ToString().c_str(), GetTime());
 
             if (!fAlreadyHave)
                 pfrom->AskFor(inv);
