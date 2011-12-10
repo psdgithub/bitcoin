@@ -60,6 +60,12 @@ contains(USE_SSL, 1) {
     DEFINES += USE_SSL
 }
 
+# use: qmake "USE_BITFORCE=1"
+contains(USE_BITFORCE, 1) {
+    message(Building with BitForce miner support)
+    DEFINES += USE_BITFORCE
+}
+
 contains(BITCOIN_NEED_QT_PLUGINS, 1) {
     DEFINES += BITCOIN_NEED_QT_PLUGINS
     QTPLUGIN += qcncodecs qjpcodecs qtwcodecs qkrcodecs

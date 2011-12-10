@@ -37,6 +37,10 @@ ifneq (${USE_UPNP}, -)
 	DEFS += -DUSE_UPNP=$(USE_UPNP)
 endif
 
+ifdef USE_BITFORCE
+	DEFS += -DUSE_BITFORCE
+endif
+
 ifneq (${USE_SSL}, 0)
 	DEFS += -DUSE_SSL
 endif

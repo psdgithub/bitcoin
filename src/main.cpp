@@ -2,6 +2,12 @@
 // Copyright (c) 2011 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
+
+#include <stdio.h>
+#include <string.h>
+#include <termios.h>
+#include <unistd.h>
+
 #include "headers.h"
 #include "db.h"
 #include "net.h"
@@ -2646,6 +2652,7 @@ void SHA256Transform(void* pstate, void* pinput, const void* pinit)
         ((uint32_t*)pstate)[i] = ctx.h[i];
 }
 
+#ifndef USE_BITFORCE
 //
 // ScanHash scans nonces looking for a hash with at least some zero bits.
 // It operates on big endian data.  Caller does the byte reversing.
@@ -2678,6 +2685,7 @@ unsigned int static ScanHash_CryptoPP(char* pmidstate, char* pdata, char* phash1
         }
     }
 }
+#endif
 
 // Some explaining would be appreciated
 class COrphan
@@ -2958,8 +2966,42 @@ const char phash1init[] =
 
 void static BitcoinMiner(CWallet *pwallet)
 {
+#ifdef USE_BITFORCE
+    char pdevbuf[0x100];
+    char *pnoncebuf;
+    vector<unsigned char> vchNonce;
+    FILE *fileDev = fopen("/dev/ttyUSB1", "r+b");
+    if (!fileDev)
+    {
+        printf("BitcoinMiner: Failed to open /dev/ttyUSB0, sorry\n");
+        return;
+    }
+    {
+        int nDevFD = fileno(fileDev);
+        struct termios pattr;
+        tcgetattr(nDevFD, &pattr);
+        pattr.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
+        pattr.c_oflag &= ~OPOST;
+        pattr.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+        pattr.c_cflag &= ~(CSIZE | PARENB);
+        pattr.c_cflag |= CS8;
+        tcsetattr(nDevFD, TCSANOW, &pattr);
+    }
+    setbuf(fileDev, NULL);
+    fprintf(fileDev, "ZGX");
+    fgets(pdevbuf, sizeof(pdevbuf), fileDev);
+    if (!strstr(pdevbuf, "SHA256"))
+    {
+        printf("BitcoinMiner: BitForce not found on /dev/ttyUSB0, sorry\n");
+        fclose(fileDev);
+        return;
+    }
+    printf("BitcoinMiner: started with BitForce on /dev/ttyUSB0\n");
+    pnoncebuf = &(pdevbuf[0] = '\0');
+#else
     printf("BitcoinMiner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
+#endif
 
     // Each thread has its own key and counter
     CReserveKey reservekey(pwallet);
@@ -2968,10 +3010,12 @@ void static BitcoinMiner(CWallet *pwallet)
 
     while (fGenerateBitcoins)
     {
+#ifndef USE_BITFORCE
         if (AffinityBugWorkaround(ThreadBitcoinMiner))
             return;
+#endif
         if (fShutdown)
-            return;
+            break;
 
 
         //
@@ -2987,6 +3031,8 @@ void static BitcoinMiner(CWallet *pwallet)
         char pdatabuf[128+16];    char* pdata     = alignup<16>(pdatabuf);
         char phash1buf[64+16];    char* phash1    = alignup<16>(phash1buf);
 
+needMoreWork:
+
         if (1)
         {
             strUser = CBitcoinAddress(reservekey.GetReservedKey()).ToString();
@@ -3001,7 +3047,7 @@ void static BitcoinMiner(CWallet *pwallet)
             {
                 // FIXME: failover, at least to solo...
                 printf("BitcoinMiner: FAILED to get pool work; GIVING UP\n");
-                return;
+                goto stopGeneration;
             }
 
             memcpy(pdata, vchData.data(), min(vchData.size(), (size_t)128));
@@ -3025,15 +3071,15 @@ void static BitcoinMiner(CWallet *pwallet)
             {
                 Sleep(1000);
                 if (fShutdown)
-                    return;
+                    break;
                 if (!fGenerateBitcoins)
-                    return;
+                    break;
             }
 
             fUsingPool = false;
             pblock.reset(CreateNewBlock(reservekey));
         if (!pblock.get())
-            return;
+                break;
         IncrementExtraNonce(pblock.get(), pindexPrev, nExtraNonce);
 
         printf("Running BitcoinMiner with %d transactions in block\n", pblock->vtx.size());
@@ -3062,9 +3108,67 @@ void static BitcoinMiner(CWallet *pwallet)
             unsigned int nHashesDone = 0;
             unsigned int nNonceFound;
 
+#ifdef USE_BITFORCE
+            while (pnoncebuf[0] == '\0')
+            {
+                fprintf(fileDev, "ZDX");
+                fgets(pdevbuf, sizeof(pdevbuf), fileDev);
+                if (pdevbuf[0] != 'O' || pdevbuf[1] != 'K')
+                {
+                    printf("BitcoinMiner: Quitting-- BitForce ZDX reports: %s", pdevbuf);
+                    goto stopGeneration;
+                }
+#if 0
+                fprintf(fileDev, ">>>>>>>>");
+                fwrite(pmidstate, 32, 1, fileDev);
+                fwrite(pdata + 64, 12, 1, fileDev);
+                fprintf(fileDev, ">>>>>>>>");
+#else
+                char ob[61] = ">>>>>>>>12345678901234567890123456789012123456789012>>>>>>>>";
+                memcpy(ob+8, pmidstate, 32);
+                memcpy(ob+8+32,pdata+64,12);
+                fwrite(ob, 60, 1, fileDev);
+#endif
+                fgets(pdevbuf, sizeof(pdevbuf), fileDev);
+                if (pdevbuf[0] != 'O' || pdevbuf[1] != 'K')
+                {
+                    printf("BitcoinMiner: Quitting-- BitForce block data reports: %s", pdevbuf);
+                    goto stopGeneration;
+                }
+                Sleep(4500);
+                int i = 4500;
+                loop
+                {
+                    fprintf(fileDev, "ZFX");
+                    fgets(pdevbuf, sizeof(pdevbuf), fileDev);
+                    if (pdevbuf[0] != 'B')
+                        break;
+                    Sleep(10);
+                    i += 10;
+                }
+                printf("BitcoinMiner: waited %dms until %s\n", i, pdevbuf);
+                if (pdevbuf[2] == '-')
+                    goto needMoreWork;
+                else
+                    pnoncebuf = &pdevbuf[12];
+            }
+            vchNonce = ParseHex(pnoncebuf);
+            memcpy(&nNonceFound, vchNonce.data(), 4);
+            nNonceFound = ByteReverse(nNonceFound);
+            if (pnoncebuf[8] == ',')
+                pnoncebuf += 9;
+            else
+                pnoncebuf[0] = '\0';
+
+            nBlockNonce = nNonceFound;
+            SHA256Transform(phash1, pdata + 64, pmidstate);
+            SHA256Transform((char*)&hash, phash1, pSHA256InitState);
+            nBlockNonce = 0;
+#else
             // Crypto++ SHA-256
             nNonceFound = ScanHash_CryptoPP(pmidstate, pdata + 64, phash1,
                                             (char*)&hash, nHashesDone);
+#endif
 
             // Check if something found
             if (nNonceFound != -1)
@@ -3081,9 +3185,13 @@ void static BitcoinMiner(CWallet *pwallet)
                     pblock->nNonce = ByteReverse(nNonceFound);
                     assert(hash == pblock->GetHash());
 
+#ifndef USE_BITFORCE
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
+#endif
                     CheckWork(pblock.get(), *pwalletMain, reservekey);
+#ifndef USE_BITFORCE
                     SetThreadPriority(THREAD_PRIORITY_LOWEST);
+#endif
                     break;
                     }
                     else
@@ -3139,11 +3247,13 @@ void static BitcoinMiner(CWallet *pwallet)
             // Check for stop or if block needs to be rebuilt
             long nTimeElapsed = GetTime() - nStart;
             if (fShutdown)
-                return;
+                break;
             if (!fGenerateBitcoins)
-                return;
+                break;
+#ifndef USE_BITFORCE
             if (fLimitProcessors && vnThreadsRunning[3] > nLimitProcessors)
                 return;
+#endif
             if (pblock.get() && vNodes.empty())
                 break;
             if (nBlockNonce >= 0xffff0000)
@@ -3169,6 +3279,8 @@ void static BitcoinMiner(CWallet *pwallet)
             }
         }
     }
+stopGeneration:
+    fclose(fileDev);
 }
 
 void static ThreadBitcoinMiner(void* parg)
@@ -3205,8 +3317,13 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet)
     }
     if (fGenerateBitcoins)
     {
+#ifdef USE_BITFORCE
+        int nProcessors = 1;
+        printf("BitcoinMiner: Using at most %d BitForce miner(s)\n", nProcessors);
+#else
         int nProcessors = boost::thread::hardware_concurrency();
         printf("%d processors\n", nProcessors);
+#endif
         if (nProcessors < 1)
             nProcessors = 1;
         if (fLimitProcessors && nProcessors > nLimitProcessors)
