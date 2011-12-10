@@ -281,3 +281,8 @@ void WalletModel::UnlockContext::CopyFrom(const UnlockContext& rhs)
     *this = rhs;
     rhs.relock = false;
 }
+
+void WalletModel::GenerateBitcoins(bool enable)
+{
+    ::GenerateBitcoins(enable, wallet);
+}

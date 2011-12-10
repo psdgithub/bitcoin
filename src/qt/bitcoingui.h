@@ -86,6 +86,7 @@ private:
     QAction *encryptWalletAction;
     QAction *backupWalletAction;
     QAction *changePassphraseAction;
+    QAction *generateAction;
     QAction *aboutQtAction;
 
     QSystemTrayIcon *trayIcon;
@@ -165,6 +166,8 @@ private slots:
     void changePassphrase();
     /** Ask for pass phrase to unlock wallet temporarily */
     void unlockWallet();
+    /** Control Bitcoin generation */
+    void generate(bool);
 
     /** Show window if hidden, unminimize when minimized */
     void showNormalIfMinimized();
