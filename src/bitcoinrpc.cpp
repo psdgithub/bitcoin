@@ -9,6 +9,7 @@
 #include "init.h"
 #undef printf
 #include <boost/asio.hpp>
+#include <boost/format.hpp>
 #include <boost/iostreams/concepts.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/algorithm/string.hpp>
@@ -2361,16 +2362,8 @@ void ThreadRPCServer2(void* parg)
 
 
 
-Object CallRPC(const string& strMethod, const Array& params)
+Value CallRPC(const string& strMethod, const Array& params, const string& strNode, const string& strService, bool fUseSSL, const map<string, string>& mapRequestHeaders)
 {
-    if (mapArgs["-rpcuser"] == "" && mapArgs["-rpcpassword"] == "")
-        throw runtime_error(strprintf(
-            _("You must set rpcpassword=<password> in the configuration file:\n%s\n"
-              "If the file does not exist, create it with owner-readable-only file permissions."),
-                GetConfigFile().c_str()));
-
-    // Connect to localhost
-    bool fUseSSL = GetBoolArg("-rpcssl");
 #ifdef USE_SSL
     asio::io_service io_service;
     ssl::context context(io_service, ssl::context::sslv23);
@@ -2378,22 +2371,16 @@ Object CallRPC(const string& strMethod, const Array& params)
     SSLStream sslStream(io_service, context);
     SSLIOStreamDevice d(sslStream, fUseSSL);
     iostreams::stream<SSLIOStreamDevice> stream(d);
-    if (!d.connect(GetArg("-rpcconnect", "127.0.0.1"), GetArg("-rpcport", "8332")))
+    if (!d.connect(strNode, strService))
         throw runtime_error("couldn't connect to server");
 #else
     if (fUseSSL)
         throw runtime_error("-rpcssl=1, but bitcoin compiled without full openssl libraries.");
 
-    ip::tcp::iostream stream(GetArg("-rpcconnect", "127.0.0.1"), GetArg("-rpcport", "8332"));
+    ip::tcp::iostream stream(strNode, strService);
     if (stream.fail())
         throw runtime_error("couldn't connect to server");
 #endif
-
-
-    // HTTP basic authentication
-    string strUserPass64 = EncodeBase64(mapArgs["-rpcuser"] + ":" + mapArgs["-rpcpassword"]);
-    map<string, string> mapRequestHeaders;
-    mapRequestHeaders["Authorization"] = string("Basic ") + strUserPass64;
 
     // Send request
     string strRequest = JSONRPCRequest(strMethod, params, 1);
@@ -2419,7 +2406,86 @@ Object CallRPC(const string& strMethod, const Array& params)
     if (reply.empty())
         throw runtime_error("expected reply to have result, error and id properties");
 
-    return reply;
+    const Value& result = find_value(reply, "result");
+    const Value& error  = find_value(reply, "error");
+
+    if (error.type() != null_type)
+    {
+        // Error
+        int code = find_value(error.get_obj(), "code").get_int();
+        string strError = (boost::format("error %d: ") % abs(code)).str() + write_string(error, false);
+        throw runtime_error(strError);
+    }
+
+    return result;
+}
+
+Value CallRPC(const string& strMethod, const Array& params, const string& strNode, const string& strService, bool fUseSSL, const string& strAuthorization)
+{
+    map<string, string> mapRequestHeaders;
+    if (strAuthorization.size())
+        mapRequestHeaders["Authorization"] = strAuthorization;
+
+    return CallRPC(strMethod, params, strNode, strService, fUseSSL, mapRequestHeaders);
+}
+
+Value CallRPC(const string& strMethod, const Array& params, const string& strNode, const string& strService, bool fUseSSL, const string& strUser, const string& strPass)
+{
+    // HTTP basic authentication
+    string strAuthorization = string("Basic ") + EncodeBase64(strUser + ":" + strPass);
+
+    return CallRPC(strMethod, params, strNode, strService, fUseSSL, strAuthorization);
+}
+
+Value CallRPC(const string& strMethod, const Array& params)
+{
+    if (mapArgs["-rpcuser"] == "" && mapArgs["-rpcpassword"] == "")
+        throw runtime_error(strprintf(
+            _("You must set rpcpassword=<password> in the configuration file:\n%s\n"
+              "If the file does not exist, create it with owner-readable-only file permissions."),
+                GetConfigFile().c_str()));
+
+    return CallRPC(strMethod, params, GetArg("-rpcconnect", "127.0.0.1"), GetArg("-rpcport", "8332"), GetBoolArg("-rpcssl"), mapArgs["-rpcuser"], mapArgs["-rpcpassword"]);
+}
+
+
+
+
+void
+GetRemoteWork(string strUser, vector<unsigned char>& vchData, uint256& hashTarget, vector<unsigned char>& vchMidstate)
+{
+    Array params;
+    Object reply = CallRPC("getwork", params, "mining.eligius.st", "8337", false, strUser, "x").get_obj();
+    int nGot = 0;
+
+    for (Object::iterator it = reply.begin(); it < reply.end(); ++it)
+    {
+        string strKey = Config::get_name(*it);
+
+        if (strKey == "data")
+            vchData = ParseHex(Config::get_value(*it).get_str());
+        else
+        if (strKey == "target")
+            hashTarget = uint256(ParseHex(Config::get_value(*it).get_str()));
+        else
+        if (strKey == "midstate")
+            vchMidstate = ParseHex(Config::get_value(*it).get_str());
+    }
+    
+    if (!hashTarget)
+        throw runtime_error("missing target");
+    if (!vchData.size())
+        throw runtime_error("missing data");
+}
+
+void
+SubmitRemoteWork(string strUser, const char *pdata)
+{
+    Array params;
+    params.push_back(HexStr(pdata, &pdata[128]));
+    Value reply = CallRPC("getwork", params, "mining.eligius.st", "8337", false, strUser, "x");
+    if (!reply.get_bool())
+        throw runtime_error("share rejected");
 }
 
 
@@ -2500,20 +2566,19 @@ int CommandLineRPC(int argc, char *argv[])
         if (strMethod == "sendmany"                && n > 2) ConvertTo<boost::int64_t>(params[2]);
 
         // Execute
-        Object reply = CallRPC(strMethod, params);
-
-        // Parse reply
-        const Value& result = find_value(reply, "result");
-        const Value& error  = find_value(reply, "error");
-
-        if (error.type() != null_type)
+        Value result;
+        try
         {
-            // Error
-            strPrint = "error: " + write_string(error, false);
-            int code = find_value(error.get_obj(), "code").get_int();
-            nRet = abs(code);
+            result = CallRPC(strMethod, params);
         }
-        else
+        catch (runtime_error error)
+        {
+            // FIXME: return value
+            strPrint = error.what();
+            nRet = 1;
+        }
+
+        if (!nRet)
         {
             // Result
             if (result.type() == null_type)

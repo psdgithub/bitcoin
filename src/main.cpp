@@ -2949,6 +2949,13 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 
 void static ThreadBitcoinMiner(void* parg);
 
+extern void GetRemoteWork(string strUser, vector<unsigned char>& vchData, uint256& hashTarget, vector<unsigned char>& vchMidstate);
+extern void SubmitRemoteWork(string strUser, const char *pdata);
+
+const char phash1init[] =
+"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
+"\0\0\0\x80\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x01\0\0";
+
 void static BitcoinMiner(CWallet *pwallet)
 {
     printf("BitcoinMiner started\n");
@@ -2957,6 +2964,7 @@ void static BitcoinMiner(CWallet *pwallet)
     // Each thread has its own key and counter
     CReserveKey reservekey(pwallet);
     unsigned int nExtraNonce = 0;
+    bool fUsingPool = false;
 
     while (fGenerateBitcoins)
     {
@@ -2964,14 +2972,6 @@ void static BitcoinMiner(CWallet *pwallet)
             return;
         if (fShutdown)
             return;
-        while (vNodes.empty() || IsInitialBlockDownload())
-        {
-            Sleep(1000);
-            if (fShutdown)
-                return;
-            if (!fGenerateBitcoins)
-                return;
-        }
 
 
         //
@@ -2979,23 +2979,72 @@ void static BitcoinMiner(CWallet *pwallet)
         //
         unsigned int nTransactionsUpdatedLast = nTransactionsUpdated;
         CBlockIndex* pindexPrev = pindexBest;
+        auto_ptr<CBlock> pblock;
+        uint256 hashTarget;
+        string strUser;
 
-        auto_ptr<CBlock> pblock(CreateNewBlock(reservekey));
+        char pmidstatebuf[32+16]; char* pmidstate = alignup<16>(pmidstatebuf);
+        char pdatabuf[128+16];    char* pdata     = alignup<16>(pdatabuf);
+        char phash1buf[64+16];    char* phash1    = alignup<16>(phash1buf);
+
+        if (1)
+        {
+            strUser = CBitcoinAddress(reservekey.GetReservedKey()).ToString();
+            vector<unsigned char> vchData;
+            vector<unsigned char> vchMidstate;
+
+            try
+            {
+                GetRemoteWork(strUser, vchData, hashTarget, vchMidstate);
+            }
+            catch (...)
+            {
+                // FIXME: failover, at least to solo...
+                printf("BitcoinMiner: FAILED to get pool work; GIVING UP\n");
+                return;
+            }
+
+            memcpy(pdata, vchData.data(), min(vchData.size(), (size_t)128));
+            if (vchMidstate.size() == 32)
+                memcpy(pmidstate, vchMidstate.data(), 32);
+            else
+                SHA256Transform(pmidstate, pdata, pSHA256InitState);
+
+            // FIXME: make sure it isn't a stale prevblock
+
+            if (!fUsingPool)
+            {
+                memcpy(phash1, phash1init, sizeof(phash1init));
+                printf("Running BitcoinMiner with pool work (address %s)\n", strUser.c_str());
+                fUsingPool = true;
+            }
+        }
+        else
+        {
+            while (vNodes.empty() || IsInitialBlockDownload())
+            {
+                Sleep(1000);
+                if (fShutdown)
+                    return;
+                if (!fGenerateBitcoins)
+                    return;
+            }
+
+            fUsingPool = false;
+            pblock.reset(CreateNewBlock(reservekey));
         if (!pblock.get())
             return;
         IncrementExtraNonce(pblock.get(), pindexPrev, nExtraNonce);
 
         printf("Running BitcoinMiner with %d transactions in block\n", pblock->vtx.size());
 
-
         //
         // Prebuild hash buffers
         //
-        char pmidstatebuf[32+16]; char* pmidstate = alignup<16>(pmidstatebuf);
-        char pdatabuf[128+16];    char* pdata     = alignup<16>(pdatabuf);
-        char phash1buf[64+16];    char* phash1    = alignup<16>(phash1buf);
-
         FormatHashBuffers(pblock.get(), pmidstate, pdata, phash1);
+
+            hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+        }
 
         unsigned int& nBlockTime = *(unsigned int*)(pdata + 64 + 4);
         unsigned int& nBlockNonce = *(unsigned int*)(pdata + 64 + 12);
@@ -3005,7 +3054,7 @@ void static BitcoinMiner(CWallet *pwallet)
         // Search
         //
         int64 nStart = GetTime();
-        uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+        int64 nCurrentTime = nStart;
         uint256 hashbuf[2];
         uint256& hash = *alignup<16>(hashbuf);
         loop
@@ -3025,7 +3074,10 @@ void static BitcoinMiner(CWallet *pwallet)
 
                 if (hash <= hashTarget)
                 {
+                    printf("BitcoinMiner: HASH %s <= %s\n", hash.GetHex().c_str(), hashTarget.GetHex().c_str());
                     // Found a solution
+                    if (pblock.get())
+                    {
                     pblock->nNonce = ByteReverse(nNonceFound);
                     assert(hash == pblock->GetHash());
 
@@ -3033,6 +3085,22 @@ void static BitcoinMiner(CWallet *pwallet)
                     CheckWork(pblock.get(), *pwalletMain, reservekey);
                     SetThreadPriority(THREAD_PRIORITY_LOWEST);
                     break;
+                    }
+                    else
+                    {
+                        unsigned int nLastNonce = nBlockNonce;
+                        nBlockNonce = (nNonceFound);
+                        try
+                        {
+                            SubmitRemoteWork(strUser, pdata);
+                            printf("BitcoinMiner: Pool accepted share\n");
+                        }
+                        catch (runtime_error e)
+                        {
+                            printf("BitcoinMiner: Error submitting work to pool: %s\n", e.what());
+                        }
+                        nBlockNonce = nLastNonce;
+                    }
                 }
             }
 
@@ -3069,24 +3137,36 @@ void static BitcoinMiner(CWallet *pwallet)
             }
 
             // Check for stop or if block needs to be rebuilt
+            long nTimeElapsed = GetTime() - nStart;
             if (fShutdown)
                 return;
             if (!fGenerateBitcoins)
                 return;
             if (fLimitProcessors && vnThreadsRunning[3] > nLimitProcessors)
                 return;
-            if (vNodes.empty())
+            if (pblock.get() && vNodes.empty())
                 break;
             if (nBlockNonce >= 0xffff0000)
                 break;
-            if (nTransactionsUpdated != nTransactionsUpdatedLast && GetTime() - nStart > 60)
+            if (nTransactionsUpdated != nTransactionsUpdatedLast && nTimeElapsed > 60)
                 break;
             if (pindexPrev != pindexBest)
                 break;
+            if (nTimeElapsed > 5 && !pblock.get())
+                break;
 
+            if (pblock.get())
+            {
             // Update nTime every few seconds
             pblock->nTime = max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
             nBlockTime = ByteReverse(pblock->nTime);
+            }
+            else
+            if (0) // wait for longpoll support
+            {
+                nBlockTime = ByteReverse(ByteReverse(nBlockTime) + 1);
+                nBlockNonce = 0;
+            }
         }
     }
 }
