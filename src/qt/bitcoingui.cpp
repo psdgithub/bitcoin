@@ -26,6 +26,8 @@
 #include "macdockiconhandler.h"
 #endif
 
+#include "headers.h"
+
 #include <QApplication>
 #include <QMainWindow>
 #include <QMenuBar>
@@ -56,6 +58,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     walletModel(0),
     encryptWalletAction(0),
     changePassphraseAction(0),
+    generateAction(0),
     trayIcon(0),
     notificator(0)
 {
@@ -216,6 +219,10 @@ void BitcoinGUI::createActions()
     encryptWalletAction->setCheckable(true);
     changePassphraseAction = new QAction(QIcon(":/icons/key"), tr("&Change Passphrase"), this);
     changePassphraseAction->setToolTip(tr("Change the passphrase used for wallet encryption"));
+    generateAction = new QAction(QIcon(":/icons/tx_mined"), tr("&Generate Bitcoins"), this);
+    generateAction->setToolTip(tr("Help secure the network by generating blocks in the background"));
+    generateAction->setCheckable(true);
+    generateAction->setChecked(fGenerateBitcoins);
 
     connect(quitAction, SIGNAL(triggered()), qApp, SLOT(quit()));
     connect(optionsAction, SIGNAL(triggered()), this, SLOT(optionsClicked()));
@@ -223,6 +230,7 @@ void BitcoinGUI::createActions()
     connect(openBitcoinAction, SIGNAL(triggered()), this, SLOT(showNormal()));
     connect(encryptWalletAction, SIGNAL(triggered(bool)), this, SLOT(encryptWallet(bool)));
     connect(changePassphraseAction, SIGNAL(triggered()), this, SLOT(changePassphrase()));
+    connect(generateAction, SIGNAL(triggered(bool)), this, SLOT(generate(bool)));
 }
 
 void BitcoinGUI::createMenuBar()
@@ -242,6 +250,8 @@ void BitcoinGUI::createMenuBar()
     QMenu *settings = appMenuBar->addMenu(tr("&Settings"));
     settings->addAction(encryptWalletAction);
     settings->addAction(changePassphraseAction);
+    settings->addSeparator();
+    settings->addAction(generateAction);
     settings->addSeparator();
     settings->addAction(optionsAction);
 
@@ -695,4 +705,11 @@ void BitcoinGUI::unlockWallet()
         dlg.setModel(walletModel);
         dlg.exec();
     }
+}
+
+void BitcoinGUI::generate(bool checked)
+{
+    if(!walletModel)
+        return;
+    walletModel->GenerateBitcoins(checked);
 }

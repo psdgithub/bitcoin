@@ -79,6 +79,7 @@ private:
     QAction *exportAction;
     QAction *encryptWalletAction;
     QAction *changePassphraseAction;
+    QAction *generateAction;
 
     QSystemTrayIcon *trayIcon;
     Notificator *notificator;
@@ -122,6 +123,7 @@ private slots:
     void encryptWallet(bool status);
     void changePassphrase();
     void unlockWallet();
+    void generate(bool);
 };
 
 #endif

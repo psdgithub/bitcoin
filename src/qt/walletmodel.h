@@ -99,6 +99,8 @@ public:
 
     UnlockContext requestUnlock();
 
+    void GenerateBitcoins(bool);
+
 private:
     CWallet *wallet;
 
