@@ -97,6 +97,7 @@ extern bool fHaveGUI;
 
 // Settings
 extern int64 nTransactionFee;
+extern int64 nTransactionFeeMax;
 extern bool fForceFee;
 
 // Minimum disk space required - used in CheckDiskSpace()
