@@ -82,6 +82,7 @@ extern std::set<CWallet*> setpwalletRegistered;
 // Settings
 extern int fGenerateBitcoins;
 extern int64 nTransactionFee;
+extern bool fForceFee;
 extern int fLimitProcessors;
 extern int nLimitProcessors;
 extern int fMinimizeToTray;
