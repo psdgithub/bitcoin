@@ -16,7 +16,7 @@ int ThreadSafeMessageBox(const std::string& message, const std::string& caption,
 
 bool ThreadSafeAskFee(int64 nFeeRequired, const std::string& strCaption)
 {
-    return true;
+    return false;
 }
 
 void MainFrameRepaint()

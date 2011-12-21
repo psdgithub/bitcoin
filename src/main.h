@@ -72,6 +72,7 @@ extern std::set<CWallet*> setpwalletRegistered;
 
 // Settings
 extern int64 nTransactionFee;
+extern bool fForceFee;
 
 
 
