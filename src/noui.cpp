@@ -6,6 +6,7 @@
 
 #include <string>
 #include "init.h"
+#include "main.h"
 
 int ThreadSafeMessageBox(const std::string& message, const std::string& caption, int style)
 {
@@ -16,7 +17,7 @@ int ThreadSafeMessageBox(const std::string& message, const std::string& caption,
 
 bool ThreadSafeAskFee(int64 nFeeRequired, const std::string& strCaption)
 {
-    return false;
+    return nFeeRequired == nTransactionFee || nFeeRequired <= nTransactionFeeMax;
 }
 
 void MainFrameRepaint()
