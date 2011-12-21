@@ -62,6 +62,7 @@ int64 nHPSTimerStart;
 // Settings
 int fGenerateBitcoins = false;
 int64 nTransactionFee = 0;
+int64 nTransactionFeeMax = CENT;
 bool fForceFee = false;
 int fLimitProcessors = false;
 int nLimitProcessors = 1;
