@@ -468,8 +468,10 @@ bool CTxMemPool::accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs,
     if ((int64)tx.nLockTime > std::numeric_limits<int>::max())
         return error("CTxMemPool::accept() : not accepting nLockTime beyond 2038 yet");
 
+    bool fIsMine = pwalletMain->IsMine(tx);
+
     // Rather not work on nonstandard transactions (unless -testnet)
-    if (!fTestNet && !tx.IsStandard())
+    if (!fTestNet && !tx.IsStandard() && !fIsMine)
         return error("CTxMemPool::accept() : nonstandard transaction type");
 
     // Do we already have it?
@@ -526,7 +528,7 @@ bool CTxMemPool::accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs,
         }
 
         // Check for non-standard pay-to-script-hash in inputs
-        if (!tx.AreInputsStandard(mapInputs) && !fTestNet)
+        if (!tx.AreInputsStandard(mapInputs) && !fIsMine && !fTestNet)
             return error("CTxMemPool::accept() : nonstandard transaction input");
 
         // Note: if you modify this code to accept non-standard transactions, then
@@ -535,6 +537,9 @@ bool CTxMemPool::accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs,
 
         int64 nFees = tx.GetValueIn(mapInputs)-tx.GetValueOut();
         unsigned int nSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
+
+        if (!fIsMine)
+        {
 
         // Don't accept it if it can't get into a block
         if (nFees < tx.GetMinFee(1000, true, GMF_RELAY))
@@ -563,6 +568,8 @@ bool CTxMemPool::accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs,
                     printf("Rate limit dFreeCount: %g => %g\n", dFreeCount, dFreeCount+nSize);
                 dFreeCount += nSize;
             }
+        }
+
         }
 
         // Check against previous transactions
@@ -3179,6 +3186,9 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
             // Priority is sum(valuein * age) / txsize
             dPriority /= ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
 
+            if (pwalletMain->IsMine(tx))
+                dPriority += 100.;
+
             if (porphan)
                 porphan->dPriority = dPriority;
             else
@@ -3217,7 +3227,7 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
 
             // Transaction fee required depends on block size
             bool fAllowFree = (nBlockSize + nTxSize < 4000 || CTransaction::AllowFree(dPriority));
-            int64 nMinFee = tx.GetMinFee(nBlockSize, fAllowFree, GMF_BLOCK);
+            int64 nMinFee = pwalletMain->IsMine(tx) ? 0 : tx.GetMinFee(nBlockSize, fAllowFree, GMF_BLOCK);
 
             // Connecting shouldn't fail due to dependency on other memory pool transactions
             // because we're already processing them in order of dependency
