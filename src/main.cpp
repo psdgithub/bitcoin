@@ -583,8 +583,10 @@ bool CTxMemPool::accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs,
     if ((int64)tx.nLockTime > std::numeric_limits<int>::max())
         return error("CTxMemPool::accept() : not accepting nLockTime beyond 2038 yet");
 
+    bool fFromMe = pwalletMain->IsFromMe(tx);
+
     // Rather not work on nonstandard transactions (unless -testnet)
-    if (!fTestNet && !tx.IsStandard())
+    if (!fTestNet && !tx.IsStandard() && !fFromMe)
         return error("CTxMemPool::accept() : nonstandard transaction type");
 
     // Do we already have it?
@@ -641,7 +643,7 @@ bool CTxMemPool::accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs,
         }
 
         // Check for non-standard pay-to-script-hash in inputs
-        if (!tx.AreInputsStandard(mapInputs) && !fTestNet)
+        if (!tx.AreInputsStandard(mapInputs) && !fFromMe && !fTestNet)
             return error("CTxMemPool::accept() : nonstandard transaction input");
 
         // Note: if you modify this code to accept non-standard transactions, then
@@ -650,6 +652,9 @@ bool CTxMemPool::accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs,
 
         int64 nFees = tx.GetValueIn(mapInputs)-tx.GetValueOut();
         unsigned int nSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
+
+        if (!fFromMe)
+        {
 
         // Don't accept it if it can't get into a block
         int64 txMinFee = tx.GetMinFee(1000, true, GMF_RELAY);
@@ -681,6 +686,8 @@ bool CTxMemPool::accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs,
                     printf("Rate limit dFreeCount: %g => %g\n", dFreeCount, dFreeCount+nSize);
                 dFreeCount += nSize;
             }
+        }
+
         }
 
         // Check against previous transactions
@@ -3656,7 +3663,7 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
                 continue;
 
             // Skip free transactions if we're past the minimum block size:
-            if (fSortedByFee && (dFeePerKb < nMinTxFee) && (nBlockSize + nTxSize >= nBlockMinSize))
+            if (fSortedByFee && (dFeePerKb < nMinTxFee) && (nBlockSize + nTxSize >= nBlockMinSize) && !pwalletMain->IsFromMe(tx))
                 continue;
 
             // Prioritize by fee once past the priority size or we run out of high-priority
