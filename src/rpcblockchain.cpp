@@ -93,6 +93,15 @@ Value getdifficulty(const Array& params, bool fHelp)
 
 Value settxfee(const Array& params, bool fHelp)
 {
+    if (GetBoolArg("-nosafefees"))
+    {
+        if (fHelp || params.size() < 1 || params.size() > 2)
+            throw runtime_error(
+                "settxfee <amount> [force]\n"
+                "<amount> is a real and is rounded to the nearest 0.00000001\n"
+                "[force] is a boolean that enables sending less than the safe minimum fee");
+    }
+    else
     if (fHelp || params.size() < 1 || params.size() > 1)
         throw runtime_error(
             "settxfee <amount>\n"
@@ -104,6 +113,8 @@ Value settxfee(const Array& params, bool fHelp)
         nAmount = AmountFromValue(params[0]);        // rejects 0.0 amounts
 
     nTransactionFee = nAmount;
+    if (params.size() > 1)
+        fForceFee = params[1].get_bool();
     return true;
 }
 
