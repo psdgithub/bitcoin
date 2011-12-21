@@ -34,7 +34,7 @@ static bool noui_ThreadSafeMessageBox(const std::string& message, const std::str
 
 static bool noui_ThreadSafeAskFee(int64 /*nFeeRequired*/)
 {
-    return true;
+    return false;
 }
 
 static void noui_InitMessage(const std::string &message)
