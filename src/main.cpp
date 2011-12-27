@@ -1641,9 +1641,6 @@ bool LoadBlockIndex(bool fAllowNew)
     {
         hashGenesisBlock = uint256("0x00000007199508e34a9ff81e6ec0c477a4cccff2a4767a8eee39c11db367b008");
         bnProofOfWorkLimit = CBigNum(~uint256(0) >> 28);
-        pchMessageStart[0] = 0xfa;
-        pchMessageStart[1] = 0xbf;
-        pchMessageStart[2] = 0xb5;
         pchMessageStart[3] = 0xda;
     }
 

@@ -273,6 +273,12 @@ bool AppInit2(int argc, char* argv[])
     fNoListen = GetBoolArg("-nolisten") || fTOR;
     fLogTimestamps = GetBoolArg("-logtimestamps");
 
+    if (!(fTestNet || GetBoolArg("-yes_i_am_really_putting_bitcoin2_on_mainnet")))
+    {
+        MyMessageBox("Bitcoin2 is still very much experimental.\nOnly testnet is allowed.\nStart with the -testnet flag.", "Testnet required");
+        return false;
+    }
+
 #ifndef QT_GUI
     for (int i = 1; i < argc; i++)
         if (!IsSwitchChar(argv[i][0]))
