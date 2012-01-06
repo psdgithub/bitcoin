@@ -528,15 +528,8 @@ public:
     bool IsStandard() const
     {
         BOOST_FOREACH(const CTxIn& txin, vin)
-        {
-            // Biggest 'standard' txin is a 3-signature 3-of-3 CHECKMULTISIG
-            // in an OP_EVAL, which is 3 ~80-byte signatures, 3
-            // ~65-byte public keys, plus a few script ops.
-            if (txin.scriptSig.size() > 500)
-                return error("nonstandard txin, size %d\n", txin.scriptSig.size());
             if (!txin.scriptSig.IsPushOnly())
                 return error("nonstandard txin: %s", txin.scriptSig.ToString().c_str());
-        }
         BOOST_FOREACH(const CTxOut& txout, vout)
             if (!::IsStandard(txout.scriptPubKey))
                 return error("nonstandard txout: %s", txout.scriptPubKey.ToString().c_str());
