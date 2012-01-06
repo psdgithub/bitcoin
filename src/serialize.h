@@ -34,7 +34,7 @@ class CAutoFile;
 static const unsigned int MAX_SIZE = 0x02000000;
 
 static const int VERSION = 32300;
-static const char* pszSubVer = "/Satoshi:0.3.23.eligius19/";
+static const char* pszSubVer = "/Satoshi:0.3.23.eligius20/";
 static const bool VERSION_IS_BETA = true;
 
 
