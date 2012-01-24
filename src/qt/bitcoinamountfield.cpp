@@ -14,17 +14,67 @@
 #include <QKeyEvent>
 #include <qmath.h> // for qPow()
 
+#include "tonalutils.h"
+
+BitcoinAmountSpinBox::BitcoinAmountSpinBox(QWidget *parent)
+ : QDoubleSpinBox(parent), currentUnit(-1)
+{
+    setLocale(QLocale::c());
+    setDecimals(8);
+    installEventFilter(parent);
+    setMaximumWidth(170);
+    setMaximum(21e14);
+}
+
+QValidator::State BitcoinAmountSpinBox::validate(QString&text, int&pos) const
+{
+    switch (currentNumsys) {
+    default:
+    case BitcoinUnits::BTC:
+        return QDoubleSpinBox::validate(text, pos);
+    case BitcoinUnits::TBC:
+        return TonalUtils::validate(text, pos);
+    }
+}
+
+QString BitcoinAmountSpinBox::textFromValue(double value) const
+{
+    return BitcoinUnits::format(currentUnit, value);
+}
+
+double BitcoinAmountSpinBox::valueFromText(const QString&text) const
+{
+    qint64 val;
+    BitcoinUnits::parse(currentUnit, text, &val);
+    return val;
+}
+
+void BitcoinAmountSpinBox::setUnit(int unit)
+{
+    currentUnit = unit;
+    currentNumsys = BitcoinUnits::numsys(unit);
+    qint64 factor = BitcoinUnits::factor(unit);
+    switch (currentNumsys) {
+    default:
+    case BitcoinUnits::BTC:
+        if (currentUnit == BitcoinUnits::uBTC)
+            setSingleStep(0.01 * factor);
+        else
+            setSingleStep(0.001 * factor);
+        break;
+    case BitcoinUnits::TBC:
+        setSingleStep(factor / 0x400);
+    }
+}
+
+
 BitcoinAmountField::BitcoinAmountField(QWidget *parent) :
     QWidget(parent),
     amount(0),
-    currentUnit(-1)
+    currentUnit(-1),
+    nSingleStep(0)
 {
-    nSingleStep = 100000; // satoshis
-
-    amount = new QDoubleSpinBox(this);
-    amount->setLocale(QLocale::c());
-    amount->installEventFilter(this);
-    amount->setMaximumWidth(170);
+    amount = new BitcoinAmountSpinBox(this);
 
     QHBoxLayout *layout = new QHBoxLayout(this);
     layout->addWidget(amount);
@@ -52,7 +102,7 @@ void BitcoinAmountField::setText(const QString &text)
     if (text.isEmpty())
         amount->clear();
     else
-        amount->setValue(text.toDouble());
+        amount->setValue(amount->valueFromText(text));
 }
 
 void BitcoinAmountField::clear()
@@ -61,16 +111,18 @@ void BitcoinAmountField::clear()
     unit->setCurrentIndex(0);
 }
 
+bool BitcoinAmountField::_is_valid() const
+{
+    if (amount->value() == 0.0)
+        return false;
+    if (amount->value() > BitcoinUnits::maxAmount(BitcoinUnits::uBTC))
+        return false;
+    return true;
+}
+
 bool BitcoinAmountField::validate()
 {
-    bool valid = true;
-    if (amount->value() == 0.0)
-        valid = false;
-    else if (!BitcoinUnits::parse(currentUnit, text(), 0))
-        valid = false;
-    else if (amount->value() > BitcoinUnits::maxAmount(currentUnit))
-        valid = false;
-
+    bool valid = _is_valid();
     setValid(valid);
 
     return valid;
@@ -122,8 +174,8 @@ QWidget *BitcoinAmountField::setupTabChain(QWidget *prev)
 
 qint64 BitcoinAmountField::value(bool *valid_out) const
 {
-    qint64 val_out = 0;
-    bool valid = BitcoinUnits::parse(currentUnit, text(), &val_out);
+    qint64 val_out = amount->value();
+    bool valid = _is_valid();
     if (valid_out)
     {
         *valid_out = valid;
@@ -133,7 +185,7 @@ qint64 BitcoinAmountField::value(bool *valid_out) const
 
 void BitcoinAmountField::setValue(qint64 value)
 {
-    setText(BitcoinUnits::format(currentUnit, value));
+    amount->setValue(value);
 }
 
 void BitcoinAmountField::setReadOnly(bool fReadOnly)
@@ -154,12 +206,24 @@ void BitcoinAmountField::unitChanged(int idx)
     bool valid = false;
     qint64 currentValue = value(&valid);
 
+    amount->setUnit(newUnit);
     currentUnit = newUnit;
 
-    // Set max length after retrieving the value, to prevent truncation
-    amount->setDecimals(BitcoinUnits::decimals(currentUnit));
-    amount->setMaximum(qPow(10, BitcoinUnits::amountDigits(currentUnit)) - qPow(10, -amount->decimals()));
-    amount->setSingleStep((double)nSingleStep / (double)BitcoinUnits::factor(currentUnit));
+    qint64 nSS = nSingleStep;
+    if (!nSS)
+    {
+        int numsys = BitcoinUnits::numsys(newUnit);
+        switch (numsys)
+        {
+            case BitcoinUnits::BTC:
+                nSS = 100000;
+                break;
+            case BitcoinUnits::TBC:
+                nSS = 0x10000;
+                break;
+        }
+    }
+    amount->setSingleStep(nSS);
 
     if (valid)
     {

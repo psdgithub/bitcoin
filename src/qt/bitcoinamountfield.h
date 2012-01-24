@@ -5,12 +5,29 @@
 #ifndef BITCOINAMOUNTFIELD_H
 #define BITCOINAMOUNTFIELD_H
 
+#include <QDoubleSpinBox>
 #include <QWidget>
 
 QT_BEGIN_NAMESPACE
-class QDoubleSpinBox;
 class QValueComboBox;
 QT_END_NAMESPACE
+
+class BitcoinAmountSpinBox : public QDoubleSpinBox
+{
+    Q_OBJECT
+public:
+    BitcoinAmountSpinBox(QWidget *parent = 0);
+
+    virtual QValidator::State validate(QString&text, int&pos) const;
+    virtual QString textFromValue(double) const;
+    virtual double valueFromText(const QString&) const;
+
+    void setUnit(int unit);
+
+private:
+    int currentUnit;
+    int currentNumsys;
+};
 
 /** Widget for entering bitcoin amounts.
   */
@@ -56,10 +73,11 @@ protected:
     bool eventFilter(QObject *object, QEvent *event);
 
 private:
-    QDoubleSpinBox *amount;
+    BitcoinAmountSpinBox *amount;
     QValueComboBox *unit;
     int currentUnit;
     qint64 nSingleStep;
+    bool _is_valid() const;
 
     void setText(const QString &text);
     QString text() const;
