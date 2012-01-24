@@ -145,6 +145,7 @@ HEADERS += src/qt/bitcoingui.h \
     src/qt/bitcoinaddressvalidator.h \
     src/alert.h \
     src/addrman.h \
+    src/qt/tonalutils.h \
     src/base58.h \
     src/bignum.h \
     src/chainparams.h \
@@ -282,6 +283,7 @@ SOURCES += src/qt/bitcoin.cpp \
     src/qt/notificator.cpp \
     src/qt/paymentserver.cpp \
     src/qt/rpcconsole.cpp \
+    src/qt/tonalutils.cpp \
     src/noui.cpp \
     src/leveldb.cpp \
     src/txdb.cpp \
