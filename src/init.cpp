@@ -519,6 +519,14 @@ bool AppInit2(int argc, char* argv[])
 
     RandAddSeedPerfmon();
 
+    {
+        // Put "p2sh/CHV" in the coinbase so everybody can tell when
+        // a majority of miners support it
+        const char* pszP2SH = "p2sh/CHV\1NOP2SH";
+        std::vector<unsigned char> vchData(pszP2SH, pszP2SH+strlen(pszP2SH));
+        mapAuxCoinbases["P2SH"] = CScript(vchData);
+    }
+
     if (!CreateThread(StartNode, NULL))
         wxMessageBox("Error: CreateThread(StartNode) failed", "Bitcoin");
 

@@ -1,4 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
+// Copyright (c) 2011 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 #include "headers.h"
@@ -1282,8 +1283,22 @@ bool CTransaction::ConnectInputs(CTxDB& txdb, map<uint256, CTxIndex>& mapTestPoo
                     if (pindex->nBlockPos == txindex.pos.nBlockPos && pindex->nFile == txindex.pos.nFile)
                         return error("ConnectInputs() : tried to spend coinbase at depth %d", pindexBlock->nHeight - pindex->nHeight);
 
+            bool fStrictPayToScriptHash = true;
+            if (fBlock)
+            {
+                // To avoid being on the short end of a block-chain split,
+                // don't do validation of pay-to-script-hash transactions
+                // until blocks with timestamps after p2shtime:
+                int64 nP2SHSwitchTime = GetArg("-p2shtime", 1329955200); // Feb 23, 2012 @ 00:00:00 UTC
+                fStrictPayToScriptHash = (pindexBlock->nTime >= nP2SHSwitchTime);
+            }
+            // if !fBlock, then always be strict-- don't accept
+            // invalid-under-new-rules pay-to-script-hash transactions into
+            // our memory pool (don't relay them, don't include them
+            // in blocks we mine).
+
             // Verify signature
-            if (!VerifySignature(txPrev, *this, i))
+            if (!VerifySignature(txPrev, *this, i, fStrictPayToScriptHash, 0))
                 return error("ConnectInputs() : %s VerifySignature failed", GetHash().ToString().substr(0,10).c_str());
 
             // Check for conflicts
@@ -1361,7 +1376,7 @@ bool CTransaction::ClientConnectInputs()
                 return false;
 
             // Verify signature
-            if (!VerifySignature(txPrev, *this, i))
+            if (!VerifySignature(txPrev, *this, i, true, 0))
                 return error("ConnectInputs() : VerifySignature failed");
 
             ///// this is redundant with the mapNextTx stuff, not sure which I want to get rid of

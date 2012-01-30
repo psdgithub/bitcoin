@@ -1,4 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
+// Copyright (c) 2011 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOIN_MAIN_H
@@ -528,7 +529,7 @@ public:
     bool IsStandard() const
     {
         BOOST_FOREACH(const CTxIn& txin, vin)
-            if (!txin.scriptSig.IsPushOnly())
+            if (!::IsStandardInput(txin.scriptSig))
                 return error("nonstandard txin: %s", txin.scriptSig.ToString().c_str());
         BOOST_FOREACH(const CTxOut& txout, vout)
             if (!::IsStandard(txout.scriptPubKey))
