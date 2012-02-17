@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(base58_DecodeBase58)
         BOOST_CHECK(DecodeBase58(vstrOut[i], result));
         BOOST_CHECK_EQUAL_COLLECTIONS(result.begin(), result.end(), expected.begin(), expected.end());
     }
-    BOOST_CHECK(!DecodeBase58("invalid", result));
+    BOOST_CHECK(!DecodeBase58("invalid+", result));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
