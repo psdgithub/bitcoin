@@ -58,7 +58,6 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     QMainWindow(parent),
     clientModel(0),
     walletModel(0),
-    dummyWidget(0),
     encryptWalletAction(0),
     changePassphraseAction(0),
     aboutQtAction(0),
@@ -87,9 +86,6 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
 
     // Create the tray icon (or setup the dock icon)
     createTrayIcon();
-
-    // Dummy widget used when restoring window state after minimization
-    dummyWidget = new QWidget();
 
     // Create tabs
     overviewPage = new OverviewPage();
@@ -168,7 +164,6 @@ BitcoinGUI::~BitcoinGUI()
 #ifdef Q_WS_MAC
     delete appMenuBar;
 #endif
-    delete dummyWidget;
 }
 
 void BitcoinGUI::createActions()
@@ -422,9 +417,7 @@ void BitcoinGUI::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
 
 void BitcoinGUI::showNormal()
 {
-    // Reparent window to the desktop (in case it was hidden on minimize)
-    if(parent() != NULL)
-        setParent(NULL, Qt::Window);
+    setWindowFlags(windowFlags() & (~Qt::Tool));
     QMainWindow::showNormal();
 }
 
@@ -570,7 +563,7 @@ void BitcoinGUI::changeEvent(QEvent *e)
             if(isMinimized())
             {
                 // Hiding the window from taskbar
-                setParent(dummyWidget, Qt::SubWindow);
+                setWindowFlags(windowFlags() | Qt::Tool);
                 return;
             }
             else

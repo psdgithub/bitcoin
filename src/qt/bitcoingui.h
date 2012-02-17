@@ -58,8 +58,6 @@ private:
 
     QStackedWidget *centralWidget;
 
-    QWidget *dummyWidget;
-
     OverviewPage *overviewPage;
     QWidget *transactionsPage;
     AddressBookPage *addressBookPage;
