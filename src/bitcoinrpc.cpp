@@ -1499,24 +1499,50 @@ Value gettransaction(const Array& params, bool fHelp)
 
     Object entry;
 
-    if (!pwalletMain->mapWallet.count(hash))
-        throw JSONRPCError(-5, "Invalid or non-wallet transaction id");
-    const CWalletTx& wtx = pwalletMain->mapWallet[hash];
+    if (pwalletMain->mapWallet.count(hash))
+    {
+        const CWalletTx& wtx = pwalletMain->mapWallet[hash];
 
-    int64 nCredit = wtx.GetCredit();
-    int64 nDebit = wtx.GetDebit();
-    int64 nNet = nCredit - nDebit;
-    int64 nFee = (wtx.IsFromMe() ? wtx.GetValueOut() - nDebit : 0);
+        int64 nCredit = wtx.GetCredit();
+        int64 nDebit = wtx.GetDebit();
+        int64 nNet = nCredit - nDebit;
+        int64 nFee = (wtx.IsFromMe() ? wtx.GetValueOut() - nDebit : 0);
 
-    entry.push_back(Pair("amount", ValueFromAmount(nNet - nFee)));
-    if (wtx.IsFromMe())
-        entry.push_back(Pair("fee", ValueFromAmount(nFee)));
+        entry.push_back(Pair("amount", ValueFromAmount(nNet - nFee)));
+        if (wtx.IsFromMe())
+            entry.push_back(Pair("fee", ValueFromAmount(nFee)));
 
-    WalletTxToJSON(pwalletMain->mapWallet[hash], entry);
+        WalletTxToJSON(pwalletMain->mapWallet[hash], entry);
 
-    Array details;
-    ListTransactions(pwalletMain->mapWallet[hash], "*", 0, false, details);
-    entry.push_back(Pair("details", details));
+        Array details;
+        ListTransactions(pwalletMain->mapWallet[hash], "*", 0, false, details);
+        entry.push_back(Pair("details", details));
+    }
+    else
+    {
+        CTxDB txdb("r");
+        CTransaction tx;
+        CTxIndex txindex;
+        if (!tx.ReadFromDisk(txdb, COutPoint(hash, 0), txindex))
+            throw JSONRPCError(-5, "Unknown transaction id");
+        CBlock block;
+        if (!block.ReadFromDisk(txindex.pos.nFile, txindex.pos.nBlockPos, false))
+            throw JSONRPCError(-5, "Cannot find block transaction is in");
+        uint256 hashBlock = block.GetHash();
+        entry.push_back(Pair("blockhash", hashBlock.GetHex()));
+        entry.push_back(Pair("txid", hash.GetHex()));
+        if (tx.IsCoinBase())
+            entry.push_back(Pair("coinbase", HexStr(tx.vin[0].scriptSig.begin(), tx.vin[0].scriptSig.end())));
+        map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.find(block.GetHash());
+        if (mi == mapBlockIndex.end() || !(*mi).second || !(*mi).second->IsInMainChain())
+            entry.push_back(Pair("confirmations", 0));
+        else
+        {
+            CBlockIndex *pindex = (*mi).second;
+            entry.push_back(Pair("confirmations", 1 + nBestHeight - pindex->nHeight));
+            entry.push_back(Pair("time", (boost::int64_t)block.nTime));
+        }
+    }
 
     return entry;
 }
