@@ -268,7 +268,7 @@ bool CTransaction::IsStandard() const
         // ~65-byte public keys, plus a few script ops.
         if (txin.scriptSig.size() > 500)
             return false;
-        if (!txin.scriptSig.IsPushOnly())
+        if (!::IsStandardInput(txin.scriptSig))
             return false;
     }
     BOOST_FOREACH(const CTxOut& txout, vout)
@@ -278,15 +278,15 @@ bool CTransaction::IsStandard() const
 }
 
 //
-// Check transaction inputs, and make sure any
-// pay-to-script-hash transactions are evaluating IsStandard scripts
+// Check transaction inputs, and make sure their scriptPubKeys are "standard"
 //
-// Why bother? To avoid denial-of-service attacks; an attacker
-// can submit a standard HASH... OP_EQUAL transaction,
-// which will get accepted into blocks. The redemption
-// script can be anything; an attacker could use a very
-// expensive-to-check-upon-redemption script like:
+// Why bother? To avoid denial-of-service attacks; an attacker can mine a
+// non-standard transaction with an expensive scriptPubKey, and then use a
+// standard transaction to trick a miner into executing it. For example:
 //   DUP CHECKSIG DROP ... repeated 100 times... OP_1
+//
+// Note that this does NOT check scriptSig, as that is already done execution
+// for the inputs.
 //
 bool CTransaction::AreInputsStandard(const MapPrevTx& mapInputs) const
 {
@@ -306,27 +306,11 @@ bool CTransaction::AreInputsStandard(const MapPrevTx& mapInputs) const
         int nArgsExpected = ScriptSigArgsExpected(whichType, vSolutions);
 
         // Transactions with extra stuff in their scriptSigs are
-        // non-standard. Note that this EvalScript() call will
-        // be quick, because if there are any operations
-        // beside "push data" in the scriptSig the
-        // IsStandard() call returns false
+        // non-standard.
         vector<vector<unsigned char> > stack;
-        if (!EvalScript(stack, vin[i].scriptSig, *this, i, 0))
+        std::vector<unsigned char> vchLastScript;
+        if (!EvalScript(stack, vin[i].scriptSig, *this, i, 0, true, vchLastScript))
             return false;
-
-        if (whichType == TX_SCRIPTHASH)
-        {
-            if (stack.empty())
-                return false;
-            CScript subscript(stack.back().begin(), stack.back().end());
-            vector<vector<unsigned char> > vSolutions2;
-            txnouttype whichType2;
-            if (!Solver(subscript, whichType2, vSolutions2))
-                return false;
-            if (whichType2 == TX_SCRIPTHASH)
-                return false;
-            nArgsExpected += ScriptSigArgsExpected(whichType2, vSolutions2);
-        }
 
         if (stack.size() != nArgsExpected)
             return false;
@@ -1101,15 +1085,14 @@ int CTransaction::GetP2SHSigOpCount(const MapPrevTx& inputs) const
     for (int i = 0; i < vin.size(); i++)
     {
         const CTxOut& prevout = GetOutputFor(vin[i], inputs);
-        if (prevout.scriptPubKey.IsPayToScriptHash())
-            nSigOps += prevout.scriptPubKey.GetSigOpCount(vin[i].scriptSig);
+        nSigOps += prevout.scriptPubKey.GetSigOpCount(true);
     }
     return nSigOps;
 }
 
 bool CTransaction::ConnectInputs(MapPrevTx inputs,
                                  map<uint256, CTxIndex>& mapTestPool, const CDiskTxPos& posThisTx,
-                                 const CBlockIndex* pindexBlock, bool fBlock, bool fMiner, bool fStrictPayToScriptHash)
+                                 const CBlockIndex* pindexBlock, bool fBlock, bool fMiner)
 {
     // Take over previous transactions' spent pointers
     // fBlock is true when this is called from AcceptBlock when a new best-block is added to the blockchain
@@ -1145,6 +1128,20 @@ bool CTransaction::ConnectInputs(MapPrevTx inputs,
             nValueIn += txPrev.vout[prevout.n].nValue;
             if (!MoneyRange(txPrev.vout[prevout.n].nValue) || !MoneyRange(nValueIn))
                 return DoS(100, error("ConnectInputs() : txin values out of range"));
+
+            bool fStrictPayToScriptHash = true;
+            if (fBlock)
+            {
+                // To avoid being on the short end of a block-chain split,
+                // don't do validation of pay-to-script-hash transactions
+                // until blocks with timestamps after p2shtime:
+                int64 nP2SHSwitchTime = GetArg("-p2shtime", std::numeric_limits<int64_t>::max());
+                fStrictPayToScriptHash = (pindexBlock->nTime >= nP2SHSwitchTime);
+            }
+            // if !fBlock, then always be strict-- don't accept
+            // invalid-under-new-rules pay-to-script-hash transactions into
+            // our memory pool (don't relay them, don't include them
+            // in blocks we mine).
 
             // Skip ECDSA signature verification when connecting blocks (fBlock=true)
             // before the last blockchain checkpoint. This is safe because block merkle hashes are
@@ -1256,13 +1253,6 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
     if (!CheckBlock())
         return false;
 
-    // To avoid being on the short end of a block-chain split,
-    // don't do secondary validation of pay-to-script-hash transactions
-    // until blocks with timestamps after paytoscripthashtime (see init.cpp for default).
-    // This code can be removed once a super-majority of the network has upgraded.
-    int64 nEvalSwitchTime = GetArg("-paytoscripthashtime", std::numeric_limits<int64_t>::max());
-    bool fStrictPayToScriptHash = (pindex->nTime >= nEvalSwitchTime);
-
     //// issue here: it doesn't know the version
     unsigned int nTxPos = pindex->nBlockPos + ::GetSerializeSize(CBlock(), SER_DISK) - 1 + GetSizeOfCompactSize(vtx.size());
 
@@ -1285,19 +1275,9 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
             if (!tx.FetchInputs(txdb, mapQueuedChanges, true, false, mapInputs, fInvalid))
                 return false;
 
-            if (fStrictPayToScriptHash)
-            {
-                // Add in sigops done by pay-to-script-hash inputs;
-                // this is to prevent a "rogue miner" from creating
-                // an incredibly-expensive-to-validate block.
-                nSigOps += tx.GetP2SHSigOpCount(mapInputs);
-                if (nSigOps > MAX_BLOCK_SIGOPS)
-                    return DoS(100, error("ConnectBlock() : too many sigops"));
-            }
-
             nFees += tx.GetValueIn(mapInputs)-tx.GetValueOut();
 
-            if (!tx.ConnectInputs(mapInputs, mapQueuedChanges, posThisTx, pindex, true, false, fStrictPayToScriptHash))
+            if (!tx.ConnectInputs(mapInputs, mapQueuedChanges, posThisTx, pindex, true, false))
                 return false;
         }
 

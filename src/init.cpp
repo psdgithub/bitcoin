@@ -489,22 +489,22 @@ bool AppInit2(int argc, char* argv[])
     fNoListen = !GetBoolArg("-listen", true);
 
     // This code can be removed once a super-majority of the network has upgraded.
-    if (GetBoolArg("-bip16", true))
+    if (GetBoolArg("-bip17", true))
     {
         if (fTestNet)
-            SoftSetArg("-paytoscripthashtime", "1329264000"); // Feb 15
+            SoftSetArg("-p2shtime", "1329264000"); // Feb 15
         else
-            SoftSetArg("-paytoscripthashtime", "1330578000"); // Mar 1
+            SoftSetArg("-p2shtime", "1329955200"); // Feb 23
 
-        // Put "/P2SH/" in the coinbase so everybody can tell when
+        // Put "p2sh/CHV" in the coinbase so everybody can tell when
         // a majority of miners support it
-        const char* pszP2SH = "/P2SH/";
+        const char* pszP2SH = "p2sh/CHV";
         std::vector<unsigned char> vchData(pszP2SH, pszP2SH+strlen(pszP2SH));
         mapAuxCoinbases["P2SH"] = CScript(vchData);
     }
     else
     {
-        const char* pszP2SH = "NOP2SH";
+        const char* pszP2SH = "p2sh/NOCHV";
         std::vector<unsigned char> vchData(pszP2SH, pszP2SH+strlen(pszP2SH));
         mapAuxCoinbases["P2SH"] = CScript(vchData);
     }
