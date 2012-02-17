@@ -926,6 +926,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
                 if (strKey == "fGenerateBitcoins")  ssValue >> fGenerateBitcoins;
 #endif
                 if (strKey == "nTransactionFee")    ssValue >> nTransactionFee;
+                if (strKey == "nTransactionFeeMax") ssValue >> nTransactionFeeMax;
                 if (strKey == "fLimitProcessors")   ssValue >> fLimitProcessors;
                 if (strKey == "nLimitProcessors")   ssValue >> nLimitProcessors;
                 if (strKey == "fMinimizeToTray")    ssValue >> fMinimizeToTray;
@@ -960,6 +961,7 @@ int CWalletDB::LoadWallet(CWallet* pwallet)
     printf("nFileVersion = %d\n", nFileVersion);
     printf("fGenerateBitcoins = %d\n", fGenerateBitcoins);
     printf("nTransactionFee = %"PRI64d"\n", nTransactionFee);
+    printf("nTransactionFeeMax = %"PRI64d"\n", nTransactionFeeMax);
     printf("fMinimizeToTray = %d\n", fMinimizeToTray);
     printf("fMinimizeOnClose = %d\n", fMinimizeOnClose);
     printf("fUseProxy = %d\n", fUseProxy);

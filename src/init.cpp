@@ -548,6 +548,15 @@ bool AppInit2(int argc, char* argv[])
             wxMessageBox(_("Warning: -paytxfee is set very high.  This is the transaction fee you will pay if you send a transaction."), "Bitcoin", wxOK | wxICON_EXCLAMATION);
     }
 
+    if (mapArgs.count("-maxtxfee"))
+    {
+        if (!ParseMoney(mapArgs["-maxtxfee"], nTransactionFeeMax))
+        {
+            wxMessageBox(_("Invalid amount for -maxtxfee=<amount>"), "Bitcoin");
+            return false;
+        }
+    }
+
     //
     // Start the node
     //
