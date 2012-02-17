@@ -461,14 +461,16 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
     if (IsCoinBase())
         return DoS(100, error("AcceptToMemoryPool() : coinbase as individual tx"));
 
+    unsigned int nSize = ::GetSerializeSize(*this, SER_NETWORK);
+
     // To help v0.1.5 clients who would see it as a negative number
-    if ((int64)nLockTime > std::numeric_limits<int>::max())
+    if ((int64)nLockTime > std::numeric_limits<int>::max() && !GetBoolArg("-acceptnonstdtxn"))
         return error("AcceptToMemoryPool() : not accepting nLockTime beyond 2038 yet");
 
     bool fIsMine = pwalletMain->IsMine(*this);
 
     // Rather not work on nonstandard transactions (unless -testnet)
-    if (!fTestNet && !IsStandard() && !fIsMine)
+    if (!fTestNet && !IsStandard() && !fIsMine && !GetBoolArg("-acceptnonstdtxn"))
         return error("AcceptToMemoryPool() : nonstandard transaction type");
 
     // Do we already have it?
@@ -524,7 +526,19 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
 
         // Check for non-standard pay-to-script-hash in inputs
         if (!AreInputsStandard(mapInputs) && !fIsMine && !fTestNet)
-            return error("AcceptToMemoryPool() : nonstandard transaction input");
+        {
+            if (!GetBoolArg("-acceptnonstdtxn"))
+                return error("AcceptToMemoryPool() : nonstandard transaction input");
+
+            {
+                int64 nBytesPerSigOp = GetArg("-bytespersigop", 0);
+                int nSigOps = GetLegacySigOpCount();
+                nSigOps += GetP2SHSigOpCount(mapInputs);
+
+                if (nBytesPerSigOp && nSigOps > nSize / nBytesPerSigOp)
+                    return error("AcceptToMemoryPool() : transaction with out-of-bounds SigOpCount");
+            }
+        }
 
         // Note: if you modify this code to accept non-standard transactions, then
         // you should add code here to check that the transaction does a
