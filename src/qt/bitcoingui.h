@@ -81,7 +81,7 @@ private:
     QAction *aboutAction;
     QAction *receiveCoinsAction;
     QAction *optionsAction;
-    QAction *openBitcoinAction;
+    QAction *toggleHideAction;
     QAction *exportAction;
     QAction *encryptWalletAction;
     QAction *backupWalletAction;
@@ -167,6 +167,9 @@ private slots:
     void changePassphrase();
     /** Ask for pass phrase to unlock wallet temporarily */
     void unlockWallet();
+
+    /** Hide window if visible, show if hidden */
+    void toggleHidden();
 };
 
 #endif

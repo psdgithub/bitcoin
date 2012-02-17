@@ -23,6 +23,7 @@
 #include "guiconstants.h"
 #include "askpassphrasedialog.h"
 #include "notificator.h"
+#include "guiutil.h"
 
 #ifdef Q_WS_MAC
 #include "macdockiconhandler.h"
@@ -233,8 +234,8 @@ void BitcoinGUI::createActions()
     optionsAction = new QAction(QIcon(":/icons/options"), tr("&Options..."), this);
     optionsAction->setToolTip(tr("Modify configuration options for bitcoin"));
     optionsAction->setMenuRole(QAction::PreferencesRole);
-    openBitcoinAction = new QAction(QIcon(":/icons/bitcoin"), tr("Open &Bitcoin"), this);
-    openBitcoinAction->setToolTip(tr("Show the Bitcoin window"));
+    toggleHideAction = new QAction(QIcon(":/icons/bitcoin"), tr("Show/Hide &Bitcoin"), this);
+    toggleHideAction->setToolTip(tr("Show or Hide the Bitcoin window"));
     exportAction = new QAction(QIcon(":/icons/export"), tr("&Export..."), this);
     exportAction->setToolTip(tr("Export the data in the current tab to a file"));
     encryptWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Encrypt Wallet"), this);
@@ -249,7 +250,7 @@ void BitcoinGUI::createActions()
     connect(optionsAction, SIGNAL(triggered()), this, SLOT(optionsClicked()));
     connect(aboutAction, SIGNAL(triggered()), this, SLOT(aboutClicked()));
     connect(aboutQtAction, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
-    connect(openBitcoinAction, SIGNAL(triggered()), this, SLOT(showNormal()));
+    connect(toggleHideAction, SIGNAL(triggered()), this, SLOT(toggleHidden()));
     connect(encryptWalletAction, SIGNAL(triggered(bool)), this, SLOT(encryptWallet(bool)));
     connect(backupWalletAction, SIGNAL(triggered()), this, SLOT(backupWallet()));
     connect(changePassphraseAction, SIGNAL(triggered()), this, SLOT(changePassphrase()));
@@ -386,7 +387,7 @@ void BitcoinGUI::createTrayIcon()
 #endif
 
     // Configuration of the tray icon (or dock icon) icon menu
-    trayIconMenu->addAction(openBitcoinAction);
+    trayIconMenu->addAction(toggleHideAction);
     trayIconMenu->addSeparator();
     trayIconMenu->addAction(messageAction);
 #ifndef FIRST_CLASS_MESSAGING
@@ -410,7 +411,7 @@ void BitcoinGUI::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
     if(reason == QSystemTrayIcon::Trigger)
     {
         // Click on system tray icon triggers "open bitcoin"
-        openBitcoinAction->trigger();
+        toggleHideAction->trigger();
     }
 }
 #endif
@@ -419,6 +420,16 @@ void BitcoinGUI::showNormal()
 {
     setWindowFlags(windowFlags() & (~Qt::Tool));
     QMainWindow::showNormal();
+}
+
+void BitcoinGUI::toggleHidden()
+{
+    if(isHidden() || isMinimized() || GUIUtil::isObscured(this)) {
+        showNormal();
+        activateWindow();
+        raise();
+    } else
+        hide();
 }
 
 void BitcoinGUI::optionsClicked()
