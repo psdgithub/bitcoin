@@ -495,6 +495,25 @@ bool AppInit2(int argc, char* argv[])
     fAllowDNS = GetBoolArg("-dns");
     fNoListen = !GetBoolArg("-listen", true);
 
+    // This code can be removed once a super-majority of the network has upgraded.
+    if (GetBoolArg("-bip17", true))
+    {
+        if (fTestNet)
+            SoftSetArg("-p2shtime", "1329264000"); // Feb 15
+        else
+            SoftSetArg("-p2shtime", "1332460800"); // Mar 23
+
+        // Put "/P2SH/" in the coinbase so everybody can tell when
+        // a majority of miners support it
+        const char* pszP2SH = "p2sh/CHV";
+        COINBASE_FLAGS << std::vector<unsigned char>(pszP2SH, pszP2SH+strlen(pszP2SH));
+    }
+    else
+    {
+        const char* pszP2SH = "p2sh/NOCHV";
+        COINBASE_FLAGS << std::vector<unsigned char>(pszP2SH, pszP2SH+strlen(pszP2SH));
+    }
+
     // Command-line args override in-wallet settings:
 #if USE_UPNP
     fUseUPnP = GetBoolArg("-upnp", true);
