@@ -46,6 +46,8 @@ static CCriticalSection cs_nWalletUnlockTime;
 extern Value dumpprivkey(const Array& params, bool fHelp);
 extern Value importprivkey(const Array& params, bool fHelp);
 
+const Object emptyobj;
+
 Object JSONRPCError(int code, const string& message)
 {
     Object error;
@@ -131,6 +133,13 @@ HexBits(unsigned int nBits)
     return HexStr(BEGIN(uBits.cBits), END(uBits.cBits));
 }
 
+std::string
+FindDecompose(const Object& decompositions, const char* pcType, const char* pcDefault)
+{
+    Value val = find_value(decompositions, pcType);
+    return (val.type() == null_type) ? pcDefault : val.get_str();
+}
+
 void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
 {
     int confirms = wtx.GetDepthInMainChain();
@@ -146,11 +155,25 @@ void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
         entry.push_back(Pair(item.first, item.second));
 }
 
-void TxToJSON(const CTransaction &tx, Object& entry)
+void TxToJSON(const CTransaction &tx, Object& entry, const Object& decompositions)
 {
     entry.push_back(Pair("version", tx.nVersion));
     entry.push_back(Pair("locktime", (boost::int64_t)tx.nLockTime));
     entry.push_back(Pair("size", (boost::int64_t)::GetSerializeSize(tx, SER_NETWORK)));
+
+    int nDecomposeScript;
+    std::string strDecomposeScript = FindDecompose(decompositions, "script", "asm");
+    if (strDecomposeScript == "asm")
+        nDecomposeScript = 2;
+    else
+    if (strDecomposeScript == "hex")
+        nDecomposeScript = 1;
+    else
+    if (strDecomposeScript == "no")
+        nDecomposeScript = 0;
+    else
+        throw JSONRPCError(-18, "Invalid script decomposition");
+
     Array vin;
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
     {
@@ -163,7 +186,14 @@ void TxToJSON(const CTransaction &tx, Object& entry)
             prevout.push_back(Pair("hash", txin.prevout.hash.GetHex()));
             prevout.push_back(Pair("n", (boost::int64_t)txin.prevout.n));
             in.push_back(Pair("prevout", prevout));
-            in.push_back(Pair("scriptSig", txin.scriptSig.ToString()));
+            switch (nDecomposeScript) {
+            case 2:
+                in.push_back(Pair("scriptSig", txin.scriptSig.ToString()));
+            case 0:
+                break;
+            default:
+                in.push_back(Pair("scriptSig", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
+            }
         }
         in.push_back(Pair("sequence", (boost::int64_t)txin.nSequence));
         vin.push_back(in);
@@ -174,11 +204,20 @@ void TxToJSON(const CTransaction &tx, Object& entry)
     {
         Object out;
         out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
-        out.push_back(Pair("scriptPubKey", txout.scriptPubKey.ToString()));
+        switch (nDecomposeScript) {
+        case 2:
+            out.push_back(Pair("scriptPubKey", txout.scriptPubKey.ToString()));
+        case 0:
+            break;
+        default:
+            out.push_back(Pair("scriptPubKey", HexStr(txout.scriptPubKey.begin(), txout.scriptPubKey.end())));
+        }
         vout.push_back(out);
     }
     entry.push_back(Pair("vout", vout));
 }
+
+void AnyTxToJSON(const uint256 hash, const CTransaction* ptx, Object& entry, const Object& decompositions);
 
 string AccountFromValue(const Value& value)
 {
@@ -188,7 +227,7 @@ string AccountFromValue(const Value& value)
     return strAccount;
 }
 
-Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex)
+Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex, const Object& decompositions)
 {
     Object result;
     result.push_back(Pair("hash", block.GetHash().GetHex()));
@@ -203,10 +242,35 @@ Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex)
     result.push_back(Pair("nonce", (boost::uint64_t)block.nNonce));
     result.push_back(Pair("bits", HexBits(block.nBits)));
     result.push_back(Pair("difficulty", GetDifficulty(blockindex)));
-    Array txhashes;
-    BOOST_FOREACH (const CTransaction&tx, block.vtx)
-        txhashes.push_back(tx.GetHash().GetHex());
-    result.push_back(Pair("tx", txhashes));
+
+    std::string strDecomposeTxn = FindDecompose(decompositions, "tx", "hash");
+    if (strDecomposeTxn != "no")
+    {
+        Array txs;
+        if (strDecomposeTxn == "obj")
+            BOOST_FOREACH (const CTransaction&tx, block.vtx)
+            {
+                Object entry;
+                AnyTxToJSON(tx.GetHash(), &tx, entry, decompositions);
+                txs.push_back(entry);
+            }
+        else
+        if (strDecomposeTxn == "hex")
+            BOOST_FOREACH (const CTransaction&tx, block.vtx)
+            {
+                CDataStream ssTx;
+                ssTx << tx;
+
+                txs.push_back(HexStr(ssTx.begin(), ssTx.end()));
+            }
+        else
+        if (strDecomposeTxn == "hash")
+            BOOST_FOREACH (const CTransaction&tx, block.vtx)
+                txs.push_back(tx.GetHash().GetHex());
+        else
+            throw JSONRPCError(-18, "Invalid transaction decomposition");
+        result.push_back(Pair("tx", txs));
+    }
 
     if (blockindex->pprev)
         result.push_back(Pair("previousblockhash", blockindex->pprev->GetBlockHash().GetHex()));
@@ -214,6 +278,7 @@ Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex)
         result.push_back(Pair("nextblockhash", blockindex->pnext->GetBlockHash().GetHex()));
     return result;
 }
+
 
 
 
@@ -1506,23 +1571,14 @@ Value listsinceblock(const Array& params, bool fHelp)
     return ret;
 }
 
-Value gettransaction(const Array& params, bool fHelp)
+void
+AnyTxToJSON(const uint256 hash, const CTransaction* ptx, Object& entry, const Object& decompositions)
 {
-    if (fHelp || params.size() != 1)
-        throw runtime_error(
-            "gettransaction <txid>\n"
-            "Get detailed information about <txid>");
-
-    uint256 hash;
-    hash.SetHex(params[0].get_str());
-
-    Object entry;
-
     if (pwalletMain->mapWallet.count(hash))
     {
         const CWalletTx& wtx = pwalletMain->mapWallet[hash];
 
-        TxToJSON(wtx, entry);
+        TxToJSON(wtx, entry, decompositions);
 
         int64 nCredit = wtx.GetCredit();
         int64 nDebit = wtx.GetDebit();
@@ -1543,10 +1599,12 @@ Value gettransaction(const Array& params, bool fHelp)
     {
         CTransaction tx;
         uint256 hashBlock = 0;
-        if (GetTransaction(hash, tx, hashBlock))
+        if ((!ptx) && GetTransaction(hash, tx, hashBlock))
+            ptx = &tx;
+        if (ptx)
         {
             entry.push_back(Pair("txid", hash.GetHex()));
-            TxToJSON(tx, entry);
+            TxToJSON(*ptx, entry, decompositions);
             if (hashBlock == 0)
                 entry.push_back(Pair("confirmations", 0));
             else
@@ -1569,6 +1627,22 @@ Value gettransaction(const Array& params, bool fHelp)
         else
             throw JSONRPCError(-5, "No information available about transaction");
     }
+}
+
+Value gettransaction(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 2)
+        throw runtime_error(
+            "gettransaction <txid> [decompositions]\n"
+            "Get detailed information about <txid>");
+
+    uint256 hash;
+    hash.SetHex(params[0].get_str());
+
+    Object entry;
+
+    AnyTxToJSON(hash, NULL, entry,
+                (params.size() > 1) ? params[1].get_obj() : emptyobj);
 
     return entry;
 }
@@ -2055,9 +2129,9 @@ Value getblockhash(const Array& params, bool fHelp)
 
 Value getblock(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
-            "getblock <hash>\n"
+            "getblock <hash> [decompositions]\n"
             "Returns details of a block with given block-hash.");
 
     std::string strHash = params[0].get_str();
@@ -2070,7 +2144,8 @@ Value getblock(const Array& params, bool fHelp)
     CBlockIndex* pblockindex = mapBlockIndex[hash];
     block.ReadFromDisk(pblockindex, true);
 
-    return blockToJSON(block, pblockindex);
+    return blockToJSON(block, pblockindex,
+                       (params.size() > 1) ? params[1].get_obj() : emptyobj);
 }
 
 
@@ -2759,7 +2834,9 @@ int CommandLineRPC(int argc, char *argv[])
         if (strMethod == "listreceivedbyaccount"  && n > 0) ConvertTo<boost::int64_t>(params[0]);
         if (strMethod == "listreceivedbyaccount"  && n > 1) ConvertTo<bool>(params[1]);
         if (strMethod == "getbalance"             && n > 1) ConvertTo<boost::int64_t>(params[1]);
+        if (strMethod == "getblock"               && n > 1) ConvertTo<Object>(params[1]);
         if (strMethod == "getblockhash"           && n > 0) ConvertTo<boost::int64_t>(params[0]);
+        if (strMethod == "gettransaction"         && n > 1) ConvertTo<Object>(params[1]);
         if (strMethod == "move"                   && n > 2) ConvertTo<double>(params[2]);
         if (strMethod == "move"                   && n > 3) ConvertTo<boost::int64_t>(params[3]);
         if (strMethod == "sendfrom"               && n > 2) ConvertTo<double>(params[2]);
