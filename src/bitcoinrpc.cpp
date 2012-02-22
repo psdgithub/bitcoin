@@ -139,6 +139,66 @@ void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
         entry.push_back(Pair(item.first, item.second));
 }
 
+void
+ScriptSigToJSON(const CTxIn& txin, Object& out)
+{
+    out.push_back(Pair("asm", txin.scriptSig.ToString()));
+    out.push_back(Pair("hex", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
+
+    CTransaction txprev;
+    uint256 hashTxprevBlock;
+    if (!GetTransaction(txin.prevout.hash, txprev, hashTxprevBlock))
+        return;
+
+    txnouttype type;
+    vector<CBitcoinAddress> addresses;
+    int nRequired;
+
+    if (!ExtractAddresses(txprev.vout[txin.prevout.n].scriptPubKey, type,
+                          addresses, nRequired))
+    {
+        out.push_back(Pair("type", GetTxnOutputType(TX_NONSTANDARD)));
+        return;
+    }
+
+    out.push_back(Pair("type", GetTxnOutputType(type)));
+    if (type == TX_MULTISIG)
+    {
+        // TODO: Need to handle this specially since not all input addresses are required...
+        return;
+    }
+
+    Array a;
+    BOOST_FOREACH(const CBitcoinAddress& addr, addresses)
+        a.push_back(addr.ToString());
+    out.push_back(Pair("addresses", a));
+}
+
+void
+ScriptPubKeyToJSON(const CScript& scriptPubKey, Object& out)
+{
+    txnouttype type;
+    vector<CBitcoinAddress> addresses;
+    int nRequired;
+
+    out.push_back(Pair("asm", scriptPubKey.ToString()));
+    out.push_back(Pair("hex", HexStr(scriptPubKey.begin(), scriptPubKey.end())));
+
+    if (!ExtractAddresses(scriptPubKey, type, addresses, nRequired))
+    {
+        out.push_back(Pair("type", GetTxnOutputType(TX_NONSTANDARD)));
+        return;
+    }
+
+    out.push_back(Pair("reqSigs", nRequired));
+    out.push_back(Pair("type", GetTxnOutputType(type)));
+
+    Array a;
+    BOOST_FOREACH(const CBitcoinAddress& addr, addresses)
+        a.push_back(addr.ToString());
+    out.push_back(Pair("addresses", a));
+}
+
 void TxToJSON(const CTransaction &tx, Object& entry, const Object& decompositions)
 {
     entry.push_back(Pair("version", tx.nVersion));
@@ -147,6 +207,9 @@ void TxToJSON(const CTransaction &tx, Object& entry, const Object& decomposition
 
     int nDecomposeScript;
     std::string strDecomposeScript = FindDecompose(decompositions, "script", "asm");
+    if (strDecomposeScript == "obj")
+        nDecomposeScript = 3;
+    else
     if (strDecomposeScript == "asm")
         nDecomposeScript = 2;
     else
@@ -171,6 +234,13 @@ void TxToJSON(const CTransaction &tx, Object& entry, const Object& decomposition
             prevout.push_back(Pair("n", (boost::int64_t)txin.prevout.n));
             in.push_back(Pair("prevout", prevout));
             switch (nDecomposeScript) {
+            case 3:
+            {
+                Object o;
+                ScriptSigToJSON(txin, o);
+                in.push_back(Pair("scriptSig", o));
+                break;
+            }
             case 2:
                 in.push_back(Pair("scriptSig", txin.scriptSig.ToString()));
             case 0:
@@ -189,6 +259,13 @@ void TxToJSON(const CTransaction &tx, Object& entry, const Object& decomposition
         Object out;
         out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
         switch (nDecomposeScript) {
+        case 3:
+        {
+            Object o;
+            ScriptPubKeyToJSON(txout.scriptPubKey, o);
+            out.push_back(Pair("scriptPubKey", o));
+            break;
+        }
         case 2:
             out.push_back(Pair("scriptPubKey", txout.scriptPubKey.ToString()));
         case 0:
