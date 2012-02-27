@@ -9,6 +9,7 @@
 #include "addressbookpage.h"
 #include "sendcoinsdialog.h"
 #include "messagepage.h"
+#include "verifymessagedialog.h"
 #include "optionsdialog.h"
 #include "aboutdialog.h"
 #include "clientmodel.h"
@@ -248,6 +249,8 @@ void BitcoinGUI::createActions()
     backupWalletAction->setToolTip(tr("Backup wallet to another location"));
     changePassphraseAction = new QAction(QIcon(":/icons/key"), tr("&Change Passphrase"), this);
     changePassphraseAction->setToolTip(tr("Change the passphrase used for wallet encryption"));
+    verifyMessageAction = new QAction(QIcon(":/icons/transaction_0"), tr("&Verify message"), this);
+    verifyMessageAction->setToolTip(tr("Verify a message signature"));
 
     connect(quitAction, SIGNAL(triggered()), qApp, SLOT(quit()));
     connect(optionsAction, SIGNAL(triggered()), this, SLOT(optionsClicked()));
@@ -257,6 +260,7 @@ void BitcoinGUI::createActions()
     connect(encryptWalletAction, SIGNAL(triggered(bool)), this, SLOT(encryptWallet(bool)));
     connect(backupWalletAction, SIGNAL(triggered()), this, SLOT(backupWallet()));
     connect(changePassphraseAction, SIGNAL(triggered()), this, SLOT(changePassphrase()));
+    connect(verifyMessageAction, SIGNAL(triggered()), this, SLOT(verifyMessage()));
 }
 
 void BitcoinGUI::createMenuBar()
@@ -276,6 +280,7 @@ void BitcoinGUI::createMenuBar()
 #ifndef FIRST_CLASS_MESSAGING
     file->addAction(messageAction);
 #endif
+    file->addAction(verifyMessageAction);
     file->addSeparator();
     file->addAction(quitAction);
 
@@ -393,6 +398,7 @@ void BitcoinGUI::createTrayIcon()
     trayIconMenu->addAction(toggleHideAction);
     trayIconMenu->addSeparator();
     trayIconMenu->addAction(messageAction);
+    trayIconMenu->addAction(verifyMessageAction);
 #ifndef FIRST_CLASS_MESSAGING
     trayIconMenu->addSeparator();
 #endif
@@ -822,6 +828,12 @@ void BitcoinGUI::changePassphrase()
 {
     AskPassphraseDialog dlg(AskPassphraseDialog::ChangePass, this);
     dlg.setModel(walletModel);
+    dlg.exec();
+}
+
+void BitcoinGUI::verifyMessage()
+{
+    VerifyMessageDialog dlg(walletModel->getAddressTableModel(), this);
     dlg.exec();
 }
 
