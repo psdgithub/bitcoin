@@ -1879,17 +1879,32 @@ Value getwork(const Array& params, bool fHelp)
 }
 
 
+Value submitblock(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 2)
+        throw runtime_error(
+            "submitblock <data> [extra]\n"
+            "Tries to solve a block and returns null if it was successful (and a string explaining why it wasn't, otherwise).");
+
+    // Parse parameters
+    CDataStream ssBlock(ParseHex(params[0].get_str()));
+    CBlock pblock;
+    ssBlock >> pblock;
+
+    return ProcessBlock(NULL, &pblock) ? Value::null : "rejected";
+}
+
 Value getmemorypool(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() > 1)
+    if (fHelp || params.size() > 2)
         throw runtime_error(
-            "getmemorypool [data]\n"
+            "getmemorypool [data] [extra]\n"
             "If [data] is not specified, returns data needed to construct a block to work on:\n"
             "  \"version\" : block version\n"
             "  \"previousblockhash\" : hash of current highest block\n"
             "  \"transactions\" : contents of non-coinbase transactions that should be included in the next block\n"
+            "  \"coinbaseaux\" : data that should be included in coinbase\n"
             "  \"coinbasevalue\" : maximum allowable input to coinbase transaction, including the generation award and transaction fees\n"
-            "  \"coinbaseflags\" : data that should be included in coinbase so support for new features can be judged\n"
             "  \"time\" : timestamp appropriate for next block\n"
             "  \"mintime\" : minimum timestamp appropriate for next block\n"
             "  \"curtime\" : current timestamp\n"
@@ -1941,28 +1956,39 @@ Value getmemorypool(const Array& params, bool fHelp)
             transactions.push_back(HexStr(ssTx.begin(), ssTx.end()));
         }
 
+        Object aux;
+        aux.push_back(Pair("flags", HexStr(COINBASE_FLAGS.begin(), COINBASE_FLAGS.end())));
+
+        uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+
+        static Array*paMutable = NULL;
+        if (!paMutable)
+        {
+            paMutable = new Array();
+            Array&aMutable = *paMutable;
+            aMutable.push_back("time");
+            aMutable.push_back("transactions");
+            aMutable.push_back("prevblock");
+        }
+
         Object result;
         result.push_back(Pair("version", pblock->nVersion));
         result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
         result.push_back(Pair("transactions", transactions));
+        result.push_back(Pair("coinbaseaux", aux));
         result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
-        result.push_back(Pair("coinbaseflags", HexStr(COINBASE_FLAGS.begin(), COINBASE_FLAGS.end())));
+        result.push_back(Pair("target", HexStr(BEGIN(hashTarget), END(hashTarget))));
         result.push_back(Pair("time", (int64_t)pblock->nTime));
         result.push_back(Pair("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1));
+        result.push_back(Pair("mutable", *paMutable));
+        result.push_back(Pair("noncerange", "00000000ffffffff"));
         result.push_back(Pair("curtime", (int64_t)GetAdjustedTime()));
         result.push_back(Pair("bits", HexBits(pblock->nBits)));
 
         return result;
     }
     else
-    {
-        // Parse parameters
-        CDataStream ssBlock(ParseHex(params[0].get_str()));
-        CBlock pblock;
-        ssBlock >> pblock;
-
-        return ProcessBlock(NULL, &pblock);
-    }
+        return submitblock(params, fHelp).type() == null_type;
 }
 
 Value getblockhash(const Array& params, bool fHelp)
@@ -2061,6 +2087,7 @@ pair<string, rpcfn_type> pCallTable[] =
     make_pair("getwork",                &getwork),
     make_pair("listaccounts",           &listaccounts),
     make_pair("settxfee",               &settxfee),
+    make_pair("submitblock",            &submitblock),
     make_pair("getmemorypool",          &getmemorypool),
     make_pair("listsinceblock",         &listsinceblock),
     make_pair("dumpprivkey",            &dumpprivkey),
@@ -2091,6 +2118,7 @@ string pAllowInSafeMode[] =
     "walletlock",
     "validateaddress",
     "getwork",
+    "submitblock",
     "getmemorypool",
 };
 set<string> setAllowInSafeMode(pAllowInSafeMode, pAllowInSafeMode + sizeof(pAllowInSafeMode)/sizeof(pAllowInSafeMode[0]));
