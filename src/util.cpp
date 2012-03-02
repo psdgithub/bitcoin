@@ -155,6 +155,13 @@ int GetRandInt(int nMax)
 
 
 
+string GetDebugLogName()
+{
+    char pszFile[MAX_PATH+100];
+    GetDataDir(pszFile);
+    strlcat(pszFile, "/debug.log", sizeof(pszFile));
+    return pszFile;
+}
 
 inline int OutputDebugStringF(const char* pszFormat, ...)
 {
@@ -174,9 +181,7 @@ inline int OutputDebugStringF(const char* pszFormat, ...)
 
         if (!fileout)
         {
-            char pszFile[MAX_PATH+100];
-            GetDataDir(pszFile);
-            strlcat(pszFile, "/debug.log", sizeof(pszFile));
+            const char* pszFile = GetDebugLogName().c_str();
             fileout = fopen(pszFile, "a");
             if (fileout) setbuf(fileout, NULL); // unbuffered
         }
