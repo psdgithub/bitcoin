@@ -188,6 +188,9 @@ inline int OutputDebugStringF(const char* pszFormat, ...)
         if (fileout)
         {
             static bool fStartedNewLine = true;
+#ifndef WIN32
+            flockfile(fileout);
+#endif
 
             // Debug print useful for profiling
             if (fLogTimestamps && fStartedNewLine)
@@ -201,6 +204,9 @@ inline int OutputDebugStringF(const char* pszFormat, ...)
             va_start(arg_ptr, pszFormat);
             ret = vfprintf(fileout, pszFormat, arg_ptr);
             va_end(arg_ptr);
+#ifndef WIN32
+            funlockfile(fileout);
+#endif
         }
     }
 
