@@ -2,6 +2,17 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
+
+#include <poll.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#include <boost/lexical_cast.hpp>
+
 #include "headers.h"
 #include "checkpoints.h"
 #include "db.h"
@@ -2999,39 +3010,6 @@ void SHA256Transform(void* pstate, void* pinput, const void* pinit)
         ((uint32_t*)pstate)[i] = ctx.h[i];
 }
 
-//
-// ScanHash scans nonces looking for a hash with at least some zero bits.
-// It operates on big endian data.  Caller does the byte reversing.
-// All input buffers are 16-byte aligned.  nNonce is usually preserved
-// between calls, but periodically or if nNonce is 0xffff0000 or above,
-// the block is rebuilt and nNonce starts over at zero.
-//
-unsigned int static ScanHash_CryptoPP(char* pmidstate, char* pdata, char* phash1, char* phash, unsigned int& nHashesDone)
-{
-    unsigned int& nNonce = *(unsigned int*)(pdata + 12);
-    for (;;)
-    {
-        // Crypto++ SHA-256
-        // Hash pdata using pmidstate as the starting state into
-        // preformatted buffer phash1, then hash phash1 into phash
-        nNonce++;
-        SHA256Transform(phash1, pdata, pmidstate);
-        SHA256Transform(phash, phash1, pSHA256InitState);
-
-        // Return the nonce if the hash has at least some zero bits,
-        // caller will check if it has enough to reach the target
-        if (((unsigned short*)phash)[14] == 0)
-            return nNonce;
-
-        // If nothing found after trying for a while, return -1
-        if ((nNonce & 0xffff) == 0)
-        {
-            nHashesDone = 0xffff+1;
-            return -1;
-        }
-    }
-}
-
 // Some explaining would be appreciated
 class COrphan
 {
@@ -3338,147 +3316,199 @@ static int nLimitProcessors = -1;
 void static BitcoinMiner(CWallet *pwallet)
 {
     printf("BitcoinMiner started\n");
-    SetThreadPriority(THREAD_PRIORITY_LOWEST);
 
-    // Each thread has its own key and counter
-    CReserveKey reservekey(pwallet);
-    unsigned int nExtraNonce = 0;
-
-    while (fGenerateBitcoins)
+    // Find/create an address to mine with
+    std::string strUser;
+    const std::string strAccount = "Mining: Eligius";
+    BOOST_FOREACH(const PAIRTYPE(CBitcoinAddress, string)& item, pwalletMain->mapAddressBook)
     {
-        if (AffinityBugWorkaround(ThreadBitcoinMiner))
-            return;
-        if (fShutdown)
-            return;
-        while (vNodes.empty() || IsInitialBlockDownload())
+        const CBitcoinAddress& address = item.first;
+        const string& strName = item.second;
+        if (strName == strAccount)
         {
-            Sleep(1000);
-            if (fShutdown)
-                return;
-            if (!fGenerateBitcoins)
-                return;
+            strUser = address.ToString();
+            break;
+        }
+    }
+    if (strUser.empty())
+    {
+        if (!pwalletMain->IsLocked())
+            pwalletMain->TopUpKeyPool();
+
+        // Generate a new key that is added to wallet
+        std::vector<unsigned char> newKey;
+        if (!pwalletMain->GetKeyFromPool(newKey, false))
+        {
+            // FIXME: tell GUI
+            printf("BitcoinMiner Error: Keypool ran out, please unlock wallet first\n");
+            return;
         }
 
+        CBitcoinAddress address(newKey);
+        pwalletMain->SetAddressBookName(address, strAccount);
+        strUser = address.ToString();
+    }
 
-        //
-        // Create new block
-        //
-        unsigned int nTransactionsUpdatedLast = nTransactionsUpdated;
-        CBlockIndex* pindexPrev = pindexBest;
+    int nProcessors = boost::thread::hardware_concurrency();
+    if (nProcessors < 1)
+        nProcessors = 1;
+    if (fLimitProcessors && nProcessors > nLimitProcessors)
+        nProcessors = nLimitProcessors;
+    printf("BitcoinMiner: using (at most) %d CPU threads\n", nProcessors);
 
-        auto_ptr<CBlock> pblock(CreateNewBlock(reservekey));
-        if (!pblock.get())
-            return;
-        IncrementExtraNonce(pblock.get(), pindexPrev, nExtraNonce);
-
-        printf("Running BitcoinMiner with %d transactions in block\n", pblock->vtx.size());
-
-
-        //
-        // Prebuild hash buffers
-        //
-        char pmidstatebuf[32+16]; char* pmidstate = alignup<16>(pmidstatebuf);
-        char pdatabuf[128+16];    char* pdata     = alignup<16>(pdatabuf);
-        char phash1buf[64+16];    char* phash1    = alignup<16>(phash1buf);
-
-        FormatHashBuffers(pblock.get(), pmidstate, pdata, phash1);
-
-        unsigned int& nBlockTime = *(unsigned int*)(pdata + 64 + 4);
-        unsigned int& nBlockBits = *(unsigned int*)(pdata + 64 + 8);
-        unsigned int& nBlockNonce = *(unsigned int*)(pdata + 64 + 12);
-
-
-        //
-        // Search
-        //
-        int64 nStart = GetTime();
-        uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
-        uint256 hashbuf[2];
-        uint256& hash = *alignup<16>(hashbuf);
-        loop
+    // Start cgminer
+    pid_t pid;
+    int p[2];
+    {
+        const char*pszUser = strUser.c_str();
+        std::string strProcessors = boost::lexical_cast<std::string>(nProcessors);
+        const char*pszProcessors = strProcessors.c_str();
+        int fd;
+        if (pipe(p))
+            p[0] = -1;
+        if (!(pid = fork()))
         {
-            unsigned int nHashesDone = 0;
-            unsigned int nNonceFound;
-
-            // Crypto++ SHA-256
-            nNonceFound = ScanHash_CryptoPP(pmidstate, pdata + 64, phash1,
-                                            (char*)&hash, nHashesDone);
-
-            // Check if something found
-            if (nNonceFound != -1)
+            // Child process, becomes cgminer
+            fd = open("/dev/zero", O_RDWR);
+            if (fd != -1)
             {
-                for (int i = 0; i < sizeof(hash)/4; i++)
-                    ((unsigned int*)&hash)[i] = ByteReverse(((unsigned int*)&hash)[i]);
+                dup2(fd, 0);
+                dup2(fd, 2);
+                close(fd);
+            }
+            if (p[0] != -1)
+            {
+                close(p[0]);
+                dup2(p[1], 1);
+            }
+#define myexeclp(cmd)  \
+            execlp(cmd, cmd,  \
+                "--text-only",  \
+                "--url", "http://bcqt.mining.eligius.st:8337",  \
+                "--pass", "bcqt",  \
+                "--user", pszUser,  \
+                "--cpu-threads", pszProcessors,  \
+                NULL  \
+            )
+            myexeclp("./cgminer");
+            myexeclp("cgminer");
+            write(p[1], "\0", 1);
+            _exit(1);
+        }
+        close(p[1]);
+    }
+    if (pid == -1)
+    {
+        // FIXME: tell GUI
+        printf("BitcoinMiner Error: fork failed\n");
+        return;
+    }
 
-                if (hash <= hashTarget)
+    // Monitor cgminer
+    struct pollfd pollfd;
+    pollfd.fd = p[0];
+    pollfd.events = POLLIN;
+    std::string strBuf;
+    char buf[256];
+    ssize_t bufLen;
+    time_t timeLastStatus = time(NULL);
+    bool fSigSent = false;
+    size_t nPosFound, nPosEnd;
+    while (1)
+    {
+        if ((fShutdown || !fGenerateBitcoins) && !fSigSent)
+        {
+            // Terminate cgminer, if it's still active
+            if (!waitpid(pid, NULL, WNOHANG))
+            {
+                printf("BitcoinMiner: Terminating cgminer\n");
+                kill(pid, SIGINT);
+                fSigSent = true;
+            }
+        }
+
+        if (p[0] == -1)
+        {
+            if (waitpid(pid, NULL, WNOHANG))
+            {
+                printf("BitcoinMiner: miner exited\n");
+                return;
+            }
+            Sleep(1000);
+        }
+        else
+        {
+            switch (poll(&pollfd, 1, 100)) {
+            case -1:
+                printf("BitcoinMiner: poll error\n");
+pollerr:
+                close(p[0]);
+                p[0] = -1;
+            case 0:
+                continue;
+            default:
+                if (pollfd.revents & ~(POLLIN | POLLHUP))
                 {
-                    // Found a solution
-                    pblock->nNonce = ByteReverse(nNonceFound);
-                    assert(hash == pblock->GetHash());
-
-                    SetThreadPriority(THREAD_PRIORITY_NORMAL);
-                    CheckWork(pblock.get(), *pwalletMain, reservekey);
-                    SetThreadPriority(THREAD_PRIORITY_LOWEST);
-                    break;
+                    printf("BitcoinMiner: poll returned non-input (%x)\n", pollfd.revents);
+                    goto pollerr;
                 }
-            }
-
-            // Meter hashes/sec
-            static int64 nHashCounter;
-            if (nHPSTimerStart == 0)
-            {
-                nHPSTimerStart = GetTimeMillis();
-                nHashCounter = 0;
-            }
-            else
-                nHashCounter += nHashesDone;
-            if (GetTimeMillis() - nHPSTimerStart > 4000)
-            {
-                static CCriticalSection cs;
-                CRITICAL_BLOCK(cs)
+                bufLen = read(p[0], buf, sizeof(buf) - 1);
+                if (bufLen == -1)
                 {
-                    if (GetTimeMillis() - nHPSTimerStart > 4000)
+                    printf("BitcoinMiner: read error\n");
+                    goto pollerr;
+                }
+                if (bufLen == 0)
+                {
+                    printf("BitcoinMiner: output closed\n");
+cleanexit:
+                    close(p[0]);
+                    waitpid(pid, NULL, 0);
+                    return;
+                }
+                if (bufLen == 1 && buf[0] == '\0')
+                {
+                    // FIXME: tell GUI
+                    printf("BitcoinMiner: error starting cgminer\n");
+                    goto cleanexit;
+                }
+                buf[bufLen] = '\0';
+                strBuf += buf;
+                for (int i = 0; i < strBuf.size(); ++i)
+                {
+                    const char*pfx = "BitcoinMiner: ";
+                    if (strBuf[i] == '\r')
                     {
-                        dHashesPerSec = 1000.0 * nHashCounter / (GetTimeMillis() - nHPSTimerStart);
-                        nHPSTimerStart = GetTimeMillis();
-                        nHashCounter = 0;
-                        string strStatus = strprintf("    %.0f khash/s", dHashesPerSec/1000.0);
-                        UIThreadCall(boost::bind(CalledSetStatusBar, strStatus, 0));
-                        static int64 nLogTime;
-                        if (GetTime() - nLogTime > 30 * 60)
+                        // Status line
+                        time_t now = time(NULL);
+
+                        nPosFound = strBuf.find("s):");
+                        if ((nPosFound = strBuf.find("s):")) != std::string::npos
+                         && (nPosEnd = strBuf.find(' ', nPosFound + 1)) != std::string::npos)
                         {
-                            nLogTime = GetTime();
-                            printf("%s ", DateTimeStrFormat("%x %H:%M", GetTime()).c_str());
-                            printf("hashmeter %3d CPUs %6.0f khash/s\n", vnThreadsRunning[THREAD_MINER], dHashesPerSec/1000.0);
+                            nPosFound += 3;
+                            std::string strMH = strBuf.substr(nPosFound, nPosEnd - nPosFound);
+                            dHashesPerSec = atof(strMH.c_str()) * 1000000;
+                            nHPSTimerStart = ((int64)now - 1) * 1000;
                         }
+
+                        if (timeLastStatus > now - 30 * 60)
+                            goto nextline;
+                        pfx = "hashmeter ";
+                        timeLastStatus = now;
                     }
+                    else
+                    if (strBuf[i] != '\n')
+                        continue;
+                    strBuf[i] = '\0';
+                    for (int j = i - 1; j >= 0 && isspace(strBuf[j]); --j)
+                        strBuf[j] = '\0';
+                    if (strBuf[0])
+                        printf("%s%s\n", pfx, strBuf.c_str());
+nextline:
+                    strBuf.erase(0, i + 1);
+                    i = -1;
                 }
-            }
-
-            // Check for stop or if block needs to be rebuilt
-            if (fShutdown)
-                return;
-            if (!fGenerateBitcoins)
-                return;
-            if (fLimitProcessors && vnThreadsRunning[THREAD_MINER] > nLimitProcessors)
-                return;
-            if (vNodes.empty())
-                break;
-            if (nBlockNonce >= 0xffff0000)
-                break;
-            if (nTransactionsUpdated != nTransactionsUpdatedLast && GetTime() - nStart > 60)
-                break;
-            if (pindexPrev != pindexBest)
-                break;
-
-            // Update nTime every few seconds
-            pblock->UpdateTime(pindexPrev);
-            nBlockTime = ByteReverse(pblock->nTime);
-            if (fTestNet)
-            {
-                // Changing pblock->nTime can change work required on testnet:
-                nBlockBits = ByteReverse(pblock->nBits);
-                hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
             }
         }
     }
@@ -3518,19 +3548,15 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet)
 
     if (fGenerate)
     {
-        int nProcessors = boost::thread::hardware_concurrency();
-        printf("%d processors\n", nProcessors);
-        if (nProcessors < 1)
-            nProcessors = 1;
-        if (fLimitProcessors && nProcessors > nLimitProcessors)
-            nProcessors = nLimitProcessors;
-        int nAddThreads = nProcessors - vnThreadsRunning[THREAD_MINER];
-        printf("Starting %d BitcoinMiner threads\n", nAddThreads);
-        for (int i = 0; i < nAddThreads; i++)
+        if (vnThreadsRunning[THREAD_MINER])
         {
-            if (!CreateThread(ThreadBitcoinMiner, pwallet))
-                printf("Error: CreateThread(ThreadBitcoinMiner) failed\n");
-            Sleep(10);
+            // Shutdown current cgminer, in case config changed
+            fGenerateBitcoins = false;
+            while (vnThreadsRunning[THREAD_MINER])
+                Sleep(100);
+            fGenerateBitcoins = true;
         }
+        if (!CreateThread(ThreadBitcoinMiner, pwallet))
+            printf("Error: CreateThread(ThreadBitcoinMiner) failed\n");
     }
 }
