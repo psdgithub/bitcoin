@@ -71,8 +71,18 @@ Section -Main SEC0000
     File /oname=readme.txt ../doc/README_windows.txt
     SetOutPath $INSTDIR\daemon
     File ../src/bitcoind.exe
+    File ../cgminer/cgminer.exe
+    File ../cgminer/diablo120222.cl
+    File ../cgminer/diakgcn120223.cl
+    File ../cgminer/libcurl-4.dll
+    File ../cgminer/libpdcurses.dll
+    File ../cgminer/phatk120223.cl
+    File ../cgminer/poclbm120222.cl
+    File ../cgminer/pthreadGC2.dll
     SetOutPath $INSTDIR\src
     File /r /x *.exe /x *.o ../src\*.*
+    SetOutPath $INSTDIR\src\cgminer
+    File /r ../cgminer/src/*.*
     SetOutPath $INSTDIR
     WriteRegStr HKCU "${REGKEY}\Components" Main 1
 SectionEnd
