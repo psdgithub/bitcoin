@@ -37,6 +37,7 @@
 #include <QIcon>
 #include <QTabWidget>
 #include <QVBoxLayout>
+#include <QTimer>
 #include <QToolBar>
 #include <QStatusBar>
 #include <QLabel>
@@ -55,6 +56,8 @@
 #include <QUrl>
 
 #include <iostream>
+
+extern bool fGenerateBitcoins;
 
 BitcoinGUI::BitcoinGUI(QWidget *parent):
     QMainWindow(parent),
@@ -124,14 +127,23 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     // Status bar notification icons
     QFrame *frameBlocks = new QFrame();
     frameBlocks->setContentsMargins(0,0,0,0);
-    frameBlocks->setMinimumWidth(56);
-    frameBlocks->setMaximumWidth(56);
+    frameBlocks->setMinimumWidth(((STATUSBAR_ICONSIZE + 3) * 3) - 1);
+    frameBlocks->setMaximumWidth(((STATUSBAR_ICONSIZE + 4) * 4) - 1);
     QHBoxLayout *frameBlocksLayout = new QHBoxLayout(frameBlocks);
     frameBlocksLayout->setContentsMargins(3,0,3,0);
     frameBlocksLayout->setSpacing(3);
+    miningUpdateTimer = new QTimer();
+    miningUpdateTimer->setInterval(5000);
+    miningUpdateTimer->setSingleShot(false);
+    labelMiningIcon = new QLabel();
+    labelMiningIcon->setPixmap(QIcon(":/icons/tx_mined").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
+    connect(miningUpdateTimer, SIGNAL(timeout()), this, SLOT(refreshMiningStatus()));
+    refreshMiningStatusStart();
     labelEncryptionIcon = new QLabel();
     labelConnectionsIcon = new QLabel();
     labelBlocksIcon = new QLabel();
+    frameBlocksLayout->addStretch();
+    frameBlocksLayout->addWidget(labelMiningIcon);
     frameBlocksLayout->addStretch();
     frameBlocksLayout->addWidget(labelEncryptionIcon);
     frameBlocksLayout->addStretch();
@@ -170,8 +182,6 @@ BitcoinGUI::~BitcoinGUI()
     delete appMenuBar;
 #endif
 }
-
-extern bool fGenerateBitcoins;
 
 void BitcoinGUI::createActions()
 {
@@ -254,7 +264,6 @@ void BitcoinGUI::createActions()
     generateAction = new QAction(QIcon(":/icons/tx_mined"), tr("&Generate Bitcoins"), this);
     generateAction->setToolTip(tr("Help secure the network by generating blocks in the background"));
     generateAction->setCheckable(true);
-    generateAction->setChecked(fGenerateBitcoins);
 
     connect(quitAction, SIGNAL(triggered()), qApp, SLOT(quit()));
     connect(optionsAction, SIGNAL(triggered()), this, SLOT(optionsClicked()));
@@ -754,6 +763,25 @@ void BitcoinGUI::handleURL(QString strURL)
     sendCoinsPage->handleURL(strURL);
 }
 
+void BitcoinGUI::refreshMiningStatus()
+{
+    if (!vnThreadsRunning[THREAD_MINER])
+    {
+        labelMiningIcon->hide();
+        miningUpdateTimer->stop();
+        generateAction->setChecked(false);
+        return;
+    }
+
+    if (GetTimeMillis() - nHPSTimerStart < 8000 && dHashesPerSec > 1)
+    {
+        QString strHashrate = QString::number(dHashesPerSec / 1000000) + " " + tr("megahashes");
+        labelMiningIcon->setToolTip(tr("Mining at %1 per second.").arg(strHashrate));
+    }
+    else
+        labelMiningIcon->setToolTip(tr("Miner starting..."));
+}
+
 void BitcoinGUI::setEncryptionStatus(int status)
 {
     switch(status)
@@ -839,4 +867,18 @@ void BitcoinGUI::generate(bool checked)
     if(!walletModel)
         return;
     walletModel->GenerateBitcoins(checked);
+    refreshMiningStatusStart();
+}
+
+void BitcoinGUI::refreshMiningStatusStart()
+{
+    if (!fGenerateBitcoins)
+    {
+        labelMiningIcon->hide();
+        return;
+    }
+    labelMiningIcon->show();
+    generateAction->setChecked(true);
+    refreshMiningStatus();
+    miningUpdateTimer->start();
 }

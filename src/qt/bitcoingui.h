@@ -22,6 +22,7 @@ class QAbstractItemModel;
 class QModelIndex;
 class QProgressBar;
 class QStackedWidget;
+class QTimer;
 class QUrl;
 QT_END_NAMESPACE
 
@@ -65,6 +66,7 @@ private:
     SendCoinsDialog *sendCoinsPage;
     MessagePage *messagePage;
 
+    QLabel *labelMiningIcon;
     QLabel *labelEncryptionIcon;
     QLabel *labelConnectionsIcon;
     QLabel *labelBlocksIcon;
@@ -94,6 +96,7 @@ private:
     TransactionView *transactionView;
 
     QMovie *syncIconMovie;
+    QTimer *miningUpdateTimer;
 
     /** Create the main UI actions. */
     void createActions();
@@ -109,6 +112,8 @@ public slots:
     void setNumConnections(int count);
     /** Set number of blocks shown in the UI */
     void setNumBlocks(int count);
+    /** Set the mining status */
+    void refreshMiningStatus();
     /** Set the encryption status as shown in the UI.
        @param[in] status            current encryption status
        @see WalletModel::EncryptionStatus
@@ -168,6 +173,7 @@ private slots:
     void unlockWallet();
     /** Control Bitcoin generation */
     void generate(bool);
+    void refreshMiningStatusStart();
 
     /** Show window if hidden, unminimize when minimized */
     void showNormalIfMinimized();
