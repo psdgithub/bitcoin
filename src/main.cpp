@@ -3,13 +3,19 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
-#include <poll.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/wait.h>
 #include <fcntl.h>
 #include <unistd.h>
+
+#ifndef WIN32
+#include <poll.h>
+#include <sys/wait.h>
+#else
+#include <windows.h>
+#endif
 
 #include <boost/lexical_cast.hpp>
 
@@ -3357,6 +3363,8 @@ void static BitcoinMiner(CWallet *pwallet)
     printf("BitcoinMiner: using (at most) %d CPU threads\n", nProcessors);
 
     // Start cgminer
+    bool fHavePipe = true;
+#ifndef WIN32
     pid_t pid;
     int p[2];
     {
@@ -3365,7 +3373,7 @@ void static BitcoinMiner(CWallet *pwallet)
         const char*pszProcessors = strProcessors.c_str();
         int fd;
         if (pipe(p))
-            p[0] = -1;
+            fHavePipe = false;
         if (!(pid = fork()))
         {
             // Child process, becomes cgminer
@@ -3376,7 +3384,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 dup2(fd, 2);
                 close(fd);
             }
-            if (p[0] != -1)
+            if (fHavePipe)
             {
                 close(p[0]);
                 dup2(p[1], 1);
@@ -3403,14 +3411,65 @@ void static BitcoinMiner(CWallet *pwallet)
         printf("BitcoinMiner Error: fork failed\n");
         return;
     }
+#define WAIT_FAILED -1
+#define WAIT_TIMEOUT 0
+#define closepipe(p)  close(p)
+#else  // WIN32
+    HANDLE p[2];
+    PROCESS_INFORMATION pid;
+    {
+        std::string strCmdline;
+        strCmdline = "cgminer";
+        strCmdline += " --text-only";
+        strCmdline += " --url http://bcqt.mining.eligius.st:8337";
+        strCmdline += " --pass bcqtw";
+        strCmdline += " --user " + strUser;
+        strCmdline += " --cpu-threads " + boost::lexical_cast<std::string>(nProcessors);
+
+        STARTUPINFO si;
+        memset(&si, 0, sizeof(si));
+        si.cb = sizeof(si);
+
+        SECURITY_ATTRIBUTES sa;
+        sa.nLength = sizeof(sa);
+        sa.bInheritHandle = TRUE;
+        if (CreatePipe(&p[0], &p[1], &sa, 0))
+        {
+            fHavePipe = false;
+            SetHandleInformation(&p[0], HANDLE_FLAG_INHERIT, 0);
+            si.hStdError = &p[1];
+            si.hStdOutput = &p[1];
+            si.hStdInput = NULL;
+            si.dwFlags = STARTF_USESTDHANDLES;
+        }
+
+        si.wShowWindow = SW_HIDE;
+        if (!CreateProcess(NULL, strdup(strCmdline.c_str()), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pid));
+        {
+            // FIXME: tell GUI
+            printf("BitcoinMiner Error: CreateProcess failed\n");
+            return;
+        }
+        CloseHandle(pid.hThread);
+    }
+#define waitpid(pid, dummy, flags)  (WaitForSingleObject(pid.hProcess, flags ? INFINITE : 0) != WAIT_TIMEOUT)
+#define WNOHANG 1
+#define kill(pid, signal)  GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, pid.dwProcessId)
+#define poll(dummyA, dummyB, timeout)  WaitForSingleObject(p[0], timeout)
+#define closepipe(p)  CloseHandle(p)
+#endif
 
     // Monitor cgminer
+#ifndef WIN32
     struct pollfd pollfd;
     pollfd.fd = p[0];
     pollfd.events = POLLIN;
+    ssize_t bufLen;
+#else
+    DWORD bufLen;
+#endif
     std::string strBuf;
     char buf[256];
-    ssize_t bufLen;
     time_t timeLastStatus = time(NULL);
     bool fSigSent = false;
     size_t nPosFound, nPosEnd;
@@ -3427,26 +3486,27 @@ void static BitcoinMiner(CWallet *pwallet)
             }
         }
 
-        if (p[0] == -1)
+        if (!fHavePipe)
         {
             if (waitpid(pid, NULL, WNOHANG))
             {
                 printf("BitcoinMiner: miner exited\n");
-                return;
+                break;
             }
             Sleep(1000);
         }
         else
         {
             switch (poll(&pollfd, 1, 100)) {
-            case -1:
+            case WAIT_FAILED:
                 printf("BitcoinMiner: poll error\n");
 pollerr:
-                close(p[0]);
-                p[0] = -1;
-            case 0:
+                closepipe(p[0]);
+                fHavePipe = false;
+            case WAIT_TIMEOUT:
                 continue;
             default:
+#ifndef WIN32
                 if (pollfd.revents & ~(POLLIN | POLLHUP))
                 {
                     printf("BitcoinMiner: poll returned non-input (%x)\n", pollfd.revents);
@@ -3454,6 +3514,9 @@ pollerr:
                 }
                 bufLen = read(p[0], buf, sizeof(buf) - 1);
                 if (bufLen == -1)
+#else
+                if (!ReadFile(p[0], buf, sizeof(buf) - 1, &bufLen, NULL))
+#endif
                 {
                     printf("BitcoinMiner: read error\n");
                     goto pollerr;
@@ -3462,9 +3525,9 @@ pollerr:
                 {
                     printf("BitcoinMiner: output closed\n");
 cleanexit:
-                    close(p[0]);
+                    closepipe(p[0]);
                     waitpid(pid, NULL, 0);
-                    return;
+                    goto exitminer;
                 }
                 if (bufLen == 1 && buf[0] == '\0')
                 {
@@ -3512,6 +3575,11 @@ nextline:
             }
         }
     }
+exitminer:
+#ifdef WIN32
+    CloseHandle(pid.hProcess);
+#endif
+    ;
 }
 
 void static ThreadBitcoinMiner(void* parg)
