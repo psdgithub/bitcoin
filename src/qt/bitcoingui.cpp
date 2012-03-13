@@ -864,6 +864,9 @@ void BitcoinGUI::showNormalIfMinimized()
 
 void BitcoinGUI::generate(bool checked)
 {
+    clientModel->getOptionsModel()->setData(
+        clientModel->getOptionsModel()->index(OptionsModel::GenerateBitcoins),
+        checked, Qt::EditRole);
     if(!walletModel)
         return;
     walletModel->GenerateBitcoins(checked);

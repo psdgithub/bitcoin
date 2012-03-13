@@ -24,6 +24,8 @@ void OptionsModel::Init()
 
     // These are shared with core bitcoin; we want
     // command-line options to override the GUI settings:
+    if (settings.contains("fGenerateBitcoins"))
+        SoftSetBoolArg("-gen", settings.value("fGenerateBitcoins").toBool());
     if (settings.contains("fUseUPnP"))
         SoftSetBoolArg("-upnp", settings.value("fUseUPnP").toBool());
     if (settings.contains("addrProxy") && settings.value("fUseProxy").toBool())
@@ -54,7 +56,7 @@ bool OptionsModel::Upgrade()
         }
     }
     QList<QString> boolOptions;
-    boolOptions << "bDisplayAddresses" << "fMinimizeToTray" << "fMinimizeOnClose" << "fUseProxy" << "fUseUPnP";
+    boolOptions << "bDisplayAddresses" << "fMinimizeToTray" << "fMinimizeOnClose" << "fUseProxy" << "fUseUPnP" << "fGenerateBitcoins";
     foreach(QString key, boolOptions)
     {
         bool value = false;
@@ -101,6 +103,8 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
         QSettings settings;
         switch(index.row())
         {
+        case GenerateBitcoins:
+            return settings.value("fGenerateBitcoins", GetBoolArg("-gen", false));
         case StartAtStartup:
             return QVariant(GetStartOnSystemStartup());
         case MinimizeToTray:
@@ -128,6 +132,8 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
     return QVariant();
 }
 
+extern bool fGenerateBitcoins;
+
 bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, int role)
 {
     bool successful = true; /* set to false on parse error */
@@ -136,6 +142,10 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
         QSettings settings;
         switch(index.row())
         {
+        case GenerateBitcoins:
+            fGenerateBitcoins = value.toBool();
+            settings.setValue("fGenerateBitcoins", fGenerateBitcoins);
+            break;
         case StartAtStartup:
             successful = SetStartOnSystemStartup(value.toBool());
             break;
