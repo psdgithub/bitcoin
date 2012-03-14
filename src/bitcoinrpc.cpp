@@ -1898,8 +1898,8 @@ Value getmemorypool(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 2)
         throw runtime_error(
-            "getmemorypool [data] [extra]\n"
-            "If [data] is not specified, returns data needed to construct a block to work on:\n"
+            "getmemorypool\n"
+            "Returns data needed to construct a block to work on:\n"
             "  \"version\" : block version\n"
             "  \"previousblockhash\" : hash of current highest block\n"
             "  \"transactions\" : contents of non-coinbase transactions that should be included in the next block\n"
@@ -1909,7 +1909,7 @@ Value getmemorypool(const Array& params, bool fHelp)
             "  \"mintime\" : minimum timestamp appropriate for next block\n"
             "  \"curtime\" : current timestamp\n"
             "  \"bits\" : compressed target of next block\n"
-            "If [data] is specified, tries to solve the block and returns true if it was successful.");
+            "Completed blocks may be submitted via the \"submitblock\" JSON-RPC call.");
 
     if (params.size() > 0 && params[0].type() == str_type)
         return submitblock(params, fHelp).type() == null_type;
