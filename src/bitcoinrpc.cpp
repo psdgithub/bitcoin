@@ -1911,7 +1911,9 @@ Value getmemorypool(const Array& params, bool fHelp)
             "  \"bits\" : compressed target of next block\n"
             "If [data] is specified, tries to solve the block and returns true if it was successful.");
 
-    if (params.size() == 0)
+    if (params.size() > 0 && params[0].type() == str_type)
+        return submitblock(params, fHelp).type() == null_type;
+
     {
         if (vNodes.empty())
             throw JSONRPCError(-9, "Bitcoin is not connected!");
@@ -1987,8 +1989,6 @@ Value getmemorypool(const Array& params, bool fHelp)
 
         return result;
     }
-    else
-        return submitblock(params, fHelp).type() == null_type;
 }
 
 Value getblockhash(const Array& params, bool fHelp)
