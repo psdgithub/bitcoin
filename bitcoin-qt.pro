@@ -296,6 +296,11 @@ windows:DEFINES += WIN32
 windows:RC_FILE = src/qt/res/bitcoin-qt.rc
 
 windows:!contains(MINGW_THREAD_BUGFIX, 0) {
+    # At least qmake's win32-g++-cross profile links with non-threadsafe
+    # mingw libraries. This works around it by linking to the threadsafe
+    # version instead, and does so in a way compatible with static linking.
+    # It can be turned off with MINGW_THREAD_BUGFIX=0, just in case it causes
+    # any problems on some untested qmake profile now or in the future.
     LIBS +=  -lmingwthrd
     DEFINES += _MT
     QMAKE_LIBS_QT_ENTRY -= -lmingw32
