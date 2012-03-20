@@ -291,10 +291,15 @@ isEmpty(BOOST_INCLUDE_PATH) {
     macx:BOOST_INCLUDE_PATH = /opt/local/include
 }
 
-windows:LIBS += -lmingwthrd -lws2_32 -lshlwapi
-windows:DEFINES += _MT WIN32
+windows:LIBS += -lws2_32 -lshlwapi
+windows:DEFINES += WIN32
 windows:RC_FILE = src/qt/res/bitcoin-qt.rc
-windows:QMAKE_LIBS_QT_ENTRY -= -lmingw32
+
+windows:!contains(MINGW_THREAD_BUGFIX, 0) {
+    LIBS +=  -lmingwthrd
+    DEFINES += _MT
+    QMAKE_LIBS_QT_ENTRY -= -lmingw32
+}
 
 !windows:!mac {
     DEFINES += LINUX
