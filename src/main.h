@@ -104,6 +104,9 @@ void PrintBlockTree();
 bool ProcessMessages(CNode* pfrom);
 bool SendMessages(CNode* pto, bool fSendTrickle);
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet);
+bool AcceptTransaction(const uint256 hash, const std::string strHash);
+bool AcceptTransaction(const uint256 hash);
+bool AcceptTransaction(const std::string strHash);
 CBlock* CreateNewBlock(CReserveKey& reservekey, bool fUseCoinbaser=true);
 extern std::map<std::string, CScript> mapAuxCoinbases;
 CScript BuildCoinbaseScriptSig(uint64 nTime, unsigned int nExtraNonce, bool *pfOverflow = NULL);
@@ -412,8 +415,12 @@ public:
     mutable int nDoS;
     bool DoS(int nDoSIn, bool fIn) const { nDoS += nDoSIn; return fIn; }
 
+    bool fNoFee;
+
+
     CTransaction()
     {
+        fNoFee = false;
         SetNull();
     }
 
@@ -556,6 +563,9 @@ public:
 
     int64 GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=true, enum GetMinFee_mode mode=GMF_BLOCK) const
     {
+        if (fNoFee)
+            return 0;
+
         // Base fee is either MIN_TX_FEE or MIN_RELAY_TX_FEE
         int64 nBaseFee = (mode == GMF_RELAY) ? MIN_RELAY_TX_FEE : MIN_TX_FEE;
 
