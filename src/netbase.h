@@ -9,6 +9,7 @@
 
 #ifdef WIN32
 #define _WIN32_WINNT 0x0501
+#define NOMINMAX
 #include <winsock2.h>
 #include <mswsock.h>
 #include <ws2tcpip.h>
@@ -29,6 +30,10 @@
 
 extern int nConnectTimeout;
 
+#ifdef WIN32
+// In MSVC, this is defined as a macro, undefine it to prevent a compile and link error
+#undef SetPort
+#endif
 
 // IP address (IPv6, or IPv4 using mapped IPv6 range (::FFFF:0:0/96))
 class CNetAddr
