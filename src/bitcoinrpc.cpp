@@ -1908,12 +1908,27 @@ Value getwork(const Array& params, bool fHelp)
 }
 
 
+Value submitblock(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 2)
+        throw runtime_error(
+            "submitblock <data> [extra]\n"
+            "Tries to solve a block and returns null if it was successful (and a string explaining why it wasn't, otherwise).");
+
+    // Parse parameters
+    CDataStream ssBlock(ParseHex(params[0].get_str()));
+    CBlock pblock;
+    ssBlock >> pblock;
+
+    return ProcessBlock(NULL, &pblock) ? Value::null : "rejected";
+}
+
 Value getmemorypool(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() > 1)
+    if (fHelp || params.size() > 2)
         throw runtime_error(
-            "getmemorypool [data]\n"
-            "If [data] is not specified, returns data needed to construct a block to work on:\n"
+            "getmemorypool\n"
+            "Returns data needed to construct a block to work on:\n"
             "  \"version\" : block version\n"
             "  \"previousblockhash\" : hash of current highest block\n"
             "  \"transactions\" : contents of non-coinbase transactions that should be included in the next block\n"
@@ -1923,9 +1938,11 @@ Value getmemorypool(const Array& params, bool fHelp)
             "  \"mintime\" : minimum timestamp appropriate for next block\n"
             "  \"curtime\" : current timestamp\n"
             "  \"bits\" : compressed target of next block\n"
-            "If [data] is specified, tries to solve the block and returns true if it was successful.");
+            "Completed blocks may be submitted via the \"submitblock\" JSON-RPC call.");
 
-    if (params.size() == 0)
+    if (params.size() > 0 && params[0].type() == str_type)
+        return submitblock(params, fHelp).type() == null_type;
+
     {
         if (vNodes.empty())
             throw JSONRPCError(-9, "Bitcoin is not connected!");
@@ -1978,27 +1995,33 @@ Value getmemorypool(const Array& params, bool fHelp)
             aux.push_back(Pair((*it).first, HexStr(vchData.begin(), vchData.end())));
         }
 
+        uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+
+        static Array*paMutable = NULL;
+        if (!paMutable)
+        {
+            paMutable = new Array();
+            Array&aMutable = *paMutable;
+            aMutable.push_back("time");
+            aMutable.push_back("transactions");
+            aMutable.push_back("prevblock");
+        }
+
         Object result;
         result.push_back(Pair("version", pblock->nVersion));
         result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
         result.push_back(Pair("transactions", transactions));
         result.push_back(Pair("coinbaseaux", aux));
         result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
+        result.push_back(Pair("target", HexStr(BEGIN(hashTarget), END(hashTarget))));
         result.push_back(Pair("time", (int64_t)pblock->nTime));
         result.push_back(Pair("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1));
+        result.push_back(Pair("mutable", *paMutable));
+        result.push_back(Pair("noncerange", "00000000ffffffff"));
         result.push_back(Pair("curtime", (int64_t)GetAdjustedTime()));
         result.push_back(Pair("bits", HexBits(pblock->nBits)));
 
         return result;
-    }
-    else
-    {
-        // Parse parameters
-        CDataStream ssBlock(ParseHex(params[0].get_str()));
-        CBlock pblock;
-        ssBlock >> pblock;
-
-        return ProcessBlock(NULL, &pblock);
     }
 }
 
@@ -2099,6 +2122,7 @@ pair<string, rpcfn_type> pCallTable[] =
     make_pair("getwork",                &getwork),
     make_pair("listaccounts",           &listaccounts),
     make_pair("settxfee",               &settxfee),
+    make_pair("submitblock",            &submitblock),
     make_pair("getmemorypool",          &getmemorypool),
     make_pair("listsinceblock",         &listsinceblock),
     make_pair("dumpprivkey",            &dumpprivkey),
@@ -2129,6 +2153,7 @@ string pAllowInSafeMode[] =
     "walletlock",
     "validateaddress",
     "getwork",
+    "submitblock",
     "getmemorypool",
 };
 set<string> setAllowInSafeMode(pAllowInSafeMode, pAllowInSafeMode + sizeof(pAllowInSafeMode)/sizeof(pAllowInSafeMode[0]));
