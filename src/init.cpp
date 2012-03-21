@@ -360,7 +360,7 @@ bool AppInit2(int argc, char* argv[])
     if (fRequestShutdown)
     {
         printf("Shutdown requested. Exiting.\n");
-        return true;
+        return false;
     }
     printf(" block index %15"PRI64d"ms\n", GetTimeMillis() - nStart);
 

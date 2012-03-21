@@ -547,7 +547,7 @@ bool CTxDB::LoadBlockIndex()
     }
     pcursor->close();
 
-    if (!fRequestShutdown)
+    if (fRequestShutdown)
         return true;
 
     // Calculate bnChainWork
