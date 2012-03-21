@@ -128,6 +128,8 @@ bool AppInit(int argc, char* argv[])
 
 bool AppInit2(int argc, char* argv[])
 {
+    fStarting = true;
+
 #ifdef _MSC_VER
     // Turn off microsoft heap dump noise
     _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
@@ -229,7 +231,8 @@ bool AppInit2(int argc, char* argv[])
             "  -blocknotify=<cmd> "     + _("Execute command when the best block changes (%s in cmd is replaced by block hash)") + "\n" +
             "  -coinbaser=<cmd> \t  "   + _("Execute <cmd> to calculate coinbase payees") + "\n" +
             "  -keypool=<n>     \t  "   + _("Set key pool size to <n> (default: 100)") + "\n" +
-            "  -rescan          \t  "   + _("Rescan the block chain for missing wallet transactions") + "\n";
+            "  -rescan          \t  "   + _("Rescan the block chain for missing wallet transactions") + "\n" +
+            "  -loadblock=<file>\t  "   + _("Imports blocks from external blk000?.dat file") + "\n";
 
 #ifdef USE_SSL
         strUsage += string() +
@@ -361,6 +364,17 @@ bool AppInit2(int argc, char* argv[])
     if (!LoadBlockIndex())
         strErrors << _("Error loading blkindex.dat") << "\n";
     printf(" block index %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+
+    if (mapArgs.count("-loadblock"))
+    {
+        BOOST_FOREACH(string strFile, mapMultiArgs["-loadblock"])
+        {
+            CTxDB txdb("wb");
+            FILE *file = fopen(strFile.c_str(), "rb");
+            if (file)
+                LoadExternalBlockFile(file);
+        }
+    }
 
     InitMessage(_("Loading wallet..."));
     printf("Loading wallet...\n");
@@ -571,6 +585,8 @@ bool AppInit2(int argc, char* argv[])
         return false;
 
     RandAddSeedPerfmon();
+
+    fStarting = false;
 
     if (!CreateThread(StartNode, NULL))
         wxMessageBox(_("Error: CreateThread(StartNode) failed"), "Bitcoin");
