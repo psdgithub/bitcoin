@@ -110,6 +110,12 @@ public:
 
     CPubKey vchDefaultKey;
 
+    std::set<std::string> sendFromAddressRestriction;
+
+    void setSendFromAddressRestriction(std::string addresses);
+    void setSendFromAddressRestriction(std::set<std::string> addresses);
+    void clearSendFromAddressRestriction();
+
     // check whether we are allowed to upgrade (or already support) to the named feature
     bool CanSupportFeature(enum WalletFeature wf) { return nWalletMaxVersion >= wf; }
 
@@ -744,5 +750,29 @@ public:
 };
 
 bool GetWalletFile(CWallet* pwallet, std::string &strWalletFileOut);
+
+
+template<typename T>
+class CScopedSendFromAddressRestriction
+{
+private:
+    CWallet &_wallet;
+
+public:
+    CScopedSendFromAddressRestriction(CWallet& wallet, T addresses)
+    : _wallet(wallet)
+    {
+        if (addresses.empty())
+            return;
+
+        _wallet.setSendFromAddressRestriction(addresses);
+    }
+
+    ~CScopedSendFromAddressRestriction()
+    {
+        _wallet.clearSendFromAddressRestriction();
+    }
+};
+
 
 #endif
