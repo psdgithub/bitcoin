@@ -23,6 +23,7 @@
 #include "guiconstants.h"
 #include "askpassphrasedialog.h"
 #include "notificator.h"
+#include "coincontrolpage.h"
 #include "guiutil.h"
 #include "rpcconsole.h"
 
@@ -51,6 +52,7 @@
 #include <QFileDialog>
 #include <QDesktopServices>
 #include <QTimer>
+#include <QTableWidget>
 #include <QDragEnterEvent>
 #include <QUrl>
 #include <QStyle>
@@ -109,12 +111,15 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
 
     signVerifyMessageDialog = new SignVerifyMessageDialog(this);
 
+    coinControlPage = new CoinControlPage(this);
+
     centralWidget = new QStackedWidget(this);
     centralWidget->addWidget(overviewPage);
     centralWidget->addWidget(transactionsPage);
     centralWidget->addWidget(addressBookPage);
     centralWidget->addWidget(receiveCoinsPage);
     centralWidget->addWidget(sendCoinsPage);
+    centralWidget->addWidget(coinControlPage);
     setCentralWidget(centralWidget);
 
     // Create status bar
@@ -230,6 +235,12 @@ void BitcoinGUI::createActions()
     addressBookAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_5));
     tabGroup->addAction(addressBookAction);
 
+    coinControlAction = new QAction(QIcon(":/icons/bitcoin"), tr("&Coin control"), this);
+    coinControlAction->setStatusTip(tr("Manage address linkages"));
+    coinControlAction->setCheckable(true);
+    coinControlAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_6));
+    tabGroup->addAction(coinControlAction);
+
     connect(overviewAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(overviewAction, SIGNAL(triggered()), this, SLOT(gotoOverviewPage()));
     connect(sendCoinsAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
@@ -284,6 +295,8 @@ void BitcoinGUI::createActions()
     connect(changePassphraseAction, SIGNAL(triggered()), this, SLOT(changePassphrase()));
     connect(signMessageAction, SIGNAL(triggered()), this, SLOT(gotoSignMessageTab()));
     connect(verifyMessageAction, SIGNAL(triggered()), this, SLOT(gotoVerifyMessageTab()));
+    connect(coinControlAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
+    connect(coinControlAction, SIGNAL(triggered()), this, SLOT(gotoCoinControlPage()));
 }
 
 void BitcoinGUI::createMenuBar()
@@ -327,6 +340,7 @@ void BitcoinGUI::createToolBars()
     toolbar->addAction(receiveCoinsAction);
     toolbar->addAction(historyAction);
     toolbar->addAction(addressBookAction);
+    toolbar->addAction(coinControlAction);
 
     QToolBar *toolbar2 = addToolBar(tr("Actions toolbar"));
     toolbar2->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -391,6 +405,7 @@ void BitcoinGUI::setWalletModel(WalletModel *walletModel)
         receiveCoinsPage->setModel(walletModel->getAddressTableModel());
         sendCoinsPage->setModel(walletModel);
         signVerifyMessageDialog->setModel(walletModel);
+        coinControlPage->setModel(walletModel->getOptionsModel());
 
         setEncryptionStatus(walletModel->getEncryptionStatus());
         connect(walletModel, SIGNAL(encryptionStatusChanged(int)), this, SLOT(setEncryptionStatus(int)));
@@ -401,7 +416,15 @@ void BitcoinGUI::setWalletModel(WalletModel *walletModel)
 
         // Ask for passphrase if needed
         connect(walletModel, SIGNAL(requireUnlock()), this, SLOT(unlockWallet()));
+
+        toggleCoinControlTab(walletModel->getOptionsModel()->getCoinControlFeatures());
+        connect(walletModel->getOptionsModel(), SIGNAL(coinControlFeaturesChanged(bool)), this, SLOT(toggleCoinControlTab(bool)));
     }
+}
+
+void BitcoinGUI::toggleCoinControlTab(bool show)
+{
+    coinControlAction->setVisible(show);
 }
 
 void BitcoinGUI::createTrayIcon()
@@ -724,8 +747,25 @@ void BitcoinGUI::gotoReceiveCoinsPage()
 
 void BitcoinGUI::gotoSendCoinsPage()
 {
+    if (!coinControlPage->selectedAddresses().empty())
+    {
+        sendCoinsPage->setSendFromAddress(coinControlPage->selectedAddresses());
+        coinControlPage->clearSelection();
+    }
+
     sendCoinsAction->setChecked(true);
     centralWidget->setCurrentWidget(sendCoinsPage);
+
+    exportAction->setEnabled(false);
+    disconnect(exportAction, SIGNAL(triggered()), 0, 0);
+}
+
+void BitcoinGUI::gotoCoinControlPage()
+{
+    coinControlPage->UpdateTable();
+
+    coinControlAction->setChecked(true);
+    centralWidget->setCurrentWidget(coinControlPage);
 
     exportAction->setEnabled(false);
     disconnect(exportAction, SIGNAL(triggered()), 0, 0);
