@@ -252,6 +252,53 @@ bool CTransaction::ReadFromDisk(COutPoint prevout)
 }
 
 
+//
+// Check transaction inputs, and make sure any
+// pay-to-script-hash transactions are evaluating IsStandard scripts
+//
+// Why bother? To avoid denial-of-service attacks; an attacker
+// can submit a standard HASH... OP_EQUAL transaction,
+// which will get accepted into blocks. The redemption
+// script can be anything; an attacker could use a very
+// expensive-to-check-upon-redemption script like:
+//   DUP CHECKSIG DROP ... repeated 100 times... OP_1
+//
+bool CTransaction::AreInputsStandard(const MapPrevTx& mapInputs) const
+{
+    if (IsCoinBase())
+        return true; // Coinbases don't use vin normally
+
+    for (int i = 0; i < vin.size(); i++)
+    {
+        const CTxOut& prev = GetOutputFor(vin[i], mapInputs);
+
+        vector<vector<unsigned char> > vSolutions;
+        txnouttype whichType;
+        // get the scriptPubKey corresponding to this input:
+        const CScript& prevScript = prev.scriptPubKey;
+        if (!Solver(prevScript, whichType, vSolutions))
+            return false;
+        if (whichType == TX_SCRIPTHASH)
+        {
+            vector<vector<unsigned char> > stack;
+
+            if (!EvalScript(stack, vin[i].scriptSig, *this, i, 0))
+                return false;
+            if (stack.empty())
+                return false;
+            CScript subscript(stack.back().begin(), stack.back().end());
+            vector<vector<unsigned char> > vSolutions2;
+            txnouttype whichType2;
+            if (!Solver(subscript, whichType2, vSolutions2))
+                return false;
+            if (whichType2 == TX_SCRIPTHASH)
+                return false;
+        }
+    }
+
+    return true;
+}
+
 
 int CMerkleTx::SetMerkleBranch(const CBlock* pblock)
 {
@@ -429,16 +476,16 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
             return error("AcceptToMemoryPool() : FetchInputs failed %s", hash.ToString().substr(0,10).c_str());
         }
 
-        // Safety limits
-        unsigned int nSize = ::GetSerializeSize(*this, SER_NETWORK);
-        // Checking ECDSA signatures is a CPU bottleneck, so to avoid denial-of-service
-        // attacks disallow transactions with more than one SigOp per 34 bytes.
-        // 34 bytes because a TxOut is:
-        //   20-byte address + 8 byte bitcoin amount + 5 bytes of ops + 1 byte script length
-        if (GetSigOpCount() > nSize / 34 || nSize < 100)
-            return error("AcceptToMemoryPool() : nonstandard transaction");
+        // Check for non-standard pay-to-script-hash in inputs
+        if (!AreInputsStandard(mapInputs) && !fTestNet)
+            return error("AcceptToMemoryPool() : nonstandard transaction input");
+
+        // Note: if you modify this code to accept non-standard transactions, then
+        // you should add code here to check that the transaction does a
+        // reasonable number of ECDSA signature verifications.
 
         int64 nFees = GetValueIn(mapInputs)-GetValueOut();
+        unsigned int nSize = ::GetSerializeSize(*this, SER_NETWORK);
 
         // Don't accept it if it can't get into a block
         if (nFees < GetMinFee(1000, true, true))

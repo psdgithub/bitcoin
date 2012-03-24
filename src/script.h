@@ -24,6 +24,17 @@ enum
 };
 
 
+enum txnouttype
+{
+    TX_NONSTANDARD,
+    // 'standard' transaction types:
+    TX_PUBKEY,
+    TX_PUBKEYHASH,
+    TX_SCRIPTHASH,
+    TX_MULTISIG,
+};
+
+const char* GetTxnOutputType(txnouttype t);
 
 enum opcodetype
 {
@@ -162,6 +173,8 @@ enum opcodetype
 
 
     // template matching params
+    OP_SMALLINTEGER = 0xfa,
+    OP_PUBKEYS = 0xfb,
     OP_PUBKEYHASH = 0xfd,
     OP_PUBKEY = 0xfe,
 
@@ -619,10 +632,9 @@ public:
 
     bool IsPayToScriptHash() const;
 
+    // Called by CTransaction::IsStandard
     bool IsPushOnly() const
     {
-        if (size() > 200)
-            return false;
         const_iterator pc = begin();
         while (pc < end())
         {
@@ -661,7 +673,6 @@ public:
     {
         SetBitcoinAddress(CBitcoinAddress(vchPubKey));
     }
-
 
     void PrintHex() const
     {
@@ -705,6 +716,8 @@ public:
 
 bool EvalScript(std::vector<std::vector<unsigned char> >& stack, const CScript& script, const CTransaction& txTo, unsigned int nIn, int nHashType);
 
+bool EvalScript(std::vector<std::vector<unsigned char> >& stack, const CScript& script, const CTransaction& txTo, unsigned int nIn, int nHashType);
+bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, std::vector<std::vector<unsigned char> >& vSolutionsRet);
 bool IsStandard(const CScript& scriptPubKey);
 bool IsMine(const CKeyStore& keystore, const CScript& scriptPubKey);
 bool ExtractAddress(const CScript& scriptPubKey, const CKeyStore* pkeystore, CBitcoinAddress& addressRet);

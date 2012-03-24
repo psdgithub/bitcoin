@@ -485,6 +485,17 @@ public:
         return (vin.size() == 1 && vin[0].prevout.IsNull());
     }
 
+    /** Check for standard transaction types
+        @param[in] mapInputsMap of previous transactions that have outputs we're spending
+        @return True if all inputs (scriptSigs) use only standard transaction forms
+        @see CTransaction::FetchInputs
+    */
+    bool AreInputsStandard(const MapPrevTx& mapInputs) const;
+
+    /** Count ECDSA signature operations the old-fashioned (pre-0.6) way
+        @return number of sigops this transaction's outputs will produce when spent
+        @see CTransaction::FetchInputs
+    */
     int GetSigOpCount() const
     {
         int n = 0;
@@ -507,8 +518,15 @@ public:
     bool IsStandard() const
     {
         BOOST_FOREACH(const CTxIn& txin, vin)
+        {
+            // Biggest 'standard' txin is a 3-signature 3-of-3 CHECKMULTISIG
+            // pay-to-script-hash, which is 3 ~80-byte signatures, 3
+            // ~65-byte public keys, plus a few script ops.
+            if (txin.scriptSig.size() > 500)
+                return false;
             if (!txin.scriptSig.IsPushOnly())
                 return error("nonstandard txin: %s", txin.scriptSig.ToString().c_str());
+        }
         BOOST_FOREACH(const CTxOut& txout, vout)
             if (!::IsStandard(txout.scriptPubKey))
                 return error("nonstandard txout: %s", txout.scriptPubKey.ToString().c_str());
