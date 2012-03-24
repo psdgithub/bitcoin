@@ -10,6 +10,29 @@
 using namespace std;
 
 
+static bool IsDisjoint(const set<string> &set1, const set<string> &set2)
+{
+  if (set1.empty() || set2.empty())
+    return true;
+
+  typename set<string>::const_iterator it1 = set1.begin(), it1End = set1.end();
+  typename set<string>::const_iterator it2 = set2.begin(), it2End = set2.end();
+
+  if (*it1 > *set2.rbegin() || *it2 > *set1.rbegin())
+    return true;
+
+  while(it1 != it1End && it2 != it2End) {
+    if (*it1 == *it2)
+      return false;
+    if (*it1 < *it2)
+      it1++;
+    else
+      it2++;
+  }
+
+  return true;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // mapWallet
@@ -1543,7 +1566,8 @@ std::map<std::string, int64> CWallet::GetAddressBalances()
 
 set< set<string> > CWallet::GetAddressGroupings()
 {
-  map< string, set<string> > groupings;
+  set< set<string> > groupings;
+  set<string> grouping;
 
   BOOST_FOREACH(PAIRTYPE(uint256, CWalletTx) walletEntry, mapWallet) {
     CWalletTx *pcoin = &walletEntry.second;
@@ -1559,60 +1583,47 @@ set< set<string> > CWallet::GetAddressGroupings()
       continue;
 
     if (pcoin->vin.size() > 0 && IsMine(pcoin->vin[0])) {
-      // group all in addrs with eachother
-      BOOST_FOREACH(CTxIn txin1, pcoin->vin) {
-        BOOST_FOREACH(CTxIn txin2, pcoin->vin) {
-          CWalletTx tx1 = mapWallet[txin1.prevout.hash];
-          CWalletTx tx2 = mapWallet[txin2.prevout.hash];
-          string addr1 = tx1.GetAddressOfTxOut(txin1.prevout.n);
-          string addr2 = tx2.GetAddressOfTxOut(txin2.prevout.n);
-          groupings[addr1].insert(addr2);
-        }
-      }
+      // group all input addresses with each other
+      BOOST_FOREACH(CTxIn txin, pcoin->vin)
+        grouping.insert(mapWallet[txin.prevout.hash].GetAddressOfTxOut(txin.prevout.n));
 
-      // group change with first in addr, only need to group w first cuz all in addrs already grouped
-      BOOST_FOREACH(CTxOut txout, pcoin->vout) {
+      // group change with input addresses
+      BOOST_FOREACH(CTxOut txout, pcoin->vout)
         if (IsChange(txout)) {
           CWalletTx tx = mapWallet[pcoin->vin[0].prevout.hash];
           string addr = tx.GetAddressOfTxOut(pcoin->vin[0].prevout.n);
           CBitcoinAddress txoutAddr;
           ExtractAddress(txout.scriptPubKey, txoutAddr);
-          groupings[addr].insert(txoutAddr.ToString());
+          grouping.insert(txoutAddr.ToString());
         }
-      }
+      groupings.insert(grouping);
+      grouping.clear();
     }
 
     // group lone addrs by themselves
-    for (int i = 0; i < pcoin->vout.size(); i++) {
-      if (!IsMine(pcoin->vout[i]))  continue;
-      string addr = pcoin->GetAddressOfTxOut(i);
-      groupings[addr].insert(addr);
-    }
-  }
-
-  set<string> addresses;
-  BOOST_FOREACH(PAIRTYPE(string, set<string>) grouping, groupings)
-    addresses.insert(grouping.first);
-
-  BOOST_FOREACH(string address, addresses) {
-    set<string> expanded;
-    ExpandGrouping(groupings, address, expanded);
-    BOOST_FOREACH(string addr, expanded)  groupings[addr] = expanded;
+    for (int i = 0; i < pcoin->vout.size(); i++)
+      if (IsMine(pcoin->vout[i])) {
+        grouping.insert(pcoin->GetAddressOfTxOut(i));
+        groupings.insert(grouping);
+        grouping.clear();
+      }
   }
 
   set< set<string> > uniqueGroupings;
-  BOOST_FOREACH(PAIRTYPE(string, set<string>) grouping, groupings)
-    uniqueGroupings.insert(grouping.second);
-  
-  return uniqueGroupings;
-}
+  BOOST_FOREACH(set<string> grouping, groupings) {
+    set<string> merged = grouping;
+    for (set< set<string> >::iterator it = uniqueGroupings.begin(); it != uniqueGroupings.end(); ) {
+      if (IsDisjoint(*it, grouping))
+          ++it;
+      else {
+        merged.insert(it->begin(), it->end());
+        uniqueGroupings.erase(it++); // erase() invalidates the iterator it is passed.  but 'it++' is only a copy of 'it' so that's ok
+      }
+    }
+    uniqueGroupings.insert(merged);
+  }
 
-void CWallet::ExpandGrouping(map< string, set<string> > &groupings, string address, set<string> &expanded)
-{
-  if (expanded.count(address))  return;
-  expanded.insert(address);
-  BOOST_FOREACH(string expandAddress, groupings[address])
-    ExpandGrouping(groupings, expandAddress, expanded);
+  return uniqueGroupings;
 }
 
 vector<unsigned char> CReserveKey::GetReservedKey()
