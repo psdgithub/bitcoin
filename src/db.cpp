@@ -163,7 +163,8 @@ void CDB::Close()
         nMinutes = 2;
     if (strFile == "blkindex.dat" && IsInitialBlockDownload() && nBestHeight % 5000 != 0)
         nMinutes = 1;
-    dbenv.txn_checkpoint(0, nMinutes, 0);
+    if (!fStarting)
+        dbenv.txn_checkpoint(0, nMinutes, 0);
 
     CRITICAL_BLOCK(cs_db)
         --mapFileUseCount[strFile];
