@@ -142,7 +142,6 @@ public:
     int64 GetOldestKeyPoolTime();
     void GetAllReserveAddresses(std::set<CBitcoinAddress>& setAddress);
 
-    void ExpandGrouping(std::map< std::string, std::set<std::string> > &groupings, std::string address, std::set<std::string> &expanded);
     std::set< std::set<std::string> > GetAddressGroupings();
     std::map<std::string, int64> GetAddressBalances();
 

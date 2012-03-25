@@ -72,16 +72,27 @@ void CoinControlPage::sendFromSelectedAddress(QTableWidgetItem *item)
 void CoinControlPage::UpdateTable() {
   map<string, int64> balances = pwalletMain->GetAddressBalances();
   set< set<string> > groupings = pwalletMain->GetAddressGroupings();
-  set< set<string> > nonZeroGroupings;
+  vector< PAIRTYPE(int64, set<string>) > nonZeroGroupings;
 
-  BOOST_FOREACH(set<string> addresses, groupings)
+  BOOST_FOREACH(set<string> addresses, groupings) {
+    int64 balance = 0;
     BOOST_FOREACH(string address, addresses)
-      if (balances[address] > 0)
-        nonZeroGroupings.insert(addresses);
+      balance += balances[address];
+    if (balance > 0)
+      nonZeroGroupings.push_back(make_pair(balance, addresses));
+  }
+  sort(nonZeroGroupings.begin(), nonZeroGroupings.end());
 
   table->setRowCount(0);
 
-  BOOST_FOREACH(set<string> addresses, nonZeroGroupings) {
+  bool first = true;
+  BOOST_FOREACH(PAIRTYPE(uint256, set<string>) grouping, nonZeroGroupings) {
+    set<string> addresses = grouping.second;
+    if (first)
+      first = false;
+    else
+      table->insertRow(0);
+
     vector<string> sortedAddresses(addresses.begin(), addresses.end());
     sort(sortedAddresses.begin(), sortedAddresses.end(), boost::lambda::var(balances)[boost::lambda::_1] < boost::lambda::var(balances)[boost::lambda::_2]);
 
@@ -106,6 +117,5 @@ void CoinControlPage::UpdateTable() {
         table->setItem(0, 3, new QTableWidgetItem(QString::fromStdString("-")));
       }
     }
-    table->insertRow(0);
   }
 }
