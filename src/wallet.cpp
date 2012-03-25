@@ -15,8 +15,8 @@ static bool IsDisjoint(const set<string> &set1, const set<string> &set2)
   if (set1.empty() || set2.empty())
     return true;
 
-  typename set<string>::const_iterator it1 = set1.begin(), it1End = set1.end();
-  typename set<string>::const_iterator it2 = set2.begin(), it2End = set2.end();
+  set<string>::const_iterator it1 = set1.begin(), it1End = set1.end();
+  set<string>::const_iterator it2 = set2.begin(), it2End = set2.end();
 
   if (*it1 > *set2.rbegin() || *it2 > *set1.rbegin())
     return true;
