@@ -521,7 +521,7 @@ bool CTxDB::LoadBlockIndex()
         // Unserialize
         string strType;
         ssKey >> strType;
-        if (strType == "blockindex")
+        if (strType == "blockindex" && !fRequestShutdown)
         {
             CDiskBlockIndex diskindex;
             ssValue >> diskindex;
@@ -548,10 +548,13 @@ bool CTxDB::LoadBlockIndex()
         }
         else
         {
-            break;
+            break; // if shutdown requested or finished loading block index
         }
     }
     pcursor->close();
+
+    if (fRequestShutdown)
+        return true;
 
     // Calculate bnChainWork
     vector<pair<int, CBlockIndex*> > vSortedByHeight;
