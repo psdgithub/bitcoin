@@ -32,6 +32,8 @@ bool fTestNet = false;
 bool fNoListen = false;
 bool fLogTimestamps = false;
 CMedianFilter<int64> vTimeOffsets(200,0);
+FILE* fileout = NULL;
+bool fReopenDebugLog = false;
 
 
 
@@ -155,6 +157,13 @@ int GetRandInt(int nMax)
 
 
 
+string GetDebugLogName()
+{
+    char pszFile[MAX_PATH+100];
+    GetDataDir(pszFile);
+    strlcat(pszFile, "/debug.log", sizeof(pszFile));
+    return pszFile;
+}
 
 inline int OutputDebugStringF(const char* pszFormat, ...)
 {
@@ -170,19 +179,27 @@ inline int OutputDebugStringF(const char* pszFormat, ...)
     else
     {
         // print to debug.log
-        static FILE* fileout = NULL;
 
         if (!fileout)
         {
-            char pszFile[MAX_PATH+100];
-            GetDataDir(pszFile);
-            strlcat(pszFile, "/debug.log", sizeof(pszFile));
+            const char* pszFile = GetDebugLogName().c_str();
             fileout = fopen(pszFile, "a");
             if (fileout) setbuf(fileout, NULL); // unbuffered
         }
         if (fileout)
         {
             static bool fStartedNewLine = true;
+#ifndef WIN32
+            flockfile(fileout);
+
+            // reopen the log file, if requested
+            if (fReopenDebugLog) {
+                fReopenDebugLog = false;
+                const char* pszFile = GetDebugLogName().c_str();
+                if (freopen(pszFile,"a",fileout) != NULL)
+                    setbuf(fileout, NULL); // unbuffered
+            }
+#endif
 
             // Debug print useful for profiling
             if (fLogTimestamps && fStartedNewLine)
@@ -196,6 +213,9 @@ inline int OutputDebugStringF(const char* pszFormat, ...)
             va_start(arg_ptr, pszFormat);
             ret = vfprintf(fileout, pszFormat, arg_ptr);
             va_end(arg_ptr);
+#ifndef WIN32
+            funlockfile(fileout);
+#endif
         }
     }
 
