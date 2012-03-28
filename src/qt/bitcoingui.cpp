@@ -744,12 +744,19 @@ void BitcoinGUI::dropEvent(QDropEvent *event)
 {
     if(event->mimeData()->hasUrls())
     {
-        gotoSendCoinsPage();
+        int nValidUrisFound = 0;
         QList<QUrl> uris = event->mimeData()->urls();
         foreach(const QUrl &uri, uris)
         {
-            sendCoinsPage->handleURI(uri.toString());
+            if (sendCoinsPage->handleURI(uri.toString()))
+                nValidUrisFound++;
         }
+
+        // if valid URIs were found
+        if (nValidUrisFound)
+            gotoSendCoinsPage();
+        else
+            notificator->notify(Notificator::Warning, tr("URI handling"), tr("URI can not be parsed! This can be caused by an invalid address or malformed parameters."));
     }
 
     event->acceptProposedAction();
@@ -757,13 +764,18 @@ void BitcoinGUI::dropEvent(QDropEvent *event)
 
 void BitcoinGUI::handleURI(QString strURI)
 {
-    gotoSendCoinsPage();
-    sendCoinsPage->handleURI(strURI);
+    // URI has to be valid
+    if (sendCoinsPage->handleURI(strURI))
+    {
+        gotoSendCoinsPage();
 
-    if(!isActiveWindow())
-        activateWindow();
+        if (!isActiveWindow())
+            activateWindow();
 
-    showNormalIfMinimized();
+        showNormalIfMinimized();
+    }
+    else
+        notificator->notify(Notificator::Warning, tr("URI handling"), tr("URI can not be parsed! This can be caused by an invalid address or malformed parameters."));
 }
 
 void BitcoinGUI::setEncryptionStatus(int status)
