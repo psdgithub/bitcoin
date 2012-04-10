@@ -688,6 +688,23 @@ bool CNetAddr::IsRoutable() const
     return IsValid() && !(IsRFC1918() || IsRFC3927() || IsRFC4862() || (IsRFC4193() && !IsOnionCat() && !IsGarliCat()) || IsRFC4843() || IsLocal());
 }
 
+enum Network CNetAddr::GetNetwork() const
+{
+    if (!IsRoutable())
+        return NET_UNROUTABLE;
+
+    if (IsIPv4())
+        return NET_IPV4;
+
+    if (IsOnionCat())
+        return NET_TOR;
+
+    if (IsGarliCat())
+        return NET_I2P;
+
+    return NET_IPV6;
+}
+
 std::string CNetAddr::ToStringIP() const
 {
     if (IsIPv4())
