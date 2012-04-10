@@ -134,11 +134,11 @@ int main(int argc, char *argv[])
     for (int i = 1; i < argc; i++)
     {
         // limit length of parsed URIs to max. size of message queue messages
-        if (strlen(argv[i]) > 7 && strlen(argv[i]) <= BCQT_MQ_MAX_MESSAGE_SIZE && strncasecmp(argv[i], "bitcoin:", 8) == 0)
+        if (strlen(argv[i]) > 7 && strlen(argv[i]) <= IPC_MQ_MAX_MESSAGE_SIZE && strncasecmp(argv[i], "bitcoin:", 8) == 0)
         {
             const char* pszURI = argv[i];
             try {
-                interprocess::message_queue mq(interprocess::open_only, BCQT_MQ_NAME);
+                interprocess::message_queue mq(interprocess::open_only, IPC_MQ_NAME);
                 if (mq.try_send(pszURI, strlen(pszURI), 0))
                     exit(0);
                 else
@@ -260,22 +260,21 @@ int main(int argc, char *argv[])
                 {
                     window.show();
                 }
+#if !defined(MAC_OSX)
+// TODO: implement qtipcserver.cpp for Mac
 
                 // Place this here as guiref has to be defined if we dont want to lose URIs
                 ipcInit();
-
-#if !defined(MAC_OSX)
-// TODO: implement qtipcserver.cpp for Mac
 
                 // Check for URI in argv
                 for (int i = 1; i < argc; i++)
                 {
                     // only bother with this if IPC is initialized
-                    if (GlobalIpcState == IPC_INITIALIZED && strlen(argv[i]) > 7 && strlen(argv[i]) <= BCQT_MQ_MAX_MESSAGE_SIZE && strncasecmp(argv[i], "bitcoin:", 8) == 0)
+                    if (globalIpcState == IPC_INITIALIZED && strlen(argv[i]) > 7 && strlen(argv[i]) <= IPC_MQ_MAX_MESSAGE_SIZE && strncasecmp(argv[i], "bitcoin:", 8) == 0)
                     {
                         const char* pszURI = argv[i];
                         try {
-                            interprocess::message_queue mq(interprocess::open_only, BCQT_MQ_NAME);
+                            interprocess::message_queue mq(interprocess::open_only, IPC_MQ_NAME);
                             mq.try_send(pszURI, strlen(pszURI), 0);
                         }
                         catch (interprocess::interprocess_exception &ex) {

@@ -2,11 +2,8 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
-#include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
-#include <boost/tokenizer.hpp>
 
 #include "headers.h"
 #include "qtipcserver.h"
@@ -15,21 +12,21 @@ using namespace boost;
 using namespace std;
 
 /** global state definition */
-ipcState GlobalIpcState = IPC_NOT_INITIALIZED;
+ipcState globalIpcState = IPC_NOT_INITIALIZED;
 
 bool ipcRemove(const char* pszFilename)
 {
-    string strLogMessage = ("ipcRemove - possible stale message queue detected, trying to remove");
+    string logMessage = ("ipcRemove - possible stale message queue detected, trying to remove");
 
     /** try to remove the possible stale message queue */
-    if (interprocess::message_queue::remove(BCQT_MQ_NAME))
+    if (interprocess::message_queue::remove(IPC_MQ_NAME))
     {
-        printf("%s %s ...success\n", strLogMessage.c_str(), pszFilename);
+        printf("%s %s ...success\n", logMessage.c_str(), pszFilename);
         return true;
     }
     else
     {
-        printf("%s %s ...failed\n", strLogMessage.c_str(), pszFilename);
+        printf("%s %s ...failed\n", logMessage.c_str(), pszFilename);
         return false;
     }
 }
@@ -54,15 +51,15 @@ void ipcThread2(void* pArg)
     printf("ipcThread started\n");
 
     interprocess::message_queue* mq = (interprocess::message_queue*)pArg;
-    char strBuf[BCQT_MQ_MAX_MESSAGE_SIZE + 1];
+    char buffer[IPC_MQ_MAX_MESSAGE_SIZE + 1] = "";
     size_t nSize = 0;
-    unsigned int nPriority;
+    unsigned int nPriority = 0;
 
     loop
     {
-        if (mq->try_receive(&strBuf, sizeof(strBuf), nSize, nPriority))
+        if (mq->try_receive(&buffer, sizeof(buffer), nSize, nPriority))
         {
-            ThreadSafeHandleURI(std::string(strBuf, nSize));
+            ThreadSafeHandleURI(std::string(buffer, nSize));
             Sleep(1000);
         }
         else
@@ -75,30 +72,24 @@ void ipcThread2(void* pArg)
 
     /** cleanup allocated memory and set global IPC state to not initialized */
     delete mq;
-    GlobalIpcState = IPC_NOT_INITIALIZED;
+    globalIpcState = IPC_NOT_INITIALIZED;
 }
 
 void ipcInit(bool fUseMQModeOpenOnly, bool fInitCalledAfterRecovery)
 {
-#ifdef MAC_OSX
-    /** TODO: implement bitcoin: URI handling the Mac Way */
-    return;
-#endif
-
     /** set global IPC state variable to not initialized */
-    GlobalIpcState = IPC_NOT_INITIALIZED;
+    globalIpcState = IPC_NOT_INITIALIZED;
 
     interprocess::message_queue* mq = NULL;
 
     try {
         if (fUseMQModeOpenOnly)
-            mq = new interprocess::message_queue(interprocess::open_only, BCQT_MQ_NAME);
+            mq = new interprocess::message_queue(interprocess::open_only, IPC_MQ_NAME);
         else
-            mq = new interprocess::message_queue(interprocess::create_only, BCQT_MQ_NAME, BCQT_MQ_MAX_MESSAGES, BCQT_MQ_MAX_MESSAGE_SIZE);
+            mq = new interprocess::message_queue(interprocess::create_only, IPC_MQ_NAME, IPC_MQ_MAX_MESSAGES, IPC_MQ_MAX_MESSAGE_SIZE);
     }
     catch (interprocess::interprocess_exception &ex) {
 #ifdef WIN32
-
         /** check if the exception is a "file not found" error */
         if(ex.get_error_code() == interprocess::not_found_error)
         {
@@ -121,7 +112,7 @@ void ipcInit(bool fUseMQModeOpenOnly, bool fInitCalledAfterRecovery)
 
                 /** try init once more (true - open_only mode / true - avoid an infinite recursion)
                  * open_only: try to open the existing queue
-				 */
+                 */
                 ipcInit(true, true);
             }
         }
@@ -138,5 +129,5 @@ void ipcInit(bool fUseMQModeOpenOnly, bool fInitCalledAfterRecovery)
     }
 
     /** if we reach this, set global IPC state to initialized */
-    GlobalIpcState = IPC_INITIALIZED;
+    globalIpcState = IPC_INITIALIZED;
 }
