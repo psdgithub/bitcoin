@@ -155,6 +155,11 @@ int main(int argc, char *argv[])
     Q_INIT_RESOURCE(bitcoin);
     QApplication app(argc, argv);
 
+    // Install global event filter that makes sure that tooltips can be word-wrapped
+    app.installEventFilter(new GUIUtil::ToolTipToRichTextFilter(&app));
+    // QT default is very narrow, so set a minimum width
+    app.setStyleSheet("QToolTip { min-width: 350px; }");
+
     // Command-line options take precedence:
     ParseParameters(argc, argv);
 
