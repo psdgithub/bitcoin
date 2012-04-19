@@ -2,7 +2,11 @@
  * Qt4 bitcoin GUI.
  *
  * W.J. van der Laan 2011
+ * The Bitcoin Developers 2011
  */
+
+#include "checkpoints.h"
+
 #include "bitcoingui.h"
 #include "transactiontablemodel.h"
 #include "addressbookpage.h"
@@ -44,6 +48,7 @@
 #include <QStackedWidget>
 #include <QDateTime>
 #include <QMovie>
+#include <QTimer>
 
 #include <QDragEnterEvent>
 #include <QUrl>
@@ -56,6 +61,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     walletModel(0),
     encryptWalletAction(0),
     changePassphraseAction(0),
+    aboutQtAction(0),
     trayIcon(0),
     notificator(0)
 {
@@ -191,10 +197,15 @@ void BitcoinGUI::createActions()
     sendCoinsAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_2));
     tabGroup->addAction(sendCoinsAction);
 
+    connect(overviewAction, SIGNAL(triggered()), this, SLOT(showNormal()));
     connect(overviewAction, SIGNAL(triggered()), this, SLOT(gotoOverviewPage()));
+    connect(historyAction, SIGNAL(triggered()), this, SLOT(showNormal()));
     connect(historyAction, SIGNAL(triggered()), this, SLOT(gotoHistoryPage()));
+    connect(addressBookAction, SIGNAL(triggered()), this, SLOT(showNormal()));
     connect(addressBookAction, SIGNAL(triggered()), this, SLOT(gotoAddressBookPage()));
+    connect(receiveCoinsAction, SIGNAL(triggered()), this, SLOT(showNormal()));
     connect(receiveCoinsAction, SIGNAL(triggered()), this, SLOT(gotoReceiveCoinsPage()));
+    connect(sendCoinsAction, SIGNAL(triggered()), this, SLOT(showNormal()));
     connect(sendCoinsAction, SIGNAL(triggered()), this, SLOT(gotoSendCoinsPage()));
 
     quitAction = new QAction(QIcon(":/icons/quit"), tr("E&xit"), this);
@@ -203,7 +214,10 @@ void BitcoinGUI::createActions()
     quitAction->setMenuRole(QAction::QuitRole);
     aboutAction = new QAction(QIcon(":/icons/bitcoin"), tr("&About %1").arg(qApp->applicationName()), this);
     aboutAction->setToolTip(tr("Show information about Bitcoin"));
-    aboutAction->setMenuRole(QAction::AboutQtRole);
+    aboutAction->setMenuRole(QAction::AboutRole);
+    aboutQtAction = new QAction(tr("About &Qt"), this);
+    aboutQtAction->setToolTip(tr("Show information about Qt"));
+    aboutQtAction->setMenuRole(QAction::AboutQtRole);
     optionsAction = new QAction(QIcon(":/icons/options"), tr("&Options..."), this);
     optionsAction->setToolTip(tr("Modify configuration options for bitcoin"));
     optionsAction->setMenuRole(QAction::PreferencesRole);
@@ -220,6 +234,7 @@ void BitcoinGUI::createActions()
     connect(quitAction, SIGNAL(triggered()), qApp, SLOT(quit()));
     connect(optionsAction, SIGNAL(triggered()), this, SLOT(optionsClicked()));
     connect(aboutAction, SIGNAL(triggered()), this, SLOT(aboutClicked()));
+    connect(aboutQtAction, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
     connect(openBitcoinAction, SIGNAL(triggered()), this, SLOT(showNormal()));
     connect(encryptWalletAction, SIGNAL(triggered(bool)), this, SLOT(encryptWallet(bool)));
     connect(changePassphraseAction, SIGNAL(triggered()), this, SLOT(changePassphrase()));
@@ -247,6 +262,7 @@ void BitcoinGUI::createMenuBar()
 
     QMenu *help = appMenuBar->addMenu(tr("&Help"));
     help->addAction(aboutAction);
+    help->addAction(aboutQtAction);
 }
 
 void BitcoinGUI::createToolBars()
@@ -367,7 +383,6 @@ void BitcoinGUI::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
         // Click on system tray icon triggers "open bitcoin"
         openBitcoinAction->trigger();
     }
-
 }
 #endif
 
@@ -406,21 +421,36 @@ void BitcoinGUI::setNumBlocks(int count)
 {
     if(!clientModel)
         return;
-    int initTotal = clientModel->getNumBlocksAtStartup();
     int total = clientModel->getNumBlocksOfPeers();
     QString tooltip;
 
     if(count < total)
     {
-        progressBarLabel->setVisible(true);
-        progressBar->setVisible(true);
-        progressBar->setMaximum(total - initTotal);
-        progressBar->setValue(count - initTotal);
+        if (clientModel->getStatusBarWarnings() == "")
+        {
+            progressBarLabel->setVisible(true);
+            progressBarLabel->setText(tr("Synchronizing with network..."));
+            progressBar->setVisible(true);
+            progressBar->setMaximum(total);
+            progressBar->setValue(count);
+        }
+        else
+        {
+            progressBarLabel->setText(clientModel->getStatusBarWarnings());
+            progressBarLabel->setVisible(true);
+            progressBar->setVisible(false);
+        }
         tooltip = tr("Downloaded %1 of %2 blocks of transaction history.").arg(count).arg(total);
     }
     else
     {
-        progressBarLabel->setVisible(false);
+        if (clientModel->getStatusBarWarnings() == "")
+            progressBarLabel->setVisible(false);
+        else
+        {
+            progressBarLabel->setText(clientModel->getStatusBarWarnings());
+            progressBarLabel->setVisible(true);
+        }
         progressBar->setVisible(false);
         tooltip = tr("Downloaded %1 blocks of transaction history.").arg(count);
     }
@@ -431,7 +461,11 @@ void BitcoinGUI::setNumBlocks(int count)
     QString text;
 
     // Represent time from last generated block in human readable text
-    if(secs < 60)
+    if(secs <= 0)
+    {
+        // Fully up to date. Leave text empty.
+    }
+    else if(secs < 60)
     {
         text = tr("%n second(s) ago","",secs);
     }
@@ -449,9 +483,9 @@ void BitcoinGUI::setNumBlocks(int count)
     }
 
     // Set icon state: spinning if catching up, tick otherwise
-    if(secs < 30*60)
+    if(secs < 90*60 && count >= Checkpoints::GetTotalBlocksEstimate())
     {
-        tooltip = tr("Up to date") + QString("\n") + tooltip;
+        tooltip = tr("Up to date") + QString(".\n") + tooltip;
         labelBlocksIcon->setPixmap(QIcon(":/icons/synced").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
     }
     else
@@ -461,41 +495,62 @@ void BitcoinGUI::setNumBlocks(int count)
         syncIconMovie->start();
     }
 
-    tooltip += QString("\n");
-    tooltip += tr("Last received block was generated %1.").arg(text);
+    if(!text.isEmpty())
+    {
+        tooltip += QString("\n");
+        tooltip += tr("Last received block was generated %1.").arg(text);
+    }
 
     labelBlocksIcon->setToolTip(tooltip);
     progressBarLabel->setToolTip(tooltip);
     progressBar->setToolTip(tooltip);
 }
 
-void BitcoinGUI::error(const QString &title, const QString &message)
+void BitcoinGUI::refreshStatusBar()
+{
+    /* Might display multiple times in the case of multiple alerts
+    static QString prevStatusBar;
+    QString newStatusBar = clientModel->getStatusBarWarnings();
+    if (prevStatusBar != newStatusBar)
+    {
+        prevStatusBar = newStatusBar;
+        error(tr("Network Alert"), newStatusBar);
+    }*/
+    setNumBlocks(clientModel->getNumBlocks());
+}
+
+bool HACK_SHUTDOWN = false;
+
+void BitcoinGUI::error(const QString &title, const QString &message, bool modal)
 {
     // Report errors from network/worker thread
-    notificator->notify(Notificator::Critical, title, message);
+    if (modal)
+    {
+        QMessageBox::critical(this, title, message, QMessageBox::Ok, QMessageBox::Ok);
+        if (HACK_SHUTDOWN)
+            QMetaObject::invokeMethod(QCoreApplication::instance(), "quit", Qt::QueuedConnection);
+    } else {
+        notificator->notify(Notificator::Critical, title, message);
+    }
 }
 
 void BitcoinGUI::changeEvent(QEvent *e)
 {
+    QMainWindow::changeEvent(e);
 #ifndef Q_WS_MAC // Ignored on Mac
     if(e->type() == QEvent::WindowStateChange)
     {
         if(clientModel && clientModel->getOptionsModel()->getMinimizeToTray())
         {
-            if(isMinimized())
+            QWindowStateChangeEvent *wsevt = static_cast<QWindowStateChangeEvent*>(e);
+            if(!(wsevt->oldState() & Qt::WindowMinimized) && isMinimized())
             {
-                hide();
+                QTimer::singleShot(0, this, SLOT(hide()));
                 e->ignore();
-            }
-            else
-            {
-                show();
-                e->accept();
             }
         }
     }
 #endif
-    QMainWindow::changeEvent(e);
 }
 
 void BitcoinGUI::closeEvent(QCloseEvent *event)
@@ -563,7 +618,6 @@ void BitcoinGUI::incomingTransaction(const QModelIndex & parent, int start, int 
 
 void BitcoinGUI::gotoOverviewPage()
 {
-    show();
     overviewAction->setChecked(true);
     centralWidget->setCurrentWidget(overviewPage);
 
@@ -573,7 +627,6 @@ void BitcoinGUI::gotoOverviewPage()
 
 void BitcoinGUI::gotoHistoryPage()
 {
-    show();
     historyAction->setChecked(true);
     centralWidget->setCurrentWidget(transactionsPage);
 
@@ -584,7 +637,6 @@ void BitcoinGUI::gotoHistoryPage()
 
 void BitcoinGUI::gotoAddressBookPage()
 {
-    show();
     addressBookAction->setChecked(true);
     centralWidget->setCurrentWidget(addressBookPage);
 
@@ -595,7 +647,6 @@ void BitcoinGUI::gotoAddressBookPage()
 
 void BitcoinGUI::gotoReceiveCoinsPage()
 {
-    show();
     receiveCoinsAction->setChecked(true);
     centralWidget->setCurrentWidget(receiveCoinsPage);
 
@@ -606,7 +657,6 @@ void BitcoinGUI::gotoReceiveCoinsPage()
 
 void BitcoinGUI::gotoSendCoinsPage()
 {
-    show();
     sendCoinsAction->setChecked(true);
     centralWidget->setCurrentWidget(sendCoinsPage);
 
@@ -616,7 +666,7 @@ void BitcoinGUI::gotoSendCoinsPage()
 
 void BitcoinGUI::dragEnterEvent(QDragEnterEvent *event)
 {
-    // Accept only URLs
+    // Accept only URIs
     if(event->mimeData()->hasUrls())
         event->acceptProposedAction();
 }
@@ -626,10 +676,10 @@ void BitcoinGUI::dropEvent(QDropEvent *event)
     if(event->mimeData()->hasUrls())
     {
         gotoSendCoinsPage();
-        QList<QUrl> urls = event->mimeData()->urls();
-        foreach(const QUrl &url, urls)
+        QList<QUrl> uris = event->mimeData()->urls();
+        foreach(const QUrl &uri, uris)
         {
-            sendCoinsPage->handleURL(&url);
+            sendCoinsPage->handleURI(&uri);
         }
     }
 

@@ -1,5 +1,5 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2011 The Bitcoin developers
+// Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
@@ -340,7 +340,7 @@ Value getinfo(const Array& params, bool fHelp)
     obj.push_back(Pair("keypoolsize",   pwalletMain->GetKeyPoolSize()));
     obj.push_back(Pair("paytxfee",      ValueFromAmount(nTransactionFee)));
     if (pwalletMain->IsCrypted())
-        obj.push_back(Pair("unlocked_until", (boost::int64_t)nWalletUnlockTime));
+        obj.push_back(Pair("unlocked_until", (boost::int64_t)nWalletUnlockTime / 1000));
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
 #ifdef BITPENNY
 	bitpennyinfo(obj);
@@ -778,8 +778,10 @@ Value getbalance(const Array& params, bool fHelp)
             list<pair<CBitcoinAddress, int64> > listSent;
             wtx.GetAmounts(allGeneratedImmature, allGeneratedMature, listReceived, listSent, allFee, strSentAccount);
             if (wtx.GetDepthInMainChain() >= nMinDepth)
+            {
                 BOOST_FOREACH(const PAIRTYPE(CBitcoinAddress,int64)& r, listReceived)
                     nBalance += r.second;
+            }
             BOOST_FOREACH(const PAIRTYPE(CBitcoinAddress,int64)& r, listSent)
                 nBalance -= r.second;
             nBalance -= allFee;
@@ -1137,6 +1139,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
 
     // Received
     if (listReceived.size() > 0 && wtx.GetDepthInMainChain() >= nMinDepth)
+    {
         BOOST_FOREACH(const PAIRTYPE(CBitcoinAddress, int64)& r, listReceived)
         {
             string account;
@@ -1154,6 +1157,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                 ret.push_back(entry);
             }
         }
+    }
 }
 
 void AcentryToJSON(const CAccountingEntry& acentry, const string& strAccount, Array& ret)
@@ -1190,14 +1194,21 @@ Value listtransactions(const Array& params, bool fHelp)
     if (params.size() > 2)
         nFrom = params[2].get_int();
 
+    if (nCount < 0)
+        throw JSONRPCError(-8, "Negative count");
+    if (nFrom < 0)
+        throw JSONRPCError(-8, "Negative from");
+
     Array ret;
     CWalletDB walletdb(pwalletMain->strWalletFile);
 
-    // Firs: get all CWalletTx and CAccountingEntry into a sorted-by-time multimap:
+    // First: get all CWalletTx and CAccountingEntry into a sorted-by-time multimap.
     typedef pair<CWalletTx*, CAccountingEntry*> TxPair;
     typedef multimap<int64, TxPair > TxItems;
     TxItems txByTime;
 
+    // Note: maintaining indices in the database of (account,time) --> txid and (account, time) --> acentry
+    // would make this much faster for applications that do this a lot.
     for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
     {
         CWalletTx* wtx = &((*it).second);
@@ -1210,10 +1221,8 @@ Value listtransactions(const Array& params, bool fHelp)
         txByTime.insert(make_pair(entry.nTime, TxPair((CWalletTx*)0, &entry)));
     }
 
-    // Now: iterate backwards until we have nCount items to return:
-    TxItems::reverse_iterator it = txByTime.rbegin();
-    if (txByTime.size() > nFrom) std::advance(it, nFrom);
-    for (; it != txByTime.rend(); ++it)
+    // iterate backwards until we have nCount items to return:
+    for (TxItems::reverse_iterator it = txByTime.rbegin(); it != txByTime.rend(); ++it)
     {
         CWalletTx *const pwtx = (*it).second.first;
         if (pwtx != 0)
@@ -1222,18 +1231,21 @@ Value listtransactions(const Array& params, bool fHelp)
         if (pacentry != 0)
             AcentryToJSON(*pacentry, strAccount, ret);
 
-        if (ret.size() >= nCount) break;
+        if (ret.size() >= (nCount+nFrom)) break;
     }
-    // ret is now newest to oldest
+    // ret is newest to oldest
     
-    // Make sure we return only last nCount items (sends-to-self might give us an extra):
-    if (ret.size() > nCount)
-    {
-        Array::iterator last = ret.begin();
-        std::advance(last, nCount);
-        ret.erase(last, ret.end());
-    }
-    std::reverse(ret.begin(), ret.end()); // oldest to newest
+    if (nFrom > ret.size()) nFrom = ret.size();
+    if (nFrom+nCount > ret.size()) nCount = ret.size()-nFrom;
+    Array::iterator first = ret.begin();
+    std::advance(first, nFrom);
+    Array::iterator last = ret.begin();
+    std::advance(last, nFrom+nCount);
+
+    if (last != ret.end()) ret.erase(last, ret.end());
+    if (first != ret.begin()) ret.erase(ret.begin(), first);
+
+    std::reverse(ret.begin(), ret.end()); // Return oldest to newest
 
     return ret;
 }
@@ -1341,7 +1353,7 @@ Value listsinceblock(const Array& params, bool fHelp)
         CBlockIndex *block;
         for (block = pindexBest;
              block && block->nHeight > target_height;
-             block = block->pprev);
+             block = block->pprev)  { }
 
         lastblock = block ? block->GetBlockHash() : 0;
     }
@@ -1432,37 +1444,43 @@ void ThreadTopUpKeyPool(void* parg)
 
 void ThreadCleanWalletPassphrase(void* parg)
 {
-    int64 nMyWakeTime = GetTime() + *((int*)parg);
+    int64 nMyWakeTime = GetTimeMillis() + *((int64*)parg) * 1000;
+
+    ENTER_CRITICAL_SECTION(cs_nWalletUnlockTime);
 
     if (nWalletUnlockTime == 0)
     {
-        CRITICAL_BLOCK(cs_nWalletUnlockTime)
+        nWalletUnlockTime = nMyWakeTime;
+
+        do
         {
-            nWalletUnlockTime = nMyWakeTime;
-        }
+            if (nWalletUnlockTime==0)
+                break;
+            int64 nToSleep = nWalletUnlockTime - GetTimeMillis();
+            if (nToSleep <= 0)
+                break;
 
-        while (GetTime() < nWalletUnlockTime)
-            Sleep(GetTime() - nWalletUnlockTime);
+            LEAVE_CRITICAL_SECTION(cs_nWalletUnlockTime);
+            Sleep(nToSleep);
+            ENTER_CRITICAL_SECTION(cs_nWalletUnlockTime);
 
-        CRITICAL_BLOCK(cs_nWalletUnlockTime)
+        } while(1);
+
+        if (nWalletUnlockTime)
         {
             nWalletUnlockTime = 0;
+            pwalletMain->Lock();
         }
     }
     else
     {
-        CRITICAL_BLOCK(cs_nWalletUnlockTime)
-        {
-            if (nWalletUnlockTime < nMyWakeTime)
-                nWalletUnlockTime = nMyWakeTime;
-        }
-        free(parg);
-        return;
+        if (nWalletUnlockTime < nMyWakeTime)
+            nWalletUnlockTime = nMyWakeTime;
     }
 
-    pwalletMain->Lock();
+    LEAVE_CRITICAL_SECTION(cs_nWalletUnlockTime);
 
-    delete (int*)parg;
+    delete (int64*)parg;
 }
 
 Value walletpassphrase(const Array& params, bool fHelp)
@@ -1497,7 +1515,7 @@ Value walletpassphrase(const Array& params, bool fHelp)
             "Stores the wallet decryption key in memory for <timeout> seconds.");
 
     CreateThread(ThreadTopUpKeyPool, NULL);
-    int* pnSleepTime = new int(params[1].get_int());
+    int64* pnSleepTime = new int64(params[1].get_int64());
     CreateThread(ThreadCleanWalletPassphrase, pnSleepTime);
 
     return Value::null;
@@ -1550,9 +1568,9 @@ Value walletlock(const Array& params, bool fHelp)
     if (!pwalletMain->IsCrypted())
         throw JSONRPCError(-15, "Error: running with an unencrypted wallet, but walletlock was called.");
 
-    pwalletMain->Lock();
     CRITICAL_BLOCK(cs_nWalletUnlockTime)
     {
+        pwalletMain->Lock();
         nWalletUnlockTime = 0;
     }
 
@@ -1677,7 +1695,7 @@ Value getwork(const Array& params, bool fHelp)
         }
 
         // Update nTime
-        pblock->nTime = max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
+        pblock->UpdateTime(pindexPrev);
         pblock->nNonce = 0;
 
         // Update nExtraNonce
@@ -1774,7 +1792,7 @@ Value getmemorypool(const Array& params, bool fHelp)
         }
 
         // Update nTime
-        pblock->nTime = max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
+        pblock->UpdateTime(pindexPrev);
         pblock->nNonce = 0;
 
         Array transactions;
@@ -2218,6 +2236,10 @@ void ThreadRPCServer(void* parg)
     printf("ThreadRPCServer exiting\n");
 }
 
+#ifdef QT_GUI
+extern bool HACK_SHUTDOWN;
+#endif
+
 void ThreadRPCServer2(void* parg)
 {
     printf("ThreadRPCServer started\n");
@@ -2225,6 +2247,8 @@ void ThreadRPCServer2(void* parg)
     strRPCUserColonPass = mapArgs["-rpcuser"] + ":" + mapArgs["-rpcpassword"];
     if (strRPCUserColonPass == ":")
     {
+        unsigned char rand_pwd[32];
+        RAND_bytes(rand_pwd, 32);
 #ifdef BITPENNY
 		string strWhatAmI = "To use bitpennyd";
 #else
@@ -2234,11 +2258,17 @@ void ThreadRPCServer2(void* parg)
             strWhatAmI = strprintf(_("To use the %s option"), "\"-server\"");
         else if (mapArgs.count("-daemon"))
             strWhatAmI = strprintf(_("To use the %s option"), "\"-daemon\"");
-        PrintConsole(
-            _("Error: %s, you must set rpcpassword=<password>\nin the configuration file: %s\n"
+        ThreadSafeMessageBox(strprintf(
+            _("Error: %s, you must set a rpcpassword in the configuration file:\n %s\n"
+              "It is recommended you use the following random password:\n"
+              "rpcuser=bitcoinrpc\n"
+              "rpcpassword=%s\n"
+              "(you do not need to remember this password)\n"
               "If the file does not exist, create it with owner-readable-only file permissions.\n"),
                 strWhatAmI.c_str(),
-                GetConfigFile().c_str());
+                GetConfigFile().c_str(),
+                EncodeBase58(&rand_pwd[0],&rand_pwd[0]+32).c_str()),
+            _("Error"), wxOK | wxMODAL);
 #ifndef QT_GUI
         CreateThread(Shutdown, NULL);
 #endif
@@ -2250,9 +2280,27 @@ void ThreadRPCServer2(void* parg)
 
     asio::io_service io_service;
     ip::tcp::endpoint endpoint(bindAddress, GetArg("-rpcport", 8332));
+#ifndef QT_GUI
     ip::tcp::acceptor acceptor(io_service, endpoint);
 
     acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+#else
+    ip::tcp::acceptor acceptor(io_service);
+    try
+    {
+        acceptor.open(endpoint.protocol());
+        acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+        acceptor.bind(endpoint);
+        acceptor.listen(socket_base::max_connections);
+    }
+    catch(system::system_error &e)
+    {
+        HACK_SHUTDOWN = true;
+        ThreadSafeMessageBox(strprintf(_("An error occured while setting up the RPC port %i for listening: %s"), endpoint.port(), e.what()),
+                             _("Error"), wxOK | wxMODAL);
+        return;
+    }
+#endif
 
 #ifdef USE_SSL
     ssl::context context(io_service, ssl::context::sslv23);
@@ -2331,12 +2379,14 @@ void ThreadRPCServer2(void* parg)
         }
         if (!HTTPAuthorized(mapHeaders))
         {
-            // Deter brute-forcing short passwords
-            if (mapArgs["-rpcpassword"].size() < 15)
-                Sleep(50);
+            printf("ThreadRPCServer incorrect password attempt from %s\n",peer.address().to_string().c_str());
+            /* Deter brute-forcing short passwords.
+               If this results in a DOS the user really
+               shouldn't have their RPC port exposed.*/
+            if (mapArgs["-rpcpassword"].size() < 20)
+                Sleep(250);
 
             stream << HTTPReply(401, "") << std::flush;
-            printf("ThreadRPCServer incorrect password attempt\n");
             continue;
         }
 

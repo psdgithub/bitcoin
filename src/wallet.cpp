@@ -182,7 +182,7 @@ bool CWallet::EncryptWallet(const SecureString& strWalletPassphrase)
             if (!pwalletdbEncryption->TxnCommit())
                 exit(1); //We now have keys encrypted in memory, but no on disk...die to avoid confusion and let the user reload their unencrypted wallet.
 
-            pwalletdbEncryption->Close();
+            delete pwalletdbEncryption;
             pwalletdbEncryption = NULL;
         }
 
@@ -547,8 +547,10 @@ void CWalletTx::AddSupportingTransactions(CTxDB& txdb)
                 vtxPrev.push_back(tx);
 
                 if (nDepth < COPY_DEPTH)
+                {
                     BOOST_FOREACH(const CTxIn& txin, tx.vin)
                         vWorkQueue.push_back(txin.prevout.hash);
+                }
             }
         }
     }

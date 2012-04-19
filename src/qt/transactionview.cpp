@@ -10,6 +10,7 @@
 #include "transactiondescdialog.h"
 #include "editaddressdialog.h"
 #include "optionsmodel.h"
+#include "guiutil.h"
 
 #include <QScrollBar>
 #include <QComboBox>
@@ -20,7 +21,6 @@
 #include <QTableView>
 #include <QHeaderView>
 #include <QPushButton>
-#include <QFileDialog>
 #include <QMessageBox>
 #include <QPoint>
 #include <QMenu>
@@ -70,9 +70,9 @@ TransactionView::TransactionView(QWidget *parent) :
 
     typeWidget->addItem(tr("All"), TransactionFilterProxy::ALL_TYPES);
     typeWidget->addItem(tr("Received with"), TransactionFilterProxy::TYPE(TransactionRecord::RecvWithAddress) |
-                                        TransactionFilterProxy::TYPE(TransactionRecord::RecvFromIP));
+                                        TransactionFilterProxy::TYPE(TransactionRecord::RecvFromOther));
     typeWidget->addItem(tr("Sent to"), TransactionFilterProxy::TYPE(TransactionRecord::SendToAddress) |
-                                  TransactionFilterProxy::TYPE(TransactionRecord::SendToIP));
+                                  TransactionFilterProxy::TYPE(TransactionRecord::SendToOther));
     typeWidget->addItem(tr("To yourself"), TransactionFilterProxy::TYPE(TransactionRecord::SendToSelf));
     typeWidget->addItem(tr("Mined"), TransactionFilterProxy::TYPE(TransactionRecord::Generated));
     typeWidget->addItem(tr("Other"), TransactionFilterProxy::TYPE(TransactionRecord::Other));
@@ -265,10 +265,9 @@ void TransactionView::changedAmount(const QString &amount)
 void TransactionView::exportClicked()
 {
     // CSV is currently the only supported format
-    QString filename = QFileDialog::getSaveFileName(
+    QString filename = GUIUtil::getSaveFileName(
             this,
-            tr("Export Transaction Data"),
-            QDir::currentPath(),
+            tr("Export Transaction Data"), QString(),
             tr("Comma separated file (*.csv)"));
 
     if (filename.isNull()) return;

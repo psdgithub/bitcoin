@@ -1,6 +1,6 @@
 TEMPLATE = app
 TARGET =
-VERSION = 0.5.1
+VERSION = 0.5.4
 INCLUDEPATH += src src/json src/qt
 DEFINES += QT_GUI BOOST_THREAD_USE_LIB
 CONFIG += no_include_pwd
@@ -62,7 +62,7 @@ contains(USE_SSL, 1) {
 
 contains(BITCOIN_NEED_QT_PLUGINS, 1) {
     DEFINES += BITCOIN_NEED_QT_PLUGINS
-    QTPLUGIN += qcncodecs qjpcodecs qtwcodecs qkrcodecs
+    QTPLUGIN += qcncodecs qjpcodecs qtwcodecs qkrcodecs qtaccessiblewidgets
 }
 
 !windows {
@@ -204,7 +204,7 @@ CODECFORTR = UTF-8
 TRANSLATIONS = $$files(src/qt/locale/bitcoin_*.ts)
 
 isEmpty(QMAKE_LRELEASE) {
-    win32:QMAKE_LRELEASE = $$[QT_INSTALL_BINS]\lrelease.exe
+    win32:QMAKE_LRELEASE = $$[QT_INSTALL_BINS]\\lrelease.exe
     else:QMAKE_LRELEASE = $$[QT_INSTALL_BINS]/lrelease
 }
 isEmpty(TS_DIR):TS_DIR = src/qt/locale
@@ -254,6 +254,17 @@ isEmpty(BOOST_INCLUDE_PATH) {
 windows:LIBS += -lws2_32
 windows:DEFINES += WIN32
 windows:RC_FILE = src/qt/res/bitcoin-qt.rc
+
+windows:!contains(MINGW_THREAD_BUGFIX, 0) {
+    # At least qmake's win32-g++-cross profile is missing the -lmingwthrd
+    # thread-safety flag. GCC has -mthreads to enable this, but it doesn't
+    # work with static linking. -lmingwthrd must come BEFORE -lmingw, so
+    # it is prepended to QMAKE_LIBS_QT_ENTRY.
+    # It can be turned off with MINGW_THREAD_BUGFIX=0, just in case it causes
+    # any problems on some untested qmake profile now or in the future.
+    DEFINES += _MT
+    QMAKE_LIBS_QT_ENTRY = -lmingwthrd $$QMAKE_LIBS_QT_ENTRY
+}
 
 macx:HEADERS += src/qt/macdockiconhandler.h
 macx:OBJECTIVE_SOURCES += src/qt/macdockiconhandler.mm

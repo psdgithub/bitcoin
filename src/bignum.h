@@ -243,7 +243,7 @@ public:
     std::vector<unsigned char> getvch() const
     {
         unsigned int nSize = BN_bn2mpi(this, NULL);
-        if (nSize < 4)
+        if (nSize <= 4)
             return std::vector<unsigned char>();
         std::vector<unsigned char> vch(nSize);
         BN_bn2mpi(this, &vch[0]);
@@ -300,7 +300,7 @@ public:
         while (isxdigit(*psz))
         {
             *this <<= 4;
-            int n = phexdigit[*psz++];
+            int n = phexdigit[(unsigned char)*psz++];
             *this += n;
         }
         if (fNegative)

@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2011 The Bitcoin developers
+// Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOIN_SERIALIZE_H
@@ -60,7 +60,7 @@ class CDataStream;
 class CAutoFile;
 static const unsigned int MAX_SIZE = 0x02000000;
 
-static const int VERSION = 50100;
+static const int VERSION = 50400;
 static const char* pszSubVer = "";
 static const bool VERSION_IS_BETA = true;
 
@@ -99,6 +99,7 @@ enum
         const bool fRead = false;               \
         unsigned int nSerSize = 0;              \
         ser_streamplaceholder s;                \
+        assert(fGetSize||fWrite||fRead); /* suppress warning */ \
         s.nType = nType;                        \
         s.nVersion = nVersion;                  \
         {statements}                            \
@@ -112,6 +113,7 @@ enum
         const bool fWrite = true;               \
         const bool fRead = false;               \
         unsigned int nSerSize = 0;              \
+        assert(fGetSize||fWrite||fRead); /* suppress warning */ \
         {statements}                            \
     }                                           \
     template<typename Stream>                   \
@@ -122,6 +124,7 @@ enum
         const bool fWrite = false;              \
         const bool fRead = true;                \
         unsigned int nSerSize = 0;              \
+        assert(fGetSize||fWrite||fRead); /* suppress warning */ \
         {statements}                            \
     }
 
@@ -829,6 +832,38 @@ struct secure_allocator : public std::allocator<T>
 };
 
 
+//
+// Allocator that clears its contents before deletion.
+//
+template<typename T>
+struct zero_after_free_allocator : public std::allocator<T>
+{
+    // MSVC8 default copy constructor is broken
+    typedef std::allocator<T> base;
+    typedef typename base::size_type size_type;
+    typedef typename base::difference_type  difference_type;
+    typedef typename base::pointer pointer;
+    typedef typename base::const_pointer const_pointer;
+    typedef typename base::reference reference;
+    typedef typename base::const_reference const_reference;
+    typedef typename base::value_type value_type;
+    zero_after_free_allocator() throw() {}
+    zero_after_free_allocator(const zero_after_free_allocator& a) throw() : base(a) {}
+    template <typename U>
+    zero_after_free_allocator(const zero_after_free_allocator<U>& a) throw() : base(a) {}
+    ~zero_after_free_allocator() throw() {}
+    template<typename _Other> struct rebind
+    { typedef zero_after_free_allocator<_Other> other; };
+
+    void deallocate(T* p, std::size_t n)
+    {
+        if (p != NULL)
+            memset(p, 0, sizeof(T) * n);
+        std::allocator<T>::deallocate(p, n);
+    }
+};
+
+
 
 //
 // Double ended buffer combining vector and stream-like interfaces.
@@ -838,7 +873,7 @@ struct secure_allocator : public std::allocator<T>
 class CDataStream
 {
 protected:
-    typedef std::vector<char, secure_allocator<char> > vector_type;
+    typedef std::vector<char, zero_after_free_allocator<char> > vector_type;
     vector_type vch;
     unsigned int nReadPos;
     short state;

@@ -1,9 +1,20 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2011 The Bitcoin developers
+// Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 #include "headers.h"
 #include "strlcpy.h"
+
+// Work around clang compilation problem in Boost 1.46:
+// /usr/include/boost/program_options/detail/config_file.hpp:163:17: error: call to function 'to_internal' that is neither visible in the template definition nor found by argument-dependent lookup
+// See also: http://stackoverflow.com/questions/10020179/compilation-fail-in-boost-librairies-program-options
+//           http://clang.debian.net/status.php?version=3.0&key=CANNOT_FIND_FUNCTION
+namespace boost {
+    namespace program_options {
+        std::string to_internal(const std::string&);
+    }
+}
+
 #include <boost/program_options/detail/config_file.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <boost/filesystem.hpp>
@@ -469,6 +480,23 @@ void ParseParameters(int argc, char* argv[])
     }
 }
 
+bool SoftSetArg(const std::string& strArg, const std::string& strValue)
+{
+    if (mapArgs.count(strArg))
+        return false;
+    mapArgs[strArg] = strValue;
+    return true;
+}
+
+bool SoftSetArg(const std::string& strArg, bool fValue)
+{
+    if (fValue)
+        return SoftSetArg(strArg, std::string("1"));
+    else
+        return SoftSetArg(strArg, std::string("0"));
+}
+
+
 string EncodeBase64(const unsigned char* pch, size_t len)
 {
     static const char *pbase64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -550,7 +578,7 @@ vector<unsigned char> DecodeBase64(const char* p, bool* pfInvalid)
 
     while (1)
     {
-         int dec = decode64_table[*p];
+         int dec = decode64_table[(unsigned char)*p];
          if (dec == -1) break;
          p++;
          switch (mode)
@@ -590,12 +618,12 @@ vector<unsigned char> DecodeBase64(const char* p, bool* pfInvalid)
                 break;
 
             case 2: // 4n+2 base64 characters processed: require '=='
-                if (left || p[0] != '=' || p[1] != '=' || decode64_table[p[2]] != -1)
+                if (left || p[0] != '=' || p[1] != '=' || decode64_table[(unsigned char)p[2]] != -1)
                     *pfInvalid = true;
                 break;
 
             case 3: // 4n+3 base64 characters processed: require '='
-                if (left || p[0] != '=' || decode64_table[p[1]] != -1)
+                if (left || p[0] != '=' || decode64_table[(unsigned char)p[1]] != -1)
                     *pfInvalid = true;
                 break;
         }
@@ -728,26 +756,35 @@ string MyGetSpecialFolderPath(int nFolder, bool fCreate)
     {
         PSHGETSPECIALFOLDERPATHA pSHGetSpecialFolderPath =
             (PSHGETSPECIALFOLDERPATHA)GetProcAddress(hShell32, "SHGetSpecialFolderPathA");
+        bool fSuccess = false;
         if (pSHGetSpecialFolderPath)
+            fSuccess =
             (*pSHGetSpecialFolderPath)(NULL, pszPath, nFolder, fCreate);
         FreeModule(hShell32);
+        if (fSuccess)
+            return pszPath;
     }
 
     // Backup option
-    if (pszPath[0] == '\0')
+    std::string strPath;
     {
+        const char *pszEnv;
         if (nFolder == CSIDL_STARTUP)
         {
-            strcpy(pszPath, getenv("USERPROFILE"));
-            strcat(pszPath, "\\Start Menu\\Programs\\Startup");
+            pszEnv = getenv("USERPROFILE");
+            if (pszEnv)
+                strPath = pszEnv;
+            strPath += "\\Start Menu\\Programs\\Startup";
         }
         else if (nFolder == CSIDL_APPDATA)
         {
-            strcpy(pszPath, getenv("APPDATA"));
+            pszEnv = getenv("APPDATA");
+            if (pszEnv)
+                strPath = pszEnv;
         }
     }
 
-    return pszPath;
+    return strPath;
 }
 #endif
 

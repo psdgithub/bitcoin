@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2011 The Bitcoin developers
+// Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOIN_KEY_H
@@ -169,6 +169,11 @@ protected:
     EC_KEY* pkey;
     bool fSet;
 
+    void SetCompressedPubKey()
+    {
+        EC_KEY_set_conv_form(pkey, POINT_CONVERSION_COMPRESSED);
+    }
+
 public:
     CKey()
     {
@@ -229,10 +234,13 @@ public:
         if (vchSecret.size() != 32)
             throw key_error("CKey::SetSecret() : secret must be 32 bytes");
         BIGNUM *bn = BN_bin2bn(&vchSecret[0],32,BN_new());
-        if (bn == NULL) 
+        if (bn == NULL)
             throw key_error("CKey::SetSecret() : BN_bin2bn failed");
         if (!EC_KEY_regenerate_key(pkey,bn))
+        {
+            BN_clear_free(bn);
             throw key_error("CKey::SetSecret() : EC_KEY_regenerate_key failed");
+        }
         BN_clear_free(bn);
         fSet = true;
         return true;
@@ -287,13 +295,14 @@ public:
 
     bool Sign(uint256 hash, std::vector<unsigned char>& vchSig)
     {
-        vchSig.clear();
-        unsigned char pchSig[10000];
-        unsigned int nSize = 0;
-        if (!ECDSA_sign(0, (unsigned char*)&hash, sizeof(hash), pchSig, &nSize, pkey))
+        unsigned int nSize = ECDSA_size(pkey);
+        vchSig.resize(nSize); // Make sure it is big enough
+        if (!ECDSA_sign(0, (unsigned char*)&hash, sizeof(hash), &vchSig[0], &nSize, pkey))
+        {
+            vchSig.clear();
             return false;
-        vchSig.resize(nSize);
-        memcpy(&vchSig[0], pchSig, nSize);
+        }
+        vchSig.resize(nSize); // Shrink to fit actual size
         return true;
     }
 
@@ -346,7 +355,8 @@ public:
     {
         if (vchSig.size() != 65)
             return false;
-        if (vchSig[0]<27 || vchSig[0]>=31)
+        int nV = vchSig[0];
+        if (nV<27 || nV>=35)
             return false;
         ECDSA_SIG *sig = ECDSA_SIG_new();
         BN_bin2bn(&vchSig[1],32,sig->r);
@@ -354,7 +364,12 @@ public:
 
         EC_KEY_free(pkey);
         pkey = EC_KEY_new_by_curve_name(NID_secp256k1);
-        if (ECDSA_SIG_recover_key_GFp(pkey, sig, (unsigned char*)&hash, sizeof(hash), vchSig[0] - 27, 0) == 1)
+        if (nV >= 31)
+        {
+            SetCompressedPubKey();
+            nV -= 4;
+        }
+        if (ECDSA_SIG_recover_key_GFp(pkey, sig, (unsigned char*)&hash, sizeof(hash), nV - 27, 0) == 1)
         {
             fSet = true;
             ECDSA_SIG_free(sig);
@@ -386,6 +401,17 @@ public:
     CBitcoinAddress GetAddress() const
     {
         return CBitcoinAddress(GetPubKey());
+    }
+
+    bool IsValid()
+    {
+        if (!fSet)
+            return false;
+
+        CSecret secret = GetSecret();
+        CKey key2;
+        key2.SetSecret(secret);
+        return GetPubKey() == key2.GetPubKey();
     }
 };
 

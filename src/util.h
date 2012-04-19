@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2011 The Bitcoin developers
+// Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOIN_UTIL_H
@@ -115,7 +115,9 @@ typedef u_int SOCKET;
 #define Beep(n1,n2)         (0)
 inline void Sleep(int64 n)
 {
-    boost::thread::sleep(boost::get_system_time() + boost::posix_time::milliseconds(n));
+    /*Boost has a year 2038 problem— if the request sleep time is past epoch+2^31 seconds the sleep returns instantly.
+      So we clamp our sleeps here to 10 years and hope that boost is fixed by 2028.*/
+    boost::thread::sleep(boost::get_system_time() + boost::posix_time::milliseconds(n>315576000000LL?315576000000LL:n));
 }
 #endif
 
@@ -258,6 +260,12 @@ public:
 #define CRITICAL_BLOCK(cs)     \
     if (CCriticalBlock criticalblock = CCriticalBlock(cs, #cs, __FILE__, __LINE__))
 
+#define ENTER_CRITICAL_SECTION(cs) \
+    (cs).Enter(#cs, __FILE__, __LINE__)
+
+#define LEAVE_CRITICAL_SECTION(cs) \
+    (cs).Leave()
+
 class CTryCriticalBlock
 {
 protected:
@@ -291,6 +299,10 @@ public:
 
 
 
+
+// This is exactly like std::string, but with a custom allocator.
+// (secure_allocator<> is defined in serialize.h)
+typedef std::basic_string<char, std::char_traits<char>, secure_allocator<char> > SecureString;
 
 // This is exactly like std::string, but with a custom allocator.
 // (secure_allocator<> is defined in serialize.h)
@@ -455,7 +467,7 @@ inline int64 GetArg(const std::string& strArg, int64 nDefault)
     return nDefault;
 }
 
-inline bool GetBoolArg(const std::string& strArg)
+inline bool GetBoolArg(const std::string& strArg, bool fDefault=false)
 {
     if (mapArgs.count(strArg))
     {
@@ -463,9 +475,26 @@ inline bool GetBoolArg(const std::string& strArg)
             return true;
         return (atoi(mapArgs[strArg]) != 0);
     }
-    return false;
+    return fDefault;
 }
 
+/**
+ * Set an argument if it doesn't already have a value
+ *
+ * @param strArg Argument to set (e.g. "-foo")
+ * @param strValue Value (e.g. "1")
+ * @return true if argument gets set, false if it already had a value
+ */
+bool SoftSetArg(const std::string& strArg, const std::string& strValue);
+
+/**
+ * Set a boolean argument if it doesn't already have a value
+ *
+ * @param strArg Argument to set (e.g. "-foo")
+ * @param fValue Value (e.g. false)
+ * @return true if argument gets set, false if it already had a value
+ */
+bool SoftSetArg(const std::string& strArg, bool fValue);
 
 
 
@@ -738,8 +767,8 @@ inline bool AffinityBugWorkaround(void(*pfn)(void*))
 
 inline uint32_t ByteReverse(uint32_t value)
 {
-	value = ((value & 0xFF00FF00) >> 8) | ((value & 0x00FF00FF) << 8);
-	return (value<<16) | (value>>16);
+    value = ((value & 0xFF00FF00) >> 8) | ((value & 0x00FF00FF) << 8);
+    return (value<<16) | (value>>16);
 }
 
 #endif

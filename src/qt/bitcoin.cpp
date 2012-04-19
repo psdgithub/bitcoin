@@ -8,6 +8,7 @@
 
 #include "headers.h"
 #include "init.h"
+#include "util.h"
 
 #include <QApplication>
 #include <QMessageBox>
@@ -41,12 +42,19 @@ int MyMessageBox(const std::string& message, const std::string& caption, int sty
 
 int ThreadSafeMessageBox(const std::string& message, const std::string& caption, int style, wxWindow* parent, int x, int y)
 {
+    bool modal = style & wxMODAL;
+
+    if (modal)
+        while (!guiref)
+            Sleep(1000);
+
     // Message from network thread
     if(guiref)
     {
         QMetaObject::invokeMethod(guiref, "error", Qt::QueuedConnection,
                                    Q_ARG(QString, QString::fromStdString(caption)),
-                                   Q_ARG(QString, QString::fromStdString(message)));
+                                   Q_ARG(QString, QString::fromStdString(message)),
+                                   Q_ARG(bool, modal));
     }
     else
     {
@@ -91,6 +99,8 @@ void UIThreadCall(boost::function0<void> fn)
 
 void MainFrameRepaint()
 {
+    if(guiref)
+        QMetaObject::invokeMethod(guiref, "refreshStatusBar", Qt::QueuedConnection);
 }
 
 void InitMessage(const std::string &message)
@@ -108,6 +118,15 @@ void InitMessage(const std::string &message)
 std::string _(const char* psz)
 {
     return QCoreApplication::translate("bitcoin-core", psz).toStdString();
+}
+
+/* Handle runaway exceptions. Shows a message box with the problem and quits the program.
+ */
+static void handleRunawayException(std::exception *e)
+{
+    PrintExceptionContinue(e, "Runaway exception");
+    QMessageBox::critical(0, "Runaway exception", BitcoinGUI::tr("A fatal error occured. Bitcoin can no longer continue safely and will quit.") + QString("\n\n") + QString::fromStdString(strMiscWarning));
+    exit(1);
 }
 
 int main(int argc, char *argv[])
@@ -145,9 +164,12 @@ int main(int argc, char *argv[])
     app.setApplicationName(QApplication::translate("main", "Bitcoin-Qt"));
 
     QSplashScreen splash(QPixmap(":/images/splash"), 0);
-    splash.show();
-    splash.setAutoFillBackground(true);
-    splashref = &splash;
+    if (!GetBoolArg("-min"))
+    {
+        splash.show();
+        splash.setAutoFillBackground(true);
+        splashref = &splash;
+    }
 
     app.processEvents();
 
@@ -161,7 +183,8 @@ int main(int argc, char *argv[])
                 // Put this in a block, so that BitcoinGUI is cleaned up properly before
                 // calling Shutdown() in case of exceptions.
                 BitcoinGUI window;
-                splash.finish(&window);
+                if (splashref)
+                    splash.finish(&window);
                 OptionsModel optionsModel(pwalletMain);
                 ClientModel clientModel(&optionsModel);
                 WalletModel walletModel(pwalletMain, &optionsModel);
@@ -191,9 +214,9 @@ int main(int argc, char *argv[])
             return 1;
         }
     } catch (std::exception& e) {
-        PrintException(&e, "Runaway exception");
+        handleRunawayException(&e);
     } catch (...) {
-        PrintException(NULL, "Runaway exception");
+        handleRunawayException(NULL);
     }
     return 0;
 }
