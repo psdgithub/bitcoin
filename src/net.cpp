@@ -98,7 +98,7 @@ void CNode::PushGetBlocks(CBlockIndex* pindexBegin, uint256 hashEnd)
 // find 'best' local address for a particular peer
 bool GetLocal(CNetAddr& addr, const CNetAddr *paddrPeer)
 {
-    if (fUseProxy || mapArgs.count("-connect") || fNoListen)
+    if (fNoListen)
         return false;
 
     int nBestCount = -1;
@@ -1800,7 +1800,7 @@ void static Discover()
     }
 #endif
 
-    if (!fUseProxy && !mapArgs.count("-connect") && !fNoListen)
+    if (!fUseProxy && !fNoListen)
     {
         CreateThread(ThreadGetMyExternalIP, NULL);
     }
