@@ -59,6 +59,7 @@ bool SeenLocal(const CNetAddr& addr);
 bool IsLocal(const CNetAddr& addr);
 bool GetLocal(CNetAddr &addr, const CNetAddr *paddrPeer = NULL);
 bool IsReachable(const CNetAddr &addr);
+void SetReachable(enum Network net, bool fFlag = true);
 CAddress GetLocalAddress(const CNetAddr *paddrPeer = NULL);
 
 

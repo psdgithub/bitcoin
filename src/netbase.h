@@ -20,7 +20,6 @@ extern int nConnectTimeout;
 enum Network
 {
     NET_UNROUTABLE,
-
     NET_IPV4,
     NET_IPV6,
     NET_TOR,
