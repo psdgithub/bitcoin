@@ -1,3 +1,5 @@
+#include <boost/lambda/lambda.hpp>
+
 #include "bitcoingui.h"
 #include "sendcoinsdialog.h"
 #include "ui_sendcoinsdialog.h"
