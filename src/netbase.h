@@ -20,12 +20,13 @@ extern int nConnectTimeout;
 enum Network
 {
     NET_UNROUTABLE,
+
     NET_IPV4,
     NET_IPV6,
     NET_TOR,
     NET_I2P,
 
-    NET_MAX
+    NET_MAX,
 };
 
 /** IP address (IPv6, or IPv4 using mapped IPv6 range (::FFFF:0:0/96)) */
