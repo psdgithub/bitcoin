@@ -172,6 +172,8 @@ bool AppInit2(int argc, char* argv[])
             "  -pid=<file>      \t\t  " + _("Specify pid file (default: bitcoind.pid)") + "\n" +
             "  -gen             \t\t  " + _("Generate coins") + "\n" +
             "  -gen=0           \t\t  " + _("Don't generate coins") + "\n" +
+            "  -minfee=<amt>    \t  "   + _("Fee to require of transactions you mine") + "\n" +
+            "  -minfeeper=<bytes>\t  "  + _("Amount of transaction bytes before minfee is doubled") + "\n" +
             "  -min             \t\t  " + _("Start minimized") + "\n" +
             "  -splash          \t\t  " + _("Show splash screen on startup (default: 1)") + "\n" +
             "  -datadir=<dir>   \t\t  " + _("Specify data directory") + "\n" +
@@ -598,6 +600,26 @@ bool AppInit2(int argc, char* argv[])
             return false;
         }
     }
+
+    if (mapArgs.count("-minfee"))
+    {
+        if (!ParseMoney(mapArgs["-minfee"], nMinFeeBase))
+        {
+            ThreadSafeMessageBox(_("Invalid amount for -minfee=<amount>"), "Bitcoin");
+            return false;
+        }
+    }
+    if (mapArgs.count("-minfeeper"))
+    {
+        nMinFeePer = GetArg("-minfeeper", nMinFeePer);
+        if (nMinFeePer < 1)
+        {
+            ThreadSafeMessageBox(_("Invalid amount for -minfeeper=<bytes>"), "Bitcoin");
+            return false;
+        }
+    }
+    if (nMinFeeBase / nMinFeePer > 0.00025 * COIN)
+        ThreadSafeMessageBox(_("Warning: -minfee is set very high.  This is the transaction fee people must pay to get transactions accepted into your blocks."), "Bitcoin", wxOK | wxICON_EXCLAMATION);
 
     //
     // Start the node
