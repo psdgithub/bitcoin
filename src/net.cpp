@@ -204,6 +204,14 @@ void static AdvertizeLocal()
     }
 }
 
+void SetReachable(enum Network net, bool fFlag)
+{
+    LOCK(cs_mapLocalHost);
+    vfReachable[net] = fFlag;
+    if (net == NET_IPV6 && fFlag)
+        vfReachable[NET_IPV4] = true;
+}
+
 // learn a new local address
 bool AddLocal(const CNetAddr& addr, int nScore)
 {
@@ -215,9 +223,7 @@ bool AddLocal(const CNetAddr& addr, int nScore)
     {
         LOCK(cs_mapLocalHost);
         mapLocalHost[addr] = std::max(nScore, mapLocalHost[addr]) + (mapLocalHost.count(addr) ? 1 : 0);
-        enum Network net = addr.GetNetwork();
-        vfReachable[net] = true;
-        if (net == NET_IPV6) vfReachable[NET_IPV4] = true;
+        SetReachable(addr.GetNetwork());
     }
 
     AdvertizeLocal();
