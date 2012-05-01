@@ -548,6 +548,7 @@ bool AppInit2(int argc, char* argv[])
         SoftSetBoolArg("-proxydns", true);
         SoftSetBoolArg("-upnp", false);
         SoftSetBoolArg("-discover", false);
+        SetReachable(NET_TOR);
     }
 
     if (mapArgs.count("-blocknet")) {
