@@ -225,6 +225,11 @@ int main(int argc, char *argv[])
 
     app.setQuitOnLastWindowClosed(false);
 
+#ifdef QT_GUI
+    if (GUIUtil::GetStartOnSystemStartup())
+        GUIUtil::SetStartOnSystemStartup(true); // Regenerate startup link, to fix links to old versions
+#endif
+
     try
     {
         BitcoinGUI window;

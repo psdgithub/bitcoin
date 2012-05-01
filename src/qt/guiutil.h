@@ -69,6 +69,9 @@ namespace GUIUtil
     // Determine whether a widget is hidden behind other windows
     bool isObscured(QWidget *w);
 
+    bool GetStartOnSystemStartup();
+    bool SetStartOnSystemStartup(bool fAutoStart);
+
 } // namespace GUIUtil
 
 #endif // GUIUTIL_H
