@@ -110,5 +110,5 @@ void MessagePage::on_clearButton_clicked()
 {
     ui->signFrom->clear();
     ui->message->clear();
-    ui->signature->setText(tr("Click \"Sign Message\" to get signature"));
+    ui->signature->clear();
 }

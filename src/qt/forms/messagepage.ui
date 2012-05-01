@@ -101,11 +101,11 @@
        <italic>true</italic>
       </font>
      </property>
-     <property name="text">
-      <string>Click &quot;Sign Message&quot; to get signature</string>
-     </property>
      <property name="readOnly">
       <bool>true</bool>
+     </property>
+     <property name="placeholderText">
+      <string>Click &quot;Sign Message&quot; to get signature</string>
      </property>
     </widget>
    </item>
