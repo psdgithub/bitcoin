@@ -20,8 +20,8 @@ public:
     void setClientModel(ClientModel *model);
 
     enum MessageClass {
-        ERROR,
-        DEBUG,
+        MC_ERROR,
+        MC_DEBUG,
         CMD_REQUEST,
         CMD_REPLY,
         CMD_ERROR

@@ -176,8 +176,8 @@ static QColor categoryColor(int category)
 {
     switch(category)
     {
-    case RPCConsole::ERROR:        return QColor(255,0,0); break;
-    case RPCConsole::DEBUG:        return QColor(192,192,192); break;
+    case RPCConsole::MC_ERROR:     return QColor(255,0,0); break;
+    case RPCConsole::MC_DEBUG:     return QColor(192,192,192); break;
     case RPCConsole::CMD_REQUEST:  return QColor(128,128,128); break;
     case RPCConsole::CMD_REPLY:    return QColor(128,255,128); break;
     case RPCConsole::CMD_ERROR:    return QColor(255,128,128); break;
