@@ -1743,8 +1743,12 @@ void static Discover()
     {
         vector<CNetAddr> vaddr;
         if (LookupHost(pszHostName, vaddr))
+        {
             BOOST_FOREACH (const CNetAddr &addr, vaddr)
+            {
                AddLocal(addr, LOCAL_IF);
+            }
+        }
     }
 #else
     // Get local host ip
