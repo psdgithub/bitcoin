@@ -33,7 +33,7 @@ public:
 
     void pasteEntry(const SendCoinsRecipient &rv);
     void setSendFromAddress(std::string address);
-    void handleURI(const QString &uri);
+    bool handleURI(const QString &uri);
 
 public slots:
     void clear();
