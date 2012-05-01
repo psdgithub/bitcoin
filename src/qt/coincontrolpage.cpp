@@ -13,7 +13,6 @@
 #include "askpassphrasedialog.h"
 
 
-#include "headers.h"
 #include "db.h"
 #include "net.h"
 #include "init.h"
