@@ -70,6 +70,8 @@ bool fTestNet = false;
 bool fNoListen = false;
 bool fLogTimestamps = false;
 CMedianFilter<int64> vTimeOffsets(200,0);
+FILE* fileout = NULL;
+bool fReopenDebugLog = false;
 
 // Init openssl library multithreading support
 static boost::interprocess::interprocess_mutex** ppmutexOpenSSL;
@@ -198,7 +200,6 @@ inline int OutputDebugStringF(const char* pszFormat, ...)
     else
     {
         // print to debug.log
-        static FILE* fileout = NULL;
 
         if (!fileout)
         {
@@ -209,6 +210,17 @@ inline int OutputDebugStringF(const char* pszFormat, ...)
         if (fileout)
         {
             static bool fStartedNewLine = true;
+#ifndef WIN32
+            flockfile(fileout);
+
+            // reopen the log file, if requested
+            if (fReopenDebugLog) {
+                fReopenDebugLog = false;
+                boost::filesystem::path pathDebug = GetDataDir() / "debug.log";
+                if (freopen(pathDebug.string().c_str(),"a",fileout) != NULL)
+                    setbuf(fileout, NULL); // unbuffered
+            }
+#endif
 
             // Debug print useful for profiling
             if (fLogTimestamps && fStartedNewLine)
@@ -222,6 +234,9 @@ inline int OutputDebugStringF(const char* pszFormat, ...)
             va_start(arg_ptr, pszFormat);
             ret = vfprintf(fileout, pszFormat, arg_ptr);
             va_end(arg_ptr);
+#ifndef WIN32
+            funlockfile(fileout);
+#endif
         }
     }
 
