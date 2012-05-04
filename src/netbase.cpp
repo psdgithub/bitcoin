@@ -21,6 +21,7 @@ bool fProxyNameLookup = false;
 bool fNameLookup = false;
 CService addrProxy("127.0.0.1",9050);
 int nConnectTimeout = 5000;
+static bool vfNoProxy[NET_MAX] = {};
 
 
 static const unsigned char pchIPv4[12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff };
@@ -31,6 +32,11 @@ enum Network ParseNetwork(std::string net) {
     if (net == "tor")  return NET_TOR;
     if (net == "i2p")  return NET_I2P;
     return NET_UNROUTABLE;
+}
+
+void SetNoProxy(enum Network net, bool fNoProxy) {
+    assert(net >= 0 && net < NET_MAX);
+    vfNoProxy[net] = fNoProxy;
 }
 
 bool static LookupIntern(const char *pszName, std::vector<CNetAddr>& vIP, unsigned int nMaxSolutions, bool fAllowLookup)
@@ -445,7 +451,7 @@ bool ConnectSocket(const CService &addrDest, SOCKET& hSocketRet, int nTimeout)
     if (!ConnectSocketDirectly(fProxy ? addrProxy : addrDest, hSocket, nTimeout))
         return false;
 
-    if (fProxy)
+    if (fProxy && !vfNoProxy[addrDest.GetNetwork()])
     {
         switch(nSocksVersion)
         {
