@@ -3198,6 +3198,7 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
             swap(mapTestPool, mapTestPoolTmp);
 
             // Added
+            tx.nTxFees = nTxFees;
             pblock->vtx.push_back(tx);
             nBlockSize += nTxSize;
             ++nBlockTx;
@@ -3225,7 +3226,9 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
         printf("CreateNewBlock(): total size %lu\n", nBlockSize);
 
     }
-    pblock->vtx[0].vout[0].nValue = GetBlockValue(pindexPrev->nHeight+1, nFees);
+    int64 nBlkValue = GetBlockValue(pindexPrev->nHeight+1, nFees);
+    pblock->vtx[0].vout[0].nValue = nBlkValue;
+    pblock->vtx[0].nTxFees = -nBlkValue;
 
     // Fill in header
     pblock->hashPrevBlock  = pindexPrev->GetBlockHash();

@@ -402,6 +402,8 @@ public:
     mutable int nDoS;
     bool DoS(int nDoSIn, bool fIn) const { nDoS += nDoSIn; return fIn; }
 
+    int64 nTxFees;
+
     CTransaction()
     {
         SetNull();

@@ -1914,6 +1914,7 @@ Value getmemorypool(const Array& params, bool fHelp)
         pblock->nNonce = 0;
 
         Array transactions;
+        Array transactionFees;
         BOOST_FOREACH(CTransaction tx, pblock->vtx) {
             if(tx.IsCoinBase())
                 continue;
@@ -1922,12 +1923,14 @@ Value getmemorypool(const Array& params, bool fHelp)
             ssTx << tx;
 
             transactions.push_back(HexStr(ssTx.begin(), ssTx.end()));
+            transactionFees.push_back((int64_t)tx.nTxFees);
         }
 
         Object result;
         result.push_back(Pair("version", pblock->nVersion));
         result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
         result.push_back(Pair("transactions", transactions));
+        result.push_back(Pair("transactionfees", transactionFees));
         result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
         result.push_back(Pair("coinbaseflags", HexStr(COINBASE_FLAGS.begin(), COINBASE_FLAGS.end())));
         result.push_back(Pair("time", (int64_t)pblock->nTime));
