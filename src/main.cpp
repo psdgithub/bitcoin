@@ -3104,6 +3104,7 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
 
             COrphan* porphan = NULL;
             double dPriority = 0;
+            uint64 nTxFees = 0;
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
             {
                 // Read prev transaction
@@ -3123,6 +3124,7 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
                     continue;
                 }
                 int64 nValueIn = txPrev.vout[txin.prevout.n].nValue;
+                nTxFees += nValueIn;
 
                 // Read block header
                 int nConf = txindex.GetDepthInMainChain();
@@ -3135,6 +3137,10 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
 
             // Priority is sum(valuein * age) / txsize
             dPriority /= ::GetSerializeSize(tx, SER_NETWORK);
+
+            nTxFees -= tx.GetValueOut();
+            // Boost priority for fees paid
+            dPriority += (double)nTxFees * 281474976710656.;
 
             if (porphan)
                 porphan->dPriority = dPriority;
