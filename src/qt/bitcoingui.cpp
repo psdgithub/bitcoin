@@ -723,7 +723,6 @@ void BitcoinGUI::gotoMessagePage()
     disconnect(exportAction, SIGNAL(triggered()), 0, 0);
 #else
     messagePage->show();
-    messagePage->setFocus();
 #endif
 }
 
