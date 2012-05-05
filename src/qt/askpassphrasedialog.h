@@ -40,6 +40,7 @@ private slots:
     void textChanged();
     bool event(QEvent *event);
     bool eventFilter(QObject *, QEvent *event);
+    void setDefaultCapsLabelText();
 };
 
 #endif // ASKPASSPHRASEDIALOG_H
