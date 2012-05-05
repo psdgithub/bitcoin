@@ -347,8 +347,9 @@ bool AppInit2(int argc, char* argv[])
     InitMessage(_("Loading addresses..."));
     printf("Loading addresses...\n");
     nStart = GetTimeMillis();
-    if (!LoadAddresses())
-        strErrors << _("Error loading addr.dat") << "\n";
+    if (!addrman.ReadFromDisk())
+        strErrors << _("Error loading ipaddr.dat") << "\n";
+    printf("Loaded %i addresses\n", addrman.size());
     printf(" addresses   %15"PRI64d"ms\n", GetTimeMillis() - nStart);
 
     InitMessage(_("Loading block index..."));

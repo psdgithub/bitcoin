@@ -164,8 +164,6 @@ void CDB::Close()
     unsigned int nMinutes = 0;
     if (fReadOnly)
         nMinutes = 1;
-    if (strFile == "addr.dat")
-        nMinutes = 2;
     if (strFile == "blkindex.dat")
         nMinutes = 2;
     if (strFile == "blkindex.dat" && IsInitialBlockDownload())
@@ -310,7 +308,7 @@ void DBFlush(bool fShutdown)
                 CloseDb(strFile);
                 printf("%s checkpoint\n", strFile.c_str());
                 dbenv.txn_checkpoint(0, 0, 0);
-                if ((strFile != "blkindex.dat" && strFile != "addr.dat") || fDetachDB) {
+                if (strFile != "blkindex.dat" || fDetachDB) {
                     printf("%s detach\n", strFile.c_str());
                     dbenv.lsn_reset(strFile.c_str(), 0);
                 }
@@ -727,31 +725,6 @@ bool CTxDB::LoadBlockIndex()
     }
 
     return true;
-}
-
-
-
-
-
-//
-// CAddrDB
-//
-
-bool CAddrDB::WriteAddrman(const CAddrMan& addrman)
-{
-    return addrman.WriteToDisk();
-}
-
-bool CAddrDB::LoadAddresses()
-{
-    bool rc = addrman.ReadFromDisk();
-    printf("Loaded %i addresses\n", addrman.size());
-    return rc;
-}
-
-bool LoadAddresses()
-{
-    return CAddrDB("cr+").LoadAddresses();
 }
 
 

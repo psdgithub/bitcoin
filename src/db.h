@@ -294,22 +294,4 @@ public:
 };
 
 
-
-
-/** Access to the (IP) address database (addr.dat) */
-class CAddrDB : public CDB
-{
-public:
-    CAddrDB(const char* pszMode="r+") : CDB("addr.dat", pszMode) { }
-private:
-    CAddrDB(const CAddrDB&);
-    void operator=(const CAddrDB&);
-public:
-    bool WriteAddrman(const CAddrMan& addr);
-    bool LoadAddresses();
-};
-
-bool LoadAddresses();
-
-
 #endif // BITCOIN_DB_H
