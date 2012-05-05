@@ -739,58 +739,14 @@ bool CTxDB::LoadBlockIndex()
 
 bool CAddrDB::WriteAddrman(const CAddrMan& addrman)
 {
-    return Write(string("addrman"), addrman);
+    return addrman.WriteToDisk();
 }
 
 bool CAddrDB::LoadAddresses()
 {
-    if (Read(string("addrman"), addrman))
-    {
-        printf("Loaded %i addresses\n", addrman.size());
-        return true;
-    }
-    
-    // Read pre-0.6 addr records
-
-    vector<CAddress> vAddr;
-    vector<vector<unsigned char> > vDelete;
-
-    // Get cursor
-    Dbc* pcursor = GetCursor();
-    if (!pcursor)
-        return false;
-
-    loop
-    {
-        // Read next record
-        CDataStream ssKey(SER_DISK, CLIENT_VERSION);
-        CDataStream ssValue(SER_DISK, CLIENT_VERSION);
-        int ret = ReadAtCursor(pcursor, ssKey, ssValue);
-        if (ret == DB_NOTFOUND)
-            break;
-        else if (ret != 0)
-            return false;
-
-        // Unserialize
-        string strType;
-        ssKey >> strType;
-        if (strType == "addr")
-        {
-            CAddress addr;
-            ssValue >> addr;
-            vAddr.push_back(addr);
-        }
-    }
-    pcursor->close();
-
-    addrman.Add(vAddr, CNetAddr("0.0.0.0"));
+    bool rc = addrman.ReadFromDisk();
     printf("Loaded %i addresses\n", addrman.size());
-
-    // Note: old records left; we ran into hangs-on-startup
-    // bugs for some users who (we think) were running after
-    // an unclean shutdown.
-
-    return true;
+    return rc;
 }
 
 bool LoadAddresses()

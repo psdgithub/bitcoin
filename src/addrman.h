@@ -497,6 +497,50 @@ public:
             Check();
         }
     }
+
+    bool WriteToDisk() const
+    {
+        boost::filesystem::path pathAddr = GetDataDir() / "ipaddr.dat";
+        FILE *file = fopen(pathAddr.string().c_str(), "wb");
+        if (!file)
+            return false;
+
+        // Open address file to overwrite
+        CAutoFile fileout = CAutoFile(file, SER_DISK, CLIENT_VERSION);
+        if (!fileout)
+            return error("CAddrman::WriteToDisk() : CAutoFile failed");
+
+        // Write addrman data
+        fileout << *this;
+
+        // Flush stdio buffers before returning
+        fflush(fileout);
+
+        return true;
+    }
+
+    bool ReadFromDisk(FILE** pfileRet=NULL)
+    {
+        boost::filesystem::path pathAddr = GetDataDir() / "ipaddr.dat";
+        FILE *file = fopen(pathAddr.string().c_str(),
+                           pfileRet ? "rb+" : "rb");
+        if (!file)
+            return false;
+        CAutoFile filein = CAutoFile(file, SER_DISK, CLIENT_VERSION);
+        if (!filein) {
+            fclose(file);
+            return error("CAddrman::ReadFromDisk() : OpenBlockFile failed");
+        }
+
+        // Read addrman data
+        filein >> *this;
+
+        // Return file pointer
+        if (pfileRet)
+            *pfileRet = filein.release();
+        return true;
+    }
+
 };
 
 #endif
