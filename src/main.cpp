@@ -3104,7 +3104,7 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
 
             COrphan* porphan = NULL;
             double dPriority = 0;
-            uint64 nTxFees = 0;
+            int64 nTxFees = 0;
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
             {
                 // Read prev transaction
@@ -3132,20 +3132,26 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
                 dPriority += (double)nValueIn * nConf;
 
                 if (fDebug && GetBoolArg("-printpriority"))
-                    printf("priority     nValueIn=%-12I64d nConf=%-5d dPriority=%-20.1f\n", nValueIn, nConf, dPriority);
+                    printf("priority     nValueIn=%-12"PRI64d" nConf=%-5d dPriority=%-20.1f\n", nValueIn, nConf, dPriority);
             }
 
-            // Priority is sum(valuein * age) / txsize
-            dPriority /= ::GetSerializeSize(tx, SER_NETWORK);
-
+            unsigned int nSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
             nTxFees -= tx.GetValueOut();
-            // Boost priority for fees paid
-            dPriority += (double)nTxFees * 281474976710656.;
+            if (fDebug && GetBoolArg("-printpriority"))
+                printf("priority     dPriority=%f size=%d fees=%d\n", dPriority, nSize, nTxFees);
+
+            // Priority is sum(valuein * age) / txsize
+            dPriority /= nSize;
 
             if (porphan)
                 porphan->dPriority = dPriority;
             else
+            {
+                // Boost priority for fees paid
+                dPriority += (double)nTxFees * 1000000000000000000000.;
+
                 mapPriority.insert(make_pair(-dPriority, &(*mi).second));
+            }
 
             if (fDebug && GetBoolArg("-printpriority"))
             {
@@ -3220,7 +3226,21 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
                     {
                         porphan->setDependsOn.erase(hash);
                         if (porphan->setDependsOn.empty())
+                        {
+                            // Boost priority for fees paid
+                            // ... has to be done late, since we might not have input info otherwise
+                            CTransaction &tx = *porphan->ptx;
+                            map<uint256, CTxIndex> mapTestPoolTmp(mapTestPool);
+                            MapPrevTx mapInputs;
+                            if (!tx.FetchInputs(txdb, mapTestPoolTmp, false, true, mapInputs, fInvalid))
+                            {
+                                printf("CreateNewBlock(): FAILED TO FETCHINPUTS ON DEPENDENT TXN %s\n", tx.GetHash().ToString().substr(0,10).c_str());
+                                continue;
+                            }
+                            int64 nTxFees = tx.GetValueIn(mapInputs) - tx.GetValueOut();
+                            porphan->dPriority += (double)nTxFees * 1000000000000000000000.;
                             mapPriority.insert(make_pair(-porphan->dPriority, porphan->ptx));
+                        }
                     }
                 }
             }
