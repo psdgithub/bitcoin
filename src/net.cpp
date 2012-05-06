@@ -98,7 +98,7 @@ void CNode::PushGetBlocks(CBlockIndex* pindexBegin, uint256 hashEnd)
 // find 'best' local address for a particular peer
 bool GetLocal(CNetAddr& addr, const CNetAddr *paddrPeer)
 {
-    if (fUseProxy || mapArgs.count("-connect") || fNoListen)
+    if (fNoListen)
         return false;
 
     int nBestCount = -1;
@@ -205,6 +205,14 @@ void static AdvertizeLocal()
     }
 }
 
+void SetReachable(enum Network net, bool fFlag)
+{
+    LOCK(cs_mapLocalHost);
+    vfReachable[net] = fFlag;
+    if (net == NET_IPV6 && fFlag)
+        vfReachable[NET_IPV4] = true;
+}
+
 // learn a new local address
 bool AddLocal(const CNetAddr& addr, int nScore)
 {
@@ -216,9 +224,7 @@ bool AddLocal(const CNetAddr& addr, int nScore)
     {
         LOCK(cs_mapLocalHost);
         mapLocalHost[addr] = std::max(nScore, mapLocalHost[addr]) + (mapLocalHost.count(addr) ? 1 : 0);
-        enum Network net = addr.GetNetwork();
-        vfReachable[net] = true;
-        if (net == NET_IPV6) vfReachable[NET_IPV4] = true;
+        SetReachable(addr.GetNetwork());
     }
 
     AdvertizeLocal();
@@ -528,6 +534,7 @@ void CNode::PushVersion()
     CAddress addrYou = (fUseProxy ? CAddress(CService("0.0.0.0",0)) : addr);
     CAddress addrMe = GetLocalAddress(&addr);
     RAND_bytes((unsigned char*)&nLocalHostNonce, sizeof(nLocalHostNonce));
+    printf("send version message: version %d, blocks=%d, us=%s, them=%s, peer=%s\n", PROTOCOL_VERSION, nBestHeight, addrMe.ToString().c_str(), addrYou.ToString().c_str(), addr.ToString().c_str());
     PushMessage("version", PROTOCOL_VERSION, nLocalServices, nTime, addrYou, addrMe,
                 nLocalHostNonce, FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, std::vector<string>()), nBestHeight);
 }
@@ -1800,7 +1807,7 @@ void static Discover()
     }
 #endif
 
-    if (!fUseProxy && !mapArgs.count("-connect") && !fNoListen)
+    if (!fUseProxy && !fNoListen)
     {
         CreateThread(ThreadGetMyExternalIP, NULL);
     }
