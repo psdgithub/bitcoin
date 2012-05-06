@@ -79,6 +79,7 @@ private:
     QAction *sendCoinsAction;
     QAction *addressBookAction;
     QAction *messageAction;
+    QAction *verifyMessageAction;
     QAction *aboutAction;
     QAction *receiveCoinsAction;
     QAction *optionsAction;
@@ -164,6 +165,8 @@ private slots:
     void backupWallet();
     /** Change encrypted wallet passphrase */
     void changePassphrase();
+    /** Verify a message signature */
+    void verifyMessage();
     /** Ask for pass phrase to unlock wallet temporarily */
     void unlockWallet();
 
