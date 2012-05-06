@@ -46,22 +46,29 @@ int WalletModel::getNumTransactions() const
     return numTransactions;
 }
 
-void WalletModel::update()
+void WalletModel::updateStatus()
 {
+    EncryptionStatus newEncryptionStatus = getEncryptionStatus();
+
+    if(cachedEncryptionStatus != newEncryptionStatus)
+        emit encryptionStatusChanged(newEncryptionStatus);
+}
+
+void WalletModel::updateTransaction(const QString &hash, int status)
+{
+    if(transactionTableModel)
+        transactionTableModel->updateTransaction(hash, status);
+
+    // Balance and number of transactions might have changed
     qint64 newBalance = getBalance();
     qint64 newUnconfirmedBalance = getUnconfirmedBalance();
     qint64 newImmatureBalance = getImmatureBalance();
     int newNumTransactions = getNumTransactions();
-    EncryptionStatus newEncryptionStatus = getEncryptionStatus();
 
     if(cachedBalance != newBalance || cachedUnconfirmedBalance != newUnconfirmedBalance || cachedImmatureBalance != newImmatureBalance)
         emit balanceChanged(newBalance, newUnconfirmedBalance, newImmatureBalance);
-
     if(cachedNumTransactions != newNumTransactions)
         emit numTransactionsChanged(newNumTransactions);
-
-    if(cachedEncryptionStatus != newEncryptionStatus)
-        emit encryptionStatusChanged(newEncryptionStatus);
 
     cachedBalance = newBalance;
     cachedUnconfirmedBalance = newUnconfirmedBalance;
@@ -69,9 +76,10 @@ void WalletModel::update()
     cachedNumTransactions = newNumTransactions;
 }
 
-void WalletModel::updateAddressList()
+void WalletModel::updateAddressBook(const QString &address, const QString &label, int status)
 {
-    addressTableModel->update();
+    if(addressTableModel)
+        addressTableModel->updateEntry(address, label, status);
 }
 
 bool WalletModel::validateAddress(const QString &address)

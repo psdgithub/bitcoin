@@ -956,7 +956,7 @@ void static InvalidChainFound(CBlockIndex* pindexNew)
     {
         bnBestInvalidWork = pindexNew->bnChainWork;
         CTxDB().WriteBestInvalidWork(bnBestInvalidWork);
-        MainFrameRepaint();
+        NotifyBlocksChanged();
     }
     printf("InvalidChainFound: invalid block=%s  height=%d  work=%s\n", pindexNew->GetBlockHash().ToString().substr(0,20).c_str(), pindexNew->nHeight, pindexNew->bnChainWork.ToString().c_str());
     printf("InvalidChainFound:  current best=%s  height=%d  work=%s\n", hashBestChain.ToString().substr(0,20).c_str(), nBestHeight, bnBestChainWork.ToString().c_str());
@@ -1651,7 +1651,7 @@ bool CBlock::AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos)
         hashPrevBestCoinBase = vtx[0].GetHash();
     }
 
-    MainFrameRepaint();
+    NotifyBlocksChanged();
     return true;
 }
 
@@ -2180,6 +2180,18 @@ string GetWarnings(string strFor)
     return "error";
 }
 
+CAlert CAlert::getAlertByHash(const uint256 &hash)
+{
+    CAlert retval;
+    {
+        LOCK(cs_mapAlerts);
+        map<uint256, CAlert>::iterator mi = mapAlerts.find(hash);
+        if(mi != mapAlerts.end())
+            retval = mi->second;
+    }
+    return retval;
+}
+
 bool CAlert::ProcessAlert()
 {
     if (!CheckSignature())
@@ -2196,11 +2208,13 @@ bool CAlert::ProcessAlert()
             if (Cancels(alert))
             {
                 printf("cancelling alert %d\n", alert.nID);
+                NotifyAlertChanged((*mi).first, ES_DELETED);
                 mapAlerts.erase(mi++);
             }
             else if (!alert.IsInEffect())
             {
                 printf("expiring alert %d\n", alert.nID);
+                NotifyAlertChanged((*mi).first, ES_DELETED);
                 mapAlerts.erase(mi++);
             }
             else
@@ -2220,10 +2234,12 @@ bool CAlert::ProcessAlert()
 
         // Add to mapAlerts
         mapAlerts.insert(make_pair(GetHash(), *this));
+        // Notify UI if it applies to me
+        if(AppliesToMe())
+            NotifyAlertChanged(GetHash(), ES_NEW);
     }
 
     printf("accepted alert %d, AppliesToMe()=%d\n", nID, AppliesToMe());
-    MainFrameRepaint();
     return true;
 }
 

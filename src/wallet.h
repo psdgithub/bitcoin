@@ -103,8 +103,6 @@ public:
     }
 
     std::map<uint256, CWalletTx> mapWallet;
-    std::vector<uint256> vWalletUpdated;
-
     std::map<uint256, int> mapRequestCount;
 
     std::map<CBitcoinAddress, std::string> mapAddressBook;
@@ -245,13 +243,7 @@ public:
 
     bool DelAddressBookName(const CBitcoinAddress& address);
 
-    void UpdatedTransaction(const uint256 &hashTx)
-    {
-        {
-            LOCK(cs_wallet);
-            vWalletUpdated.push_back(hashTx);
-        }
-    }
+    void UpdatedTransaction(const uint256 &hashTx);
 
     void PrintWallet(const CBlock& block);
 
