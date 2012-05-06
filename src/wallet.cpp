@@ -275,7 +275,7 @@ bool CWallet::EncryptWallet(const SecureString& strWalletPassphrase)
         CDB::Rewrite(strWalletFile);
 
     }
-    NotifyKeyStoreStatusChanged(this);
+    NotifyStatusChanged(this);
 
     return true;
 }
@@ -1228,7 +1228,7 @@ string CWallet::SendMoney(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew,
         return strError;
     }
 
-    if (fAskFee && !ThreadSafeAskFee(nFeeRequired, _("Sending...")))
+    if (fAskFee && !uiInterface.ThreadSafeAskFee(nFeeRequired, _("Sending...")))
         return "ABORTED";
 
     if (!CommitTransaction(wtxNew, reservekey))

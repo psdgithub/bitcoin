@@ -700,7 +700,7 @@ void ThreadSocketHandler2(void* parg)
         if (vNodes.size() != nPrevNodeCount)
         {
             nPrevNodeCount = vNodes.size();
-            NotifyNumConnectionsChanged(vNodes.size());
+            uiInterface.NotifyNumConnectionsChanged(vNodes.size());
         }
 
 
