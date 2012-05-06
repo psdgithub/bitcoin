@@ -26,6 +26,8 @@ MessagePage::MessagePage(QWidget *parent) :
     ui->setupUi(this);
 
     GUIUtil::setupAddressWidget(ui->signFrom, this);
+
+    ui->signFrom->setFocus();
 }
 
 MessagePage::~MessagePage()
@@ -111,4 +113,6 @@ void MessagePage::on_clearButton_clicked()
     ui->signFrom->clear();
     ui->message->clear();
     ui->signature->clear();
+
+    ui->signFrom->setFocus();
 }
