@@ -525,7 +525,7 @@ public:
         FILE *file = fopen(pathAddr.string().c_str(),
                            pfileRet ? "rb+" : "rb");
         if (!file)
-            return false;
+            return true;
         CAutoFile filein = CAutoFile(file, SER_DISK, CLIENT_VERSION);
         if (!filein) {
             fclose(file);
