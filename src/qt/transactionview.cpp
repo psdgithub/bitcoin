@@ -58,7 +58,7 @@ TransactionView::TransactionView(QWidget *parent) :
     dateWidget->addItem(tr("This month"), ThisMonth);
     dateWidget->addItem(tr("Last month"), LastMonth);
     dateWidget->addItem(tr("This year"), ThisYear);
-    dateWidget->addItem(tr("Range..."), Range);
+    dateWidget->addItem(tr("Range"), Range);
     hlayout->addWidget(dateWidget);
 
     typeWidget = new QComboBox(this);
@@ -125,7 +125,7 @@ TransactionView::TransactionView(QWidget *parent) :
     QAction *copyLabelAction = new QAction(tr("Copy label"), this);
     QAction *copyAmountAction = new QAction(tr("Copy amount"), this);
     QAction *editLabelAction = new QAction(tr("Edit label"), this);
-    QAction *showDetailsAction = new QAction(tr("Show details..."), this);
+    QAction *showDetailsAction = new QAction(tr("Show transaction details"), this);
 
     contextMenu = new QMenu();
     contextMenu->addAction(copyAddressAction);
