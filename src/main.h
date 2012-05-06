@@ -73,6 +73,8 @@ extern unsigned char pchMessageStart[4];
 
 // Settings
 extern int64 nTransactionFee;
+extern int64 nTransactionFeeMax;
+extern bool fForceFee;
 
 
 
