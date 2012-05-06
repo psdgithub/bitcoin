@@ -1271,8 +1271,7 @@ unsigned int pnSeed[] =
 
 void DumpAddresses()
 {
-    CAddrDB adb;
-    adb.WriteAddrman(addrman);
+    addrman.WriteToDisk();
 }
 
 void ThreadDumpAddress2(void* parg)

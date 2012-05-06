@@ -164,8 +164,6 @@ void CDB::Close()
     unsigned int nMinutes = 0;
     if (fReadOnly)
         nMinutes = 1;
-    if (strFile == "addr.dat")
-        nMinutes = 2;
     if (strFile == "blkindex.dat")
         nMinutes = 2;
     if (strFile == "blkindex.dat" && IsInitialBlockDownload())
@@ -310,7 +308,7 @@ void DBFlush(bool fShutdown)
                 CloseDb(strFile);
                 printf("%s checkpoint\n", strFile.c_str());
                 dbenv.txn_checkpoint(0, 0, 0);
-                if ((strFile != "blkindex.dat" && strFile != "addr.dat") || fDetachDB) {
+                if (strFile != "blkindex.dat" || fDetachDB) {
                     printf("%s detach\n", strFile.c_str());
                     dbenv.lsn_reset(strFile.c_str(), 0);
                 }
@@ -727,75 +725,6 @@ bool CTxDB::LoadBlockIndex()
     }
 
     return true;
-}
-
-
-
-
-
-//
-// CAddrDB
-//
-
-bool CAddrDB::WriteAddrman(const CAddrMan& addrman)
-{
-    return Write(string("addrman"), addrman);
-}
-
-bool CAddrDB::LoadAddresses()
-{
-    if (Read(string("addrman"), addrman))
-    {
-        printf("Loaded %i addresses\n", addrman.size());
-        return true;
-    }
-
-    // Read pre-0.6 addr records
-
-    vector<CAddress> vAddr;
-    vector<vector<unsigned char> > vDelete;
-
-    // Get cursor
-    Dbc* pcursor = GetCursor();
-    if (!pcursor)
-        return false;
-
-    loop
-    {
-        // Read next record
-        CDataStream ssKey(SER_DISK, CLIENT_VERSION);
-        CDataStream ssValue(SER_DISK, CLIENT_VERSION);
-        int ret = ReadAtCursor(pcursor, ssKey, ssValue);
-        if (ret == DB_NOTFOUND)
-            break;
-        else if (ret != 0)
-            return false;
-
-        // Unserialize
-        string strType;
-        ssKey >> strType;
-        if (strType == "addr")
-        {
-            CAddress addr;
-            ssValue >> addr;
-            vAddr.push_back(addr);
-        }
-    }
-    pcursor->close();
-
-    addrman.Add(vAddr, CNetAddr("0.0.0.0"));
-    printf("Loaded %i addresses\n", addrman.size());
-
-    // Note: old records left; we ran into hangs-on-startup
-    // bugs for some users who (we think) were running after
-    // an unclean shutdown.
-
-    return true;
-}
-
-bool LoadAddresses()
-{
-    return CAddrDB("cr+").LoadAddresses();
 }
 
 
