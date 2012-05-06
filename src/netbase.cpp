@@ -21,9 +21,23 @@ bool fProxyNameLookup = false;
 bool fNameLookup = false;
 CService addrProxy("127.0.0.1",9050);
 int nConnectTimeout = 5000;
+static bool vfNoProxy[NET_MAX] = {};
 
 
 static const unsigned char pchIPv4[12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff };
+
+enum Network ParseNetwork(std::string net) {
+    if (net == "ipv4") return NET_IPV4;
+    if (net == "ipv6") return NET_IPV6;
+    if (net == "tor")  return NET_TOR;
+    if (net == "i2p")  return NET_I2P;
+    return NET_UNROUTABLE;
+}
+
+void SetNoProxy(enum Network net, bool fNoProxy) {
+    assert(net >= 0 && net < NET_MAX);
+    vfNoProxy[net] = fNoProxy;
+}
 
 bool static LookupIntern(const char *pszName, std::vector<CNetAddr>& vIP, unsigned int nMaxSolutions, bool fAllowLookup)
 {
@@ -305,20 +319,43 @@ bool static ConnectSocketDirectly(const CService &addrConnect, SOCKET& hSocketRe
 {
     hSocketRet = INVALID_SOCKET;
 
-    SOCKET hSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    struct sockaddr_storage sockaddr;
+    int nFamily = 0;
+    size_t nSockAddrLen = 0;
+
+    if (addrConnect.IsIPv4())
+    {
+        // Use IPv4 stack to connect to IPv4 addresses
+        struct sockaddr_in sockaddr4;
+        if (!addrConnect.GetSockAddr(&sockaddr4))
+            return false;
+        memcpy(&sockaddr, &sockaddr4, sizeof(sockaddr4));
+        nSockAddrLen = sizeof(sockaddr4);
+        nFamily = AF_INET;
+    }
+#ifdef USE_IPV6
+    else if (addrConnect.IsIPv6())
+    {
+        struct sockaddr_in6 sockaddr6;
+        if (!addrConnect.GetSockAddr6(&sockaddr6))
+            return false;
+        memcpy(&sockaddr, &sockaddr6, sizeof(sockaddr6));
+        nSockAddrLen = sizeof(sockaddr6);
+        nFamily = AF_INET6;
+    }
+#endif
+    else {
+        printf("Cannot connect to %s: unsupported network\n", addrConnect.ToString().c_str());
+        return false;
+    }
+
+    SOCKET hSocket = socket(nFamily, SOCK_STREAM, IPPROTO_TCP);
     if (hSocket == INVALID_SOCKET)
         return false;
 #ifdef SO_NOSIGPIPE
     int set = 1;
     setsockopt(hSocket, SOL_SOCKET, SO_NOSIGPIPE, (void*)&set, sizeof(int));
 #endif
-
-    struct sockaddr_in sockaddr;
-    if (!addrConnect.GetSockAddr(&sockaddr))
-    {
-        closesocket(hSocket);
-        return false;
-    }
 
 #ifdef WIN32
     u_long fNonblock = 1;
@@ -332,7 +369,7 @@ bool static ConnectSocketDirectly(const CService &addrConnect, SOCKET& hSocketRe
         return false;
     }
 
-    if (connect(hSocket, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) == SOCKET_ERROR)
+    if (connect(hSocket, (struct sockaddr*)&sockaddr, nSockAddrLen) == SOCKET_ERROR)
     {
         // WSAEINVAL is here because some legacy version of winsock uses it
         if (WSAGetLastError() == WSAEINPROGRESS || WSAGetLastError() == WSAEWOULDBLOCK || WSAGetLastError() == WSAEINVAL)
@@ -409,7 +446,7 @@ bool static ConnectSocketDirectly(const CService &addrConnect, SOCKET& hSocketRe
 bool ConnectSocket(const CService &addrDest, SOCKET& hSocketRet, int nTimeout)
 {
     SOCKET hSocket = INVALID_SOCKET;
-    bool fProxy = (fUseProxy && addrDest.IsRoutable());
+    bool fProxy = (fUseProxy && addrDest.IsRoutable() && !vfNoProxy[addrDest.GetNetwork()]);
 
     if (!ConnectSocketDirectly(fProxy ? addrProxy : addrDest, hSocket, nTimeout))
         return false;
@@ -531,6 +568,11 @@ bool CNetAddr::IsIPv4() const
     return (memcmp(ip, pchIPv4, sizeof(pchIPv4)) == 0);
 }
 
+bool CNetAddr::IsIPv6() const
+{
+    return (!IsIPv4());
+}
+
 bool CNetAddr::IsRFC1918() const
 {
     return IsIPv4() && (
@@ -585,6 +627,18 @@ bool CNetAddr::IsRFC6145() const
 bool CNetAddr::IsRFC4843() const
 {
     return (GetByte(15) == 0x20 && GetByte(14) == 0x01 && GetByte(13) == 0x00 && (GetByte(12) & 0xF0) == 0x10);
+}
+
+bool CNetAddr::IsOnionCat() const
+{
+    static const unsigned char pchOnionCat[] = {0xFD,0x87,0xD8,0x7E,0xEB,0x43};
+    return (memcmp(ip, pchOnionCat, sizeof(pchOnionCat)) == 0);
+}
+
+bool CNetAddr::IsGarliCat() const
+{
+    static const unsigned char pchGarliCat[] = {0xFD,0x60,0xDB,0x4D,0xDD,0xB5};
+    return (memcmp(ip, pchGarliCat, sizeof(pchGarliCat)) == 0);
 }
 
 bool CNetAddr::IsLocal() const
@@ -645,7 +699,24 @@ bool CNetAddr::IsValid() const
 
 bool CNetAddr::IsRoutable() const
 {
-    return IsValid() && !(IsRFC1918() || IsRFC3927() || IsRFC4862() || IsRFC4193() || IsRFC4843() || IsLocal());
+    return IsValid() && !(IsRFC1918() || IsRFC3927() || IsRFC4862() || (IsRFC4193() && !IsOnionCat() && !IsGarliCat()) || IsRFC4843() || IsLocal());
+}
+
+enum Network CNetAddr::GetNetwork() const
+{
+    if (!IsRoutable())
+        return NET_UNROUTABLE;
+
+    if (IsIPv4())
+        return NET_IPV4;
+
+    if (IsOnionCat())
+        return NET_TOR;
+
+    if (IsGarliCat())
+        return NET_I2P;
+
+    return NET_IPV6;
 }
 
 std::string CNetAddr::ToStringIP() const
@@ -701,40 +772,40 @@ bool CNetAddr::GetIn6Addr(struct in6_addr* pipv6Addr) const
 std::vector<unsigned char> CNetAddr::GetGroup() const
 {
     std::vector<unsigned char> vchRet;
-    int nClass = 0; // 0=IPv6, 1=IPv4, 254=local, 255=unroutable
+    int nClass = NET_IPV6;
     int nStartByte = 0;
     int nBits = 16;
 
     // all local addresses belong to the same group
     if (IsLocal())
     {
-        nClass = 254;
+        nClass = 255;
         nBits = 0;
     }
 
     // all unroutable addresses belong to the same group
     if (!IsRoutable())
     {
-        nClass = 255;
+        nClass = NET_UNROUTABLE;
         nBits = 0;
     }
     // for IPv4 addresses, '1' + the 16 higher-order bits of the IP
     // includes mapped IPv4, SIIT translated IPv4, and the well-known prefix
     else if (IsIPv4() || IsRFC6145() || IsRFC6052())
     {
-        nClass = 1;
+        nClass = NET_IPV4;
         nStartByte = 12;
     }
     // for 6to4 tunneled addresses, use the encapsulated IPv4 address
     else if (IsRFC3964())
     {
-        nClass = 1;
+        nClass = NET_IPV4;
         nStartByte = 2;
     }
     // for Teredo-tunneled IPv6 addresses, use the encapsulated IPv4 address
     else if (IsRFC4380())
     {
-        vchRet.push_back(1);
+        vchRet.push_back(NET_IPV4);
         vchRet.push_back(GetByte(3) ^ 0xFF);
         vchRet.push_back(GetByte(2) ^ 0xFF);
         return vchRet;
@@ -770,6 +841,29 @@ int64 CNetAddr::GetHash() const
 void CNetAddr::print() const
 {
     printf("CNetAddr(%s)\n", ToString().c_str());
+}
+
+// for IPv6 partners:        for unknown/Teredo partners:      for IPv4 partners:
+// 0 - unroutable            // 0 - unroutable                 // 0 - unroutable
+// 1 - teredo                // 1 - teredo                     // 1 - ipv4
+// 2 - tunneled ipv6         // 2 - tunneled ipv6
+// 3 - ipv4                  // 3 - ipv6
+// 4 - ipv6                  // 4 - ipv4
+int CNetAddr::GetReachabilityFrom(const CNetAddr *paddrPartner) const
+{
+    if (!IsValid() || !IsRoutable())
+        return 0;
+    if (paddrPartner && paddrPartner->IsIPv4())
+        return IsIPv4() ? 1 : 0;
+    if (IsRFC4380())
+        return 1;
+    if (IsRFC3964() || IsRFC6052())
+        return 2;
+    bool fRealIPv6 = paddrPartner && !paddrPartner->IsRFC4380() && paddrPartner->IsValid() && paddrPartner->IsRoutable();
+    if (fRealIPv6)
+        return IsIPv4() ? 3 : 4;
+    else
+        return IsIPv4() ? 4 : 3;
 }
 
 void CService::Init()
@@ -896,12 +990,16 @@ std::vector<unsigned char> CService::GetKey() const
 
 std::string CService::ToStringPort() const
 {
-    return strprintf(":%i", port);
+    return strprintf("%i", port);
 }
 
 std::string CService::ToStringIPPort() const
 {
-    return ToStringIP() + ToStringPort();
+    if (IsIPv4()) {
+        return ToStringIP() + ":" + ToStringPort();
+    } else {
+        return "[" + ToStringIP() + "]:" + ToStringPort();
+    }
 }
 
 std::string CService::ToString() const

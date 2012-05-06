@@ -180,6 +180,7 @@ bool AppInit2(int argc, char* argv[])
             "  -timeout=<n>     \t  "   + _("Specify connection timeout (in milliseconds)") + "\n" +
             "  -proxy=<ip:port> \t  "   + _("Connect through socks proxy") + "\n" +
             "  -socks=<n>       \t  "   + _("Select the version of socks proxy to use (4 or 5, 5 is default)") + "\n" +
+            "  -noproxy=<net>   \t  "   + _("Do not use proxy for connections to network net (ipv4 or ipv6)") + "\n" +
             "  -dns             \t  "   + _("Allow DNS lookups for -addnode, -seednode and -connect") + "\n" +
             "  -proxydns        \t  "   + _("Pass DNS requests to (SOCKS5) proxy") + "\n" +
             "  -port=<port>     \t\t  " + _("Listen for connections on <port> (default: 8333 or testnet: 18333)") + "\n" +
@@ -187,6 +188,9 @@ bool AppInit2(int argc, char* argv[])
             "  -addnode=<ip>    \t  "   + _("Add a node to connect to and attempt to keep the connection open") + "\n" +
             "  -connect=<ip>    \t\t  " + _("Connect only to the specified node") + "\n" +
             "  -seednode=<ip>   \t\t  " + _("Connect to a node to retrieve peer addresses, and disconnect") + "\n" +
+            "  -externalip=<ip> \t  "   + _("Specify your own public address") + "\n" +
+            "  -blocknet=<net>  \t  "   + _("Do not connect to addresses in network net (ipv4, ipv6)") + "\n" +
+            "  -discover        \t  "   + _("Try to discover public IP address (default: 1)") + "\n" +
             "  -irc             \t  "   + _("Find peers using internet relay chat (default: 0)") + "\n" +
             "  -listen          \t  "   + _("Accept connections from outside (default: 1)") + "\n" +
 #ifdef QT_GUI
@@ -530,6 +534,21 @@ bool AppInit2(int argc, char* argv[])
         }
     }
 
+    if (mapArgs.count("-noproxy"))
+    {
+        BOOST_FOREACH(std::string snet, mapMultiArgs["-noproxy"]) {
+            enum Network net = ParseNetwork(snet);
+            if (net == NET_UNROUTABLE) {
+                ThreadSafeMessageBox(_("Unknown network specified in -noproxy"), _("Bitcoin"), wxOK | wxMODAL);
+                return false;
+            }
+            SetNoProxy(net);
+        }
+    }
+
+    if (mapArgs.count("-connect"))
+        SoftSetBoolArg("-dnsseed", false);
+ 
     bool fTor = (fUseProxy && addrProxy.GetPort() == 9050);
     if (fTor)
     {
@@ -539,6 +558,18 @@ bool AppInit2(int argc, char* argv[])
         SoftSetBoolArg("-irc", false);
         SoftSetBoolArg("-proxydns", true);
         SoftSetBoolArg("-upnp", false);
+        SoftSetBoolArg("-discover", false);
+    }
+
+    if (mapArgs.count("-blocknet")) {
+        BOOST_FOREACH(std::string snet, mapMultiArgs["-blocknet"]) {
+            enum Network net = ParseNetwork(snet);
+            if (net == NET_UNROUTABLE) {
+                ThreadSafeMessageBox(_("Unknown network specified in -blocknet"), _("Bitcoin"), wxOK | wxMODAL);
+                return false;
+            }
+            SetLimited(net);
+        }
     }
 
     fNameLookup = GetBoolArg("-dns");
@@ -565,6 +596,12 @@ bool AppInit2(int argc, char* argv[])
             ThreadSafeMessageBox(strError, _("Bitcoin"), wxOK | wxMODAL);
             return false;
         }
+    }
+
+    if (mapArgs.count("-externalip"))
+    {
+        BOOST_FOREACH(string strAddr, mapMultiArgs["-externalip"])
+            AddLocal(CNetAddr(strAddr, fNameLookup), LOCAL_MANUAL);
     }
 
     if (mapArgs.count("-paytxfee"))
