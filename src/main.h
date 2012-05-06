@@ -75,6 +75,8 @@ extern unsigned char pchMessageStart[4];
 extern int64 nTransactionFee;
 extern int64 nTransactionFeeMax;
 extern bool fForceFee;
+extern int64 nMinFeeBase;
+extern int64 nMinFeePer;
 
 
 
@@ -585,6 +587,14 @@ public:
 
         if (!MoneyRange(nMinFee))
             nMinFee = MAX_MONEY;
+
+        if (mode == GMF_BLOCK)
+        {
+            int64 nAltMinFee = (1 + ((int64)nBytes / nMinFeePer)) * nMinFeeBase;
+            if (nAltMinFee > nMinFee)
+                nMinFee = nAltMinFee;
+        }
+
         return nMinFee;
     }
 
