@@ -1951,9 +1951,14 @@ Value getmemorypool(const Array& params, bool fHelp)
         pblock->nNonce = 0;
 
         Array transactions;
+        map<uint256, int64_t> setTxIndex;
         enum DecomposeMode dm = FindDecompose(oparam, "tx", "hex");
-        BOOST_FOREACH (const CTransaction& tx, pblock->vtx)
+        int i = 0;
+        CTxDB txdb("r");
+        BOOST_FOREACH (CTransaction& tx, pblock->vtx)
         {
+            setTxIndex[tx.GetHash()] = i++;
+
             if(tx.IsCoinBase())
                 continue;
 
@@ -1965,6 +1970,28 @@ Value getmemorypool(const Array& params, bool fHelp)
                 CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
                 ssTx << tx;
                 entry.push_back(Pair("data", HexStr(ssTx.begin(), ssTx.end())));
+
+                entry.push_back(Pair("hash", tx.GetHash().GetHex()));
+
+                MapPrevTx mapInputs;
+                map<uint256, CTxIndex> mapUnused;
+                bool fInvalid = false;
+                if (tx.FetchInputs(txdb, mapUnused, false, false, mapInputs, fInvalid))
+                {
+                    entry.push_back(Pair("fee", (int64_t)(tx.GetValueIn(mapInputs) - tx.GetValueOut())));
+
+                    Array deps;
+                    BOOST_FOREACH (MapPrevTx::value_type& inp, mapInputs)
+                    {
+                        if (setTxIndex.count(inp.first))
+                            deps.push_back(setTxIndex[inp.first]);
+                    }
+                    entry.push_back(Pair("depends", deps));
+
+                    int64_t nSigOps = tx.GetLegacySigOpCount();
+                    nSigOps += tx.GetP2SHSigOpCount(mapInputs);
+                    entry.push_back(Pair("sigops", nSigOps));
+                }
 
                 transactions.push_back(entry);
                 break;
