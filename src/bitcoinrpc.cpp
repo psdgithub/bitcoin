@@ -46,6 +46,8 @@ static CCriticalSection cs_nWalletUnlockTime;
 extern Value dumpprivkey(const Array& params, bool fHelp);
 extern Value importprivkey(const Array& params, bool fHelp);
 
+const Object emptyobj;
+
 Object JSONRPCError(int code, const string& message)
 {
     Object error;
@@ -111,6 +113,33 @@ HexBits(unsigned int nBits)
     } uBits;
     uBits.nBits = htonl((int32_t)nBits);
     return HexStr(BEGIN(uBits.cBits), END(uBits.cBits));
+}
+
+enum DecomposeMode {
+	DM_NONE = 0,
+	DM_HASH,
+	DM_HEX,
+	DM_ASM,
+	DM_OBJ,
+};
+
+enum DecomposeMode
+FindDecompose(const Object& decompositions, const char* pcType, const char* pcDefault)
+{
+    Value val = find_value(decompositions, pcType);
+    std::string strDecompose = (val.type() == null_type) ? pcDefault : val.get_str();
+
+    if (strDecompose == "no")
+        return DM_NONE;
+    if (strDecompose == "hash")
+        return DM_HASH;
+    if (strDecompose == "hex")
+        return DM_HEX;
+    if (strDecompose == "asm")
+        return DM_ASM;
+    if (strDecompose == "obj")
+        return DM_OBJ;
+    throw JSONRPCError(-18, "Invalid decomposition");
 }
 
 void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
@@ -1864,23 +1893,31 @@ Value getwork(const Array& params, bool fHelp)
 
 Value getmemorypool(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() > 1)
+    if (fHelp || params.size() > 2)
         throw runtime_error(
-            "getmemorypool [data]\n"
+            "getmemorypool [data] [params]\n"
             "If [data] is not specified, returns data needed to construct a block to work on:\n"
             "  \"version\" : block version\n"
             "  \"previousblockhash\" : hash of current highest block\n"
             "  \"transactions\" : contents of non-coinbase transactions that should be included in the next block\n"
+            "  \"coinbaseaux\" : data that should be included in coinbase\n"
             "  \"coinbasevalue\" : maximum allowable input to coinbase transaction, including the generation award and transaction fees\n"
-            "  \"coinbaseflags\" : data that should be included in coinbase so support for new features can be judged\n"
             "  \"time\" : timestamp appropriate for next block\n"
             "  \"mintime\" : minimum timestamp appropriate for next block\n"
             "  \"curtime\" : current timestamp\n"
             "  \"bits\" : compressed target of next block\n"
             "If [data] is specified, tries to solve the block and returns true if it was successful.");
 
-    if (params.size() == 0)
+    if (params.size() == 0 || params[0].type() != str_type)
     {
+        const Object& oparam = params.size() ? params[0].get_obj() : emptyobj;
+
+        {
+            Value modeval = find_value(oparam, "mode");
+            if (modeval.type() != null_type && modeval.get_str() != "template")
+                throw JSONRPCError(-8, "Invalid mode");
+        }
+
         if (vNodes.empty())
             throw JSONRPCError(-9, "Bitcoin is not connected!");
 
@@ -1914,37 +1951,95 @@ Value getmemorypool(const Array& params, bool fHelp)
         pblock->nNonce = 0;
 
         Array transactions;
-        BOOST_FOREACH(CTransaction tx, pblock->vtx) {
+        enum DecomposeMode dm = FindDecompose(oparam, "tx", "hex");
+        BOOST_FOREACH (const CTransaction& tx, pblock->vtx)
+        {
             if(tx.IsCoinBase())
                 continue;
 
-            CDataStream ssTx;
-            ssTx << tx;
+            switch (dm) {
+            case DM_OBJ:
+            {
+                Object entry;
 
-            transactions.push_back(HexStr(ssTx.begin(), ssTx.end()));
+                CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
+                ssTx << tx;
+                entry.push_back(Pair("data", HexStr(ssTx.begin(), ssTx.end())));
+
+                transactions.push_back(entry);
+                break;
+            }
+            case DM_HEX:
+            {
+                CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
+                ssTx << tx;
+
+                transactions.push_back(HexStr(ssTx.begin(), ssTx.end()));
+                break;
+            }
+            case DM_HASH:
+                transactions.push_back(tx.GetHash().GetHex());
+                break;
+            default:
+                throw JSONRPCError(-18, "Invalid transaction decomposition");
+            }
+        }
+
+        Object aux;
+        aux.push_back(Pair("flags", HexStr(COINBASE_FLAGS.begin(), COINBASE_FLAGS.end())));
+
+        uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+
+        static Array*paMutable = NULL;
+        if (!paMutable)
+        {
+            paMutable = new Array();
+            Array&aMutable = *paMutable;
+            aMutable.push_back("time");
+            aMutable.push_back("transactions");
+            aMutable.push_back("prevblock");
         }
 
         Object result;
         result.push_back(Pair("version", pblock->nVersion));
         result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
         result.push_back(Pair("transactions", transactions));
+        result.push_back(Pair("coinbaseaux", aux));
         result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
-        result.push_back(Pair("coinbaseflags", HexStr(COINBASE_FLAGS.begin(), COINBASE_FLAGS.end())));
+        result.push_back(Pair("target", hashTarget.GetHex()));
         result.push_back(Pair("time", (int64_t)pblock->nTime));
         result.push_back(Pair("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1));
+        result.push_back(Pair("mutable", *paMutable));
+        result.push_back(Pair("noncerange", "00000000ffffffff"));
+        result.push_back(Pair("sigoplimit", (int64_t)MAX_BLOCK_SIGOPS));
+        result.push_back(Pair("sizelimit", (int64_t)MAX_BLOCK_SIZE));
         result.push_back(Pair("curtime", (int64_t)GetAdjustedTime()));
         result.push_back(Pair("bits", HexBits(pblock->nBits)));
+        result.push_back(Pair("height", (int64_t)(pindexPrev->nHeight+1)));
 
         return result;
     }
     else
     {
         // Parse parameters
+        const Object& oparam = (params.size() > 1) ? params[1].get_obj() : emptyobj;
+
+        {
+            Value modeval = find_value(oparam, "mode");
+            if (modeval.type() != null_type && modeval.get_str() != "submit")
+                throw JSONRPCError(-8, "Invalid mode");
+        }
+
         CDataStream ssBlock(ParseHex(params[0].get_str()));
         CBlock pblock;
         ssBlock >> pblock;
 
-        return ProcessBlock(NULL, &pblock);
+        bool fAccepted = ProcessBlock(NULL, &pblock);
+
+        if (params.size() == 1)
+            return fAccepted;
+
+        return fAccepted ? Value::null : "rejected";
     }
 }
 
@@ -2681,6 +2776,8 @@ int CommandLineRPC(int argc, char *argv[])
         if (strMethod == "listtransactions"       && n > 2) ConvertTo<boost::int64_t>(params[2]);
         if (strMethod == "listaccounts"           && n > 0) ConvertTo<boost::int64_t>(params[0]);
         if (strMethod == "walletpassphrase"       && n > 1) ConvertTo<boost::int64_t>(params[1]);
+        if (strMethod == "getmemorypool"          && n > 1) ConvertTo<Object>(params[1]);
+        if (strMethod == "getmemorypool"          && n > 0 && params[0].get_str()[0] == '{') ConvertTo<Object>(params[0]);
         if (strMethod == "listsinceblock"         && n > 1) ConvertTo<boost::int64_t>(params[1]);
         if (strMethod == "sendmany"               && n > 1)
         {
