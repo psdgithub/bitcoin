@@ -20,6 +20,8 @@
 
 class CBlockIndex;
 
+extern bool fRPCRunning;
+
 /* Start RPC threads */
 void StartRPCThreads();
 /* Alternative to StartRPCThreads for the GUI, when no server is

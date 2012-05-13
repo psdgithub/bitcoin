@@ -10,6 +10,9 @@
 #include "bitcoin-config.h"
 #endif
 
+#include <boost/thread/condition_variable.hpp>
+#include <boost/thread/mutex.hpp>
+
 #include "bignum.h"
 #include "chainparams.h"
 #include "coins.h"
@@ -84,6 +87,8 @@ extern uint64_t nLastBlockTx;
 extern uint64_t nLastBlockSize;
 extern const std::string strMessageMagic;
 extern int64_t nTimeBestReceived;
+extern boost::mutex csBestBlock;
+extern boost::condition_variable cvBlockChange;
 extern bool fImporting;
 extern bool fReindex;
 extern bool fBenchmark;
