@@ -11,6 +11,7 @@
 #include "base58.h"
 #include "bitcoinrpc.h"
 #include "db.h"
+#include "main.h"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
@@ -34,6 +35,7 @@ using namespace json_spirit;
 static std::string strRPCUserColonPass;
 
 // These are created by StartRPCThreads, destroyed in StopRPCThreads
+bool fRPCRunning = false;
 static asio::io_service* rpc_io_service = NULL;
 static map<string, boost::shared_ptr<deadline_timer> > deadlineTimers;
 static ssl::context* rpc_ssl_context = NULL;
@@ -835,6 +837,8 @@ void StartRPCThreads()
         return;
     }
 
+    fRPCRunning = true;
+
     rpc_worker_group = new boost::thread_group();
     for (int i = 0; i < GetArg("-rpcthreads", 4); i++)
         rpc_worker_group->create_thread(boost::bind(&asio::io_service::run, rpc_io_service));
@@ -844,8 +848,10 @@ void StopRPCThreads()
 {
     if (rpc_io_service == NULL) return;
 
+    fRPCRunning = false;
     deadlineTimers.clear();
     rpc_io_service->stop();
+    cvBlockChange.notify_all();
     rpc_worker_group->join_all();
     delete rpc_worker_group; rpc_worker_group = NULL;
     delete rpc_ssl_context; rpc_ssl_context = NULL;
