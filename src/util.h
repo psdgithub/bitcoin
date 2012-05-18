@@ -121,6 +121,7 @@ extern std::string strMiscWarning;
 extern bool fTestNet;
 extern bool fNoListen;
 extern bool fLogTimestamps;
+extern const int64 nClientStartupTime;
 
 void RandAddSeed();
 void RandAddSeedPerfmon();
@@ -173,7 +174,6 @@ int64 GetAdjustedTime();
 std::string FormatFullVersion();
 std::string FormatSubVersion(const std::string& name, int nClientVersion, const std::vector<std::string>& comments);
 void AddTimeData(const CNetAddr& ip, int64 nTime);
-
 
 
 
@@ -443,7 +443,7 @@ inline uint160 Hash160(const std::vector<unsigned char>& vch)
 }
 
 
-/** Median filter over a stream of values. 
+/** Median filter over a stream of values.
  * Returns the median of the last N numbers
  */
 template <typename T> class CMedianFilter

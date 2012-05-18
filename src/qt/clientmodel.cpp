@@ -5,7 +5,7 @@
 #include "transactiontablemodel.h"
 
 #include "main.h"
-static const int64 nClientStartupTime = GetTime();
+#include "util.h"
 
 #include <QDateTime>
 
