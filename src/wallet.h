@@ -746,4 +746,28 @@ public:
 
 bool GetWalletFile(CWallet* pwallet, std::string &strWalletFileOut);
 
+
+template<typename T>
+class CScopedSendFromAddressRestriction
+{
+private:
+    CWallet &_wallet;
+
+public:
+    CScopedSendFromAddressRestriction(CWallet& wallet, T addresses)
+    : _wallet(wallet)
+    {
+        if (addresses.empty())
+            return;
+
+        _wallet.setSendFromAddressRestriction(addresses);
+    }
+
+    ~CScopedSendFromAddressRestriction()
+    {
+        _wallet.clearSendFromAddressRestriction();
+    }
+};
+
+
 #endif

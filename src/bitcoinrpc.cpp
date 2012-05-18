@@ -731,55 +731,38 @@ Value settxfee(const Array& params, bool fHelp)
 
 Value sendtoaddress(const Array& params, bool fHelp)
 {
-    string crypt_usage = pwalletMain->IsCrypted() ? "\nrequires wallet passphrase to be set with walletpassphrase first" : "";
-
-    if (fHelp || params.size() < 2 || params.size() > 4)
+    if (pwalletMain->IsCrypted() && (fHelp || params.size() < 2 || params.size() > 4))
         throw runtime_error(
-            "sendtoaddress <bitcoinaddress>[:<sendfromaddress1>[,<sendfromaddress2>[,...]]] <amount> [comment] [comment-to]\n"
-            "<amount> is a real and is rounded to the nearest 0.00000001" + crypt_usage);
-
-    string strAddress = params[0].get_str();
-    vector<string> splitAddresses;
-    boost::split(splitAddresses, strAddress, boost::is_any_of(":"));
-
-    if (splitAddresses.size() > 2)
+            "sendtoaddress <bitcoinaddress> <amount> [comment] [comment-to]\n"
+            "<amount> is a real and is rounded to the nearest 0.00000001\n"
+            "requires wallet passphrase to be set with walletpassphrase first");
+    if (!pwalletMain->IsCrypted() && (fHelp || params.size() < 2 || params.size() > 4))
         throw runtime_error(
-            "sendtoaddress <bitcoinaddress>[:<sendfromaddress1>[,<sendfromaddress2>[,...]]] <amount> [comment] [comment-to]\n"
-            "<amount> is a real and is rounded to the nearest 0.00000001" + crypt_usage);
+            "sendtoaddress <bitcoinaddress> <amount> [comment] [comment-to]\n"
+            "<amount> is a real and is rounded to the nearest 0.00000001");
 
-    strAddress = splitAddresses[0];
-    if (splitAddresses.size() == 2)
-        pwalletMain->setSendFromAddressRestriction(splitAddresses[1]);
-
-    CBitcoinAddress address(strAddress);
+    CBitcoinAddress address(params[0].get_str());
     if (!address.IsValid())
         throw JSONRPCError(-5, "Invalid bitcoin address");
+
+    // Amount
+    int64 nAmount = AmountFromValue(params[1]);
+
+    // Wallet comments
+    CWalletTx wtx;
+    if (params.size() > 2 && params[2].type() != null_type && !params[2].get_str().empty())
+        wtx.mapValue["comment"] = params[2].get_str();
+    if (params.size() > 3 && params[3].type() != null_type && !params[3].get_str().empty())
+        wtx.mapValue["to"]      = params[3].get_str();
 
     if (pwalletMain->IsLocked())
         throw JSONRPCError(-13, "Error: Please enter the wallet passphrase with walletpassphrase first.");
 
-    try
-    {
-        // Amount
-        int64 nAmount = AmountFromValue(params[1]);
-        // Wallet comments
-        CWalletTx wtx;
-        if (params.size() > 2 && params[2].type() != null_type && !params[2].get_str().empty())
-            wtx.mapValue["comment"] = params[2].get_str();
-        if (params.size() > 3 && params[3].type() != null_type && !params[3].get_str().empty())
-            wtx.mapValue["to"]      = params[3].get_str();
+    string strError = pwalletMain->SendMoneyToBitcoinAddress(address, nAmount, wtx);
+    if (strError != "")
+        throw JSONRPCError(-4, strError);
 
-        string strError = pwalletMain->SendMoneyToBitcoinAddress(strAddress, nAmount, wtx);
-        if (strError != "")
-            throw JSONRPCError(-4, strError);
-
-        pwalletMain->clearSendFromAddressRestriction();
-
-        return wtx.GetHash().GetHex();
-    } catch (...) {
-      pwalletMain->clearSendFromAddressRestriction();
-      throw;
-    }
+    return wtx.GetHash().GetHex();
 }
 
 Value listaddressgroupings(const Array& params, bool fHelp)
@@ -1146,14 +1129,29 @@ Value sendmany(const Array& params, bool fHelp)
     if (pwalletMain->IsCrypted() && (fHelp || params.size() < 2 || params.size() > 4))
         throw runtime_error(
             "sendmany <fromaccount> {address:amount,...} [minconf=1] [comment]\n"
+            "sendmany [<fromaccount>, [sendfromaddresses...]] {address:amount,...} [minconf=1] [comment]\n"
             "amounts are double-precision floating point numbers\n"
             "requires wallet passphrase to be set with walletpassphrase first");
     if (!pwalletMain->IsCrypted() && (fHelp || params.size() < 2 || params.size() > 4))
         throw runtime_error(
             "sendmany <fromaccount> {address:amount,...} [minconf=1] [comment]\n"
+            "sendmany [<fromaccount>, [sendfromaddresses...]] {address:amount,...} [minconf=1] [comment]\n"
             "amounts are double-precision floating point numbers");
 
-    string strAccount = AccountFromValue(params[0]);
+    std::string strAccount;
+    std::set<std::string> fromAddresses;
+    if (params[0].type() == str_type)
+        strAccount = AccountFromValue(params[0]);
+    else
+    {
+        Array a = params[0].get_array();
+        strAccount = AccountFromValue(a[0]);
+        BOOST_FOREACH(const Value& v, a)
+        {
+            fromAddresses.insert(v.get_str());
+        }
+    }
+
     Object sendTo = params[1].get_obj();
     int nMinDepth = 1;
     if (params.size() > 2)
@@ -1193,6 +1191,8 @@ Value sendmany(const Array& params, bool fHelp)
     int64 nBalance = GetAccountBalance(strAccount, nMinDepth);
     if (totalAmount > nBalance)
         throw JSONRPCError(-6, "Account has insufficient funds");
+
+    CScopedSendFromAddressRestriction<std::set<std::string> >(*pwalletMain, fromAddresses);
 
     // Send
     CReserveKey keyChange(pwalletMain);
@@ -2990,6 +2990,8 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "listaccounts"           && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "walletpassphrase"       && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "listsinceblock"         && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "sendmany"               && n > 0 && params[0].get_str()[0] == '[')
+        ConvertTo<Array>(params[0]);
     if (strMethod == "sendmany"               && n > 1)
     {
         string s = params[1].get_str();
