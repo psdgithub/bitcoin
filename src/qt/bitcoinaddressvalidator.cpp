@@ -25,17 +25,8 @@ QValidator::State BitcoinAddressValidator::validate(QString &input, int &pos) co
     {
         bool removeChar = false;
         QChar ch = input.at(idx);
-        // Transform characters that are visually close
         switch(ch.unicode())
         {
-        case 'l':
-        case 'I':
-            input[idx] = QChar('1');
-            break;
-        case '0':
-        case 'O':
-            input[idx] = QChar('o');
-            break;
         // Qt categorizes these as "Other_Format" not "Separator_Space"
         case 0x200B: // ZERO WIDTH SPACE
         case 0xFEFF: // ZERO WIDTH NO-BREAK SPACE
