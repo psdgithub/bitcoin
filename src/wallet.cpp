@@ -24,8 +24,8 @@ struct CompareValueOnly
 {
     bool operator()(const pair<int64, pair<const CWalletTx*, unsigned int> >& t1,
                     const pair<int64, pair<const CWalletTx*, unsigned int> >& t2) const
-    { 
-        return t1.first < t2.first; 
+    {
+        return t1.first < t2.first;
     }
 };
 
@@ -951,7 +951,9 @@ static void ApproximateBestSubset(vector<pair<int64, pair<const CWalletTx*,unsig
         int64 nTotal = 0;
         bool fReachedTarget = false;
         for (int nPass = 0; nPass < 2 && !fReachedTarget; nPass++)
+        {
             for (unsigned int i = 0; i < vValue.size(); i++)
+            {
                 if (nPass == 0 ? rand() % 2 : !vfIncluded[i])
                 {
                     nTotal += vValue[i].first;
@@ -968,6 +970,8 @@ static void ApproximateBestSubset(vector<pair<int64, pair<const CWalletTx*,unsig
                         vfIncluded[i] = false;
                     }
                 }
+            }
+        }
     }
 }
 
@@ -1059,14 +1063,12 @@ bool CWallet::SelectCoinsMinConf(int64 nTargetValue, int nConfMine, int nConfThe
                 nValueRet += vValue[i].first;
             }
 
-#ifdef DEBUG
         //// debug print
         printf("SelectCoins() best subset: ");
         for (unsigned int i = 0; i < vValue.size(); i++)
             if (vfBest[i])
                 printf("%s ", FormatMoney(vValue[i].first).c_str());
         printf("total %s\n", FormatMoney(nBest).c_str());
-#endif
     }
 
     return true;

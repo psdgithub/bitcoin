@@ -41,7 +41,7 @@ CoinControlPage::CoinControlPage(QWidget *parent) :
     table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     table->horizontalHeader()->setResizeMode(QHeaderView::ResizeToContents);
     table->setSelectionBehavior(QAbstractItemView::SelectRows);
-    
+
     connect(table, SIGNAL(itemDoubleClicked(QTableWidgetItem *)), this, SLOT(sendFromSelectedAddress(QTableWidgetItem *)));
 
     hlayout->addWidget(table);
