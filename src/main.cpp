@@ -57,6 +57,8 @@ int64 nHPSTimerStart;
 int64 nTransactionFee = 0;
 int64 nTransactionFeeMax = CENT;
 bool fForceFee = false;
+int64 nMinFeeBase = 0;
+int64 nMinFeePer = 1000;
 
 
 
