@@ -6,11 +6,10 @@
 
 #include "main.h"
 #include "ui_interface.h"
+#include "util.h"
 
 #include <QDateTime>
 #include <QTimer>
-
-static const int64 nClientStartupTime = GetTime();
 
 ClientModel::ClientModel(OptionsModel *optionsModel, QObject *parent) :
     QObject(parent), optionsModel(optionsModel),

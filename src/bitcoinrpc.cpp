@@ -11,6 +11,7 @@
 #include "init.h"
 #include "ui_interface.h"
 #include "bitcoinrpc.h"
+#include "util.h"
 
 #undef printf
 #include <boost/asio.hpp>
@@ -533,23 +534,24 @@ Value getinfo(const Array& params, bool fHelp)
             "Returns an object containing various state info.");
 
     Object obj;
-    obj.push_back(Pair("version",       (int)CLIENT_VERSION));
-    obj.push_back(Pair("protocolversion",(int)PROTOCOL_VERSION));
-    obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
-    obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance())));
-    obj.push_back(Pair("blocks",        (int)nBestHeight));
-    obj.push_back(Pair("connections",   (int)vNodes.size()));
-    obj.push_back(Pair("proxy",         (fUseProxy ? addrProxy.ToStringIPPort() : string())));
-    obj.push_back(Pair("difficulty",    (double)GetDifficulty()));
-    obj.push_back(Pair("testnet",       fTestNet));
-    obj.push_back(Pair("keypoololdest", (boost::int64_t)pwalletMain->GetOldestKeyPoolTime()));
-    obj.push_back(Pair("keypoolsize",   pwalletMain->GetKeyPoolSize()));
-    obj.push_back(Pair("paytxfee",      ValueFromAmount(nTransactionFee)));
-    obj.push_back(Pair("maxtxfee",      ValueFromAmount(nTransactionFeeMax)));
-    obj.push_back(Pair("forcetxfee",    fForceFee));
+    obj.push_back(Pair("version",         (int)CLIENT_VERSION));
+    obj.push_back(Pair("protocolversion", (int)PROTOCOL_VERSION));
+    obj.push_back(Pair("walletversion",   pwalletMain->GetVersion()));
+    obj.push_back(Pair("balance",         ValueFromAmount(pwalletMain->GetBalance())));
+    obj.push_back(Pair("blocks",          (int)nBestHeight));
+    obj.push_back(Pair("connections",     (int)vNodes.size()));
+    obj.push_back(Pair("proxy",           (fUseProxy ? addrProxy.ToStringIPPort() : string())));
+    obj.push_back(Pair("difficulty",      (double)GetDifficulty()));
+    obj.push_back(Pair("testnet",         fTestNet));
+    obj.push_back(Pair("keypoololdest",   (boost::int64_t)pwalletMain->GetOldestKeyPoolTime()));
+    obj.push_back(Pair("keypoolsize",     pwalletMain->GetKeyPoolSize()));
+    obj.push_back(Pair("paytxfee",        ValueFromAmount(nTransactionFee)));
+    obj.push_back(Pair("maxtxfee",        ValueFromAmount(nTransactionFeeMax)));
+    obj.push_back(Pair("forcetxfee",      fForceFee));
     if (pwalletMain->IsCrypted())
         obj.push_back(Pair("unlocked_until", (boost::int64_t)nWalletUnlockTime / 1000));
-    obj.push_back(Pair("errors",        GetWarnings("statusbar")));
+    obj.push_back(Pair("errors",          GetWarnings("statusbar")));
+    obj.push_back(Pair("startuptime",     (boost::int64_t)nClientStartupTime));
     return obj;
 }
 
