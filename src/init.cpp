@@ -210,7 +210,7 @@ std::string HelpMessage()
         "  -connect=<ip>          " + _("Connect only to the specified node") + "\n" +
         "  -seednode=<ip>         " + _("Connect to a node to retrieve peer addresses, and disconnect") + "\n" +
         "  -externalip=<ip>       " + _("Specify your own public address") + "\n" +
-        "  -onlynet=<net>         " + _("Only connect to nodes in network <net> (IPv4 or IPv6)") + "\n" +
+        "  -onlynet=<net>         " + _("Only connect to nodes in network <net> (IPv4, IPv6 or Tor)") + "\n" +
         "  -discover              " + _("Try to discover public IP address (default: 1)") + "\n" +
         "  -irc                   " + _("Find peers using internet relay chat (default: 0)") + "\n" +
         "  -listen                " + _("Accept connections from outside (default: 1)") + "\n" +
@@ -588,6 +588,7 @@ bool AppInit2()
         SoftSetBoolArg("-proxydns", true);
         SoftSetBoolArg("-upnp", false);
         SoftSetBoolArg("-discover", false);
+        SetReachable(NET_TOR);
     }
 
     if (mapArgs.count("-onlynet")) {
