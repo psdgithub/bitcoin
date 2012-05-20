@@ -2089,37 +2089,24 @@ Value setminfee(const Array& params, bool fHelp)
     return true;
 }
 
-Value getwork(const Array& params, bool fHelp)
-{
-    if (fHelp || params.size() > 1)
-        throw runtime_error(
-            "getwork [data]\n"
-            "If [data] is not specified, returns formatted hash data to work on:\n"
-            "  \"midstate\" : precomputed hash state after hashing the first half of the data (DEPRECATED)\n" // deprecated
-            "  \"data\" : block data\n"
-            "  \"hash1\" : formatted hash buffer for second hash (DEPRECATED)\n" // deprecated
-            "  \"target\" : little endian hash target\n"
-            "If [data] is specified, tries to solve the block and returns true if it was successful.");
 
-    if (vNodes.empty())
-        throw JSONRPCError(-9, "Bitcoin is not connected!");
+static boost::mutex mGetWork;
+static CReserveKey *reservekey = NULL;
+typedef map<uint256, pair<CBlock*, CScript> > mapNewBlock_t;
+static mapNewBlock_t mapNewBlock;
 
-    if (IsInitialBlockDownload())
-        throw JSONRPCError(-10, "Bitcoin is downloading blocks...");
+void GetWorkBlock(char *pmidstate, char *pdata, char *phash1, uint256 &hashTarget)
+{ // Fill the buffers with a correct work unit
+    boost::unique_lock<boost::mutex> lock(mGetWork);
 
-    typedef map<uint256, pair<CBlock*, CScript> > mapNewBlock_t;
-    static mapNewBlock_t mapNewBlock;    // FIXME: thread safety
-    static vector<CBlock*> vNewBlock;
-    static CReserveKey reservekey(pwalletMain);
-
-    if (params.size() == 0)
-    {
-        // Update block
         static unsigned int nTransactionsUpdatedLast;
         static CBlockIndex* pindexPrev;
         static int64 nStart;
         static CBlock* pblock;
-        if (pindexPrev != pindexBest ||
+    static vector<CBlock*> vNewBlock;
+
+    // Update block if needed
+    while (pindexPrev != pindexBest ||
             (nTransactionsUpdated != nTransactionsUpdatedLast && GetTime() - nStart > 60))
         {
             if (pindexPrev != pindexBest)
@@ -2140,9 +2127,12 @@ Value getwork(const Array& params, bool fHelp)
             nStart = GetTime();
 
             // Create new block
-            pblock = CreateNewBlock(reservekey);
-            if (!pblock)
+        if (reservekey == NULL)
+            reservekey = new CReserveKey(pwalletMain);
+        pblock = CreateNewBlock(*reservekey);
+        if (pblock == NULL)
                 throw JSONRPCError(-7, "Out of memory");
+
             vNewBlock.push_back(pblock);
 
             // Need to update only after we know CreateNewBlock succeeded
@@ -2161,12 +2151,36 @@ Value getwork(const Array& params, bool fHelp)
         mapNewBlock[pblock->hashMerkleRoot] = make_pair(pblock, pblock->vtx[0].vin[0].scriptSig);
 
         // Prebuild hash buffers
+    FormatHashBuffers(pblock, pmidstate, pdata, phash1);
+    hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+}
+
+Value getwork(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "getwork [data]\n"
+            "If [data] is not specified, returns formatted hash data to work on:\n"
+            "  \"midstate\" : precomputed hash state after hashing the first half of the data (DEPRECATED)\n" // deprecated
+            "  \"data\" : block data\n"
+            "  \"hash1\" : formatted hash buffer for second hash (DEPRECATED)\n" // deprecated
+            "  \"target\" : little endian hash target\n"
+            "If [data] is specified, tries to solve the block and returns true if it was successful.");
+
+    if (vNodes.empty())
+        throw JSONRPCError(-9, "Bitcoin is not connected!");
+
+    if (IsInitialBlockDownload())
+        throw JSONRPCError(-10, "Bitcoin is downloading blocks...");
+
+    if (params.size() == 0)
+    {
         char pmidstate[32];
         char pdata[128];
         char phash1[64];
-        FormatHashBuffers(pblock, pmidstate, pdata, phash1);
+        uint256 hashTarget;
 
-        uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+        GetWorkBlock(pmidstate, pdata, phash1, hashTarget);
 
         Object result;
         result.push_back(Pair("midstate", HexStr(BEGIN(pmidstate), END(pmidstate)))); // deprecated
@@ -2187,6 +2201,9 @@ Value getwork(const Array& params, bool fHelp)
         for (int i = 0; i < 128/4; i++)
             ((unsigned int*)pdata)[i] = ByteReverse(((unsigned int*)pdata)[i]);
 
+        // Get exclusive access to getwork structures
+        boost::unique_lock<boost::mutex> lock(mGetWork);
+
         // Get saved block
         if (!mapNewBlock.count(pdata->hashMerkleRoot))
             return false;
@@ -2197,10 +2214,38 @@ Value getwork(const Array& params, bool fHelp)
         pblock->vtx[0].vin[0].scriptSig = mapNewBlock[pdata->hashMerkleRoot].second;
         pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 
-        return CheckWork(pblock, *pwalletMain, reservekey);
+        return CheckWork(pblock, *pwalletMain, *reservekey);
     }
 }
 
+std::string FastGetWork(const std::string id)
+{ // bypass JSON in the most common case
+    if (vNodes.empty())
+        throw JSONRPCError(-9, "Bitcoin is not connected!");
+
+    if (IsInitialBlockDownload())
+        throw JSONRPCError(-10, "Bitcoin is downloading blocks...");
+
+    char pmidstate[32];
+    char pdata[128];
+    char phash1[64];
+    uint256 hashTarget;
+
+    GetWorkBlock(pmidstate, pdata, phash1, hashTarget);
+
+    std::string result = "{\"result\":{\"midstate\" : \"";
+    result += HexStr(BEGIN(pmidstate), END(pmidstate));
+    result += "\",\"data\":\"";
+    result += HexStr(BEGIN(pdata), END(pdata));
+    result += "\",\"hash1\":\"";
+    result += HexStr(BEGIN(phash1), END(phash1));
+    result += "\",\"target\":\"";
+    result += HexStr(BEGIN(hashTarget), END(hashTarget));
+    result += "\"},\"error\":null,\"id\":\"";
+    result += id;
+    result += "\"}\n";
+    return result;
+}
 
 Value getmemorypool(const Array& params, bool fHelp)
 {
@@ -2994,6 +3039,30 @@ void ThreadRPCServer3(void* parg)
         if (mapHeaders["connection"] == "close")
             fRun = false;
 
+        if ((strRequest.find("\"getwork\"") != std::string::npos) && strRequest.find("[]") != std::string::npos)
+        { // This is imperfect code
+            std::string id;
+            size_t p = strRequest.find("\"id\":\"");
+            if (p != std::string::npos)
+            {
+                size_t ep = strRequest.find("\"", p+6);
+                id = strRequest.substr(p+6, p+ep);
+            }
+            try
+            {
+                conn->stream << HTTPReply(200, FastGetWork(id), fRun) << std::flush;
+            }
+            catch (std::exception& e)
+            {
+                ErrorReply(conn->stream, JSONRPCError(-1, e.what()), id);
+            }
+            catch (Object& e)
+            {
+                ErrorReply(conn->stream, e, id);
+            }
+            continue;
+        }
+
         Value id = Value::null;
         try
         {
@@ -3007,17 +3076,40 @@ void ThreadRPCServer3(void* parg)
             id = find_value(request, "id");
 
             // Parse method
+            Value valParams = find_value(request, "params");
             Value valMethod = find_value(request, "method");
             if (valMethod.type() == null_type)
                 throw JSONRPCError(-32600, "Missing method");
             if (valMethod.type() != str_type)
                 throw JSONRPCError(-32600, "Method must be a string");
             string strMethod = valMethod.get_str();
-            if (strMethod != "getwork" && strMethod != "getmemorypool")
-                printf("ThreadRPCServer method=%s\n", strMethod.c_str());
+            if (strMethod != "getwork")
+            {
+                if (strMethod != "getmemorypool")
+                    printf("ThreadRPCServer method=%s\n", strMethod.c_str());
+            }
+            else
+            { // is a getwork request
+                if( (valParams.type() == array_type) && valParams.get_array().size() == 0 )
+                {
+                    try
+                    {
+                        std::string strReply = FastGetWork(id.type()==str_type ? id.get_str() : "");
+                        conn->stream << HTTPReply(200, strReply, fRun) << std::flush;
+                    }
+                    catch (std::exception& e)
+                    {
+                        ErrorReply(conn->stream, JSONRPCError(-1, e.what()), id);
+                    }
+                    catch (Object& e)
+                    {
+                        ErrorReply(conn->stream, e, id);
+                    }
+                    continue;
+                }
+            }
 
             // Parse params
-            Value valParams = find_value(request, "params");
             Array params;
             if (valParams.type() == array_type)
                 params = valParams.get_array();
