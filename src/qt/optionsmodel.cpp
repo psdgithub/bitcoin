@@ -23,6 +23,7 @@ void OptionsModel::Init()
     fMinimizeOnClose = settings.value("fMinimizeOnClose", false).toBool();
     nTransactionFee = settings.value("nTransactionFee").toLongLong();
     language = settings.value("language", "").toString();
+    bCoinControlFeatures = settings.value("bCoinControlFeatures", false).toBool();
 
     // These are shared with core Bitcoin; we want
     // command-line options to override the GUI settings:
@@ -60,7 +61,7 @@ bool OptionsModel::Upgrade()
         }
     }
     QList<QString> boolOptions;
-    boolOptions << "bDisplayAddresses" << "fMinimizeToTray" << "fMinimizeOnClose" << "fUseProxy" << "fUseUPnP";
+    boolOptions << "bDisplayAddresses" << "bCoinControlFeatures" << "fMinimizeToTray" << "fMinimizeOnClose" << "fUseProxy" << "fUseUPnP";
     foreach(QString key, boolOptions)
     {
         bool value = false;
@@ -131,6 +132,8 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
             return QVariant(fDetachDB);
         case Language:
             return settings.value("language", "");
+        case CoinControlFeatures:
+            return QVariant(bCoinControlFeatures);
         default:
             return QVariant();
         }
@@ -223,6 +226,12 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             settings.setValue("language", value);
             }
             break;
+        case CoinControlFeatures: {
+            bCoinControlFeatures = value.toBool();
+            settings.setValue("bCoinControlFeatures", bCoinControlFeatures);
+            emit coinControlFeaturesChanged(bCoinControlFeatures);
+            }
+            break;
         default:
             break;
         }
@@ -255,4 +264,9 @@ int OptionsModel::getDisplayUnit()
 bool OptionsModel::getDisplayAddresses()
 {
     return bDisplayAddresses;
+}
+
+bool OptionsModel::getCoinControlFeatures()
+{
+    return bCoinControlFeatures;
 }

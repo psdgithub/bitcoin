@@ -69,6 +69,7 @@ private:
     QValueComboBox *lang;
     QValueComboBox *unit;
     QCheckBox *display_addresses;
+    QCheckBox *coin_control_features;
     bool restart_warning_displayed;
 private slots:
     void showRestartWarning();
@@ -285,6 +286,9 @@ DisplayOptionsPage::DisplayOptionsPage(QWidget *parent):
     display_addresses->setToolTip(tr("Whether to show Bitcoin addresses in the transaction list"));
     layout->addWidget(display_addresses);
 
+    coin_control_features = new QCheckBox(tr("Display coin control features"), this);
+    layout->addWidget(coin_control_features);
+
     layout->addStretch();
     setLayout(layout);
 }
@@ -294,6 +298,7 @@ void DisplayOptionsPage::setMapper(MonitoredDataMapper *mapper)
     mapper->addMapping(lang, OptionsModel::Language);
     mapper->addMapping(unit, OptionsModel::DisplayUnit);
     mapper->addMapping(display_addresses, OptionsModel::DisplayAddresses);
+    mapper->addMapping(coin_control_features, OptionsModel::CoinControlFeatures);
 }
 
 void DisplayOptionsPage::showRestartWarning()

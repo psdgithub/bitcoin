@@ -28,6 +28,7 @@ public:
         DisplayAddresses, // bool
         DetachDatabases, // bool
         Language, // QString
+        CoinControlFeatures, // bool
         OptionIDRowCount,
     };
 
@@ -47,14 +48,17 @@ public:
     int getDisplayUnit();
     bool getDisplayAddresses();
     QString getLanguage() { return language; }
+    bool getCoinControlFeatures();
 private:
     int nDisplayUnit;
     bool bDisplayAddresses;
     bool fMinimizeToTray;
     bool fMinimizeOnClose;
     QString language;
+    bool bCoinControlFeatures;
 signals:
     void displayUnitChanged(int unit);
+    void coinControlFeaturesChanged(bool);
 
 public slots:
 
