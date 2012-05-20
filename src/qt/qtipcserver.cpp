@@ -59,7 +59,7 @@ void ipcThread2(void* pArg)
     {
         if (mq->try_receive(&buffer, sizeof(buffer), nSize, nPriority))
         {
-            ThreadSafeHandleURI(std::string(buffer, nSize));
+            uiInterface.ThreadSafeHandleURI(std::string(buffer, nSize));
             Sleep(1000);
         }
         else

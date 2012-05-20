@@ -23,6 +23,7 @@ using namespace std;
 using namespace boost;
 
 CWallet* pwalletMain;
+CClientUIInterface uiInterface;
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -95,17 +96,6 @@ void HandleSIGHUP(int)
 // Start
 //
 #if !defined(QT_GUI)
-int main(int argc, char* argv[])
-{
-    bool fRet = false;
-    fRet = AppInit(argc, argv);
-
-    if (fRet && fDaemon)
-        return 0;
-
-    return 1;
-}
-
 bool AppInit(int argc, char* argv[])
 {
     bool fRet = false;
@@ -161,17 +151,33 @@ bool AppInit(int argc, char* argv[])
         Shutdown(NULL);
     return fRet;
 }
+
+extern void noui_connect();
+int main(int argc, char* argv[])
+{
+    bool fRet = false;
+
+    // Connect bitcoind signal handlers
+    noui_connect();
+
+    fRet = AppInit(argc, argv);
+
+    if (fRet && fDaemon)
+        return 0;
+
+    return 1;
+}
 #endif
 
 bool static InitError(const std::string &str)
 {
-    ThreadSafeMessageBox(str, _("Bitcoin"), wxOK | wxMODAL);
+    uiInterface.ThreadSafeMessageBox(str, _("Bitcoin"), CClientUIInterface::OK | CClientUIInterface::MODAL);
     return false;
 }
 
 bool static InitWarning(const std::string &str)
 {
-    ThreadSafeMessageBox(str, _("Bitcoin"), wxOK | wxICON_EXCLAMATION | wxMODAL);
+    uiInterface.ThreadSafeMessageBox(str, _("Bitcoin"), CClientUIInterface::OK | CClientUIInterface::ICON_EXCLAMATION | CClientUIInterface::MODAL);
     return true;
 }
 
@@ -382,7 +388,7 @@ bool AppInit2()
         fprintf(stdout, "Bitcoin server starting\n");
     int64 nStart;
 
-    InitMessage(_("Loading addresses..."));
+    uiInterface.InitMessage(_("Loading addresses..."));
     printf("Loading addresses...\n");
     nStart = GetTimeMillis();
 
@@ -395,7 +401,7 @@ bool AppInit2()
     printf("Loaded %i addresses from peers.dat  %"PRI64d"ms\n",
            addrman.size(), GetTimeMillis() - nStart);
 
-    InitMessage(_("Loading block index..."));
+    uiInterface.InitMessage(_("Loading block index..."));
     printf("Loading block index...\n");
     nStart = GetTimeMillis();
     if (!LoadBlockIndex())
@@ -421,7 +427,7 @@ bool AppInit2()
         }
     }
 
-    InitMessage(_("Loading wallet..."));
+    uiInterface.InitMessage(_("Loading wallet..."));
     printf("Loading wallet...\n");
     nStart = GetTimeMillis();
     bool fFirstRun;
@@ -489,14 +495,14 @@ bool AppInit2()
     }
     if (pindexBest != pindexRescan)
     {
-        InitMessage(_("Rescanning..."));
+        uiInterface.InitMessage(_("Rescanning..."));
         printf("Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
         nStart = GetTimeMillis();
         pwalletMain->ScanForWalletTransactions(pindexRescan, true);
         printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
     }
 
-    InitMessage(_("Done loading"));
+    uiInterface.InitMessage(_("Done loading"));
     printf("Done loading\n");
 
     //// debug print
