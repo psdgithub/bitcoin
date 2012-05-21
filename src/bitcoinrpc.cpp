@@ -130,6 +130,21 @@ EnsureWalletIsUnlocked()
         throw JSONRPCError(-13, "Error: Please enter the wallet passphrase with walletpassphrase first.");
 }
 
+unsigned int
+FindLimit(const Object& oparam, const char* pcName, int nDefault)
+{
+    Value val = find_value(oparam, pcName);
+    switch (val.type()) {
+    case bool_type:
+        return val.get_bool() ? nDefault : std::numeric_limits<unsigned int>::max();
+    case int_type:
+    case real_type:
+        return val.get_int();
+    default:
+        return nDefault;
+    }
+}
+
 enum DecomposeMode {
     DM_NONE = 0,
     DM_HASH,
@@ -2135,6 +2150,9 @@ Value getmemorypool(const Array& params, bool fHelp)
 
         static CReserveKey reservekey(pwalletMain);
 
+        unsigned int nSizeLimit = FindLimit(oparam, "sizelimit", MAX_BLOCK_SIZE_GEN);
+        unsigned int nSigOpLimit = FindLimit(oparam, "sigoplimit", MAX_BLOCK_SIGOPS);
+
         // Update block
         static unsigned int nTransactionsUpdatedLast;
         static CBlockIndex* pindexPrev;
@@ -2172,6 +2190,8 @@ Value getmemorypool(const Array& params, bool fHelp)
         Array transactions;
         map<uint256, int64_t> setTxIndex;
         enum DecomposeMode dm = FindDecompose(oparam, "tx", "hex");
+        int nBlockSize = 1000;
+        int nBlockSigOps = 100;
         int i = 0;
         CTxDB txdb("r");
         BOOST_FOREACH (CTransaction& tx, pblock->vtx)
@@ -2181,21 +2201,44 @@ Value getmemorypool(const Array& params, bool fHelp)
             if(tx.IsCoinBase())
                 continue;
 
+            CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
+            ssTx << tx;
+
+            bool fHaveInputs;
+            MapPrevTx mapInputs;
+            int64_t nSigOps = tx.GetLegacySigOpCount();
+            {
+                map<uint256, CTxIndex> mapUnused;
+                bool fInvalid = false;
+                fHaveInputs = tx.FetchInputs(txdb, mapUnused, false, false, mapInputs, fInvalid);
+                if (fHaveInputs)
+                {
+                    nSigOps += tx.GetP2SHSigOpCount(mapInputs);
+                    if (nBlockSigOps + nSigOps > nSigOpLimit || nBlockSize + ssTx.size() > nSizeLimit)
+                    {
+                        // Need to remove the fees from the coinbase
+                        int64 nTxFees = tx.GetValueIn(mapInputs) - tx.GetValueOut();
+                        pblock->vtx[0].vout[0].nValue -= nTxFees;
+                        // Can't break, since the following transactions may have fees to remove too
+                        continue;
+                    }
+                }
+                // else, we maybe won't satisfy the limits, but that's allowed
+            }
+
+            nBlockSigOps += nSigOps;
+            nBlockSize += ssTx.size();
+
             switch (dm) {
             case DM_OBJ:
             {
                 Object entry;
 
-                CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
-                ssTx << tx;
                 entry.push_back(Pair("data", HexStr(ssTx.begin(), ssTx.end())));
 
                 entry.push_back(Pair("hash", tx.GetHash().GetHex()));
 
-                MapPrevTx mapInputs;
-                map<uint256, CTxIndex> mapUnused;
-                bool fInvalid = false;
-                if (tx.FetchInputs(txdb, mapUnused, false, false, mapInputs, fInvalid))
+                if (fHaveInputs)
                 {
                     entry.push_back(Pair("fee", (int64_t)(tx.GetValueIn(mapInputs) - tx.GetValueOut())));
 
@@ -2207,8 +2250,6 @@ Value getmemorypool(const Array& params, bool fHelp)
                     }
                     entry.push_back(Pair("depends", deps));
 
-                    int64_t nSigOps = tx.GetLegacySigOpCount();
-                    nSigOps += tx.GetP2SHSigOpCount(mapInputs);
                     entry.push_back(Pair("sigops", nSigOps));
                 }
 
@@ -2217,9 +2258,6 @@ Value getmemorypool(const Array& params, bool fHelp)
             }
             case DM_HEX:
             {
-                CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
-                ssTx << tx;
-
                 transactions.push_back(HexStr(ssTx.begin(), ssTx.end()));
                 break;
             }
