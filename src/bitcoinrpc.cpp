@@ -2153,6 +2153,23 @@ Value getmemorypool(const Array& params, bool fHelp)
         unsigned int nSizeLimit = FindLimit(oparam, "sizelimit", MAX_BLOCK_SIZE_GEN);
         unsigned int nSigOpLimit = FindLimit(oparam, "sigoplimit", MAX_BLOCK_SIGOPS);
 
+        bool fCoinbaseTxn = false;
+        {
+            Value val = find_value(oparam, "capabilities");
+            if (val.type() == array_type)
+            {
+                Array caps = val.get_array();
+                BOOST_FOREACH(const Value& v, caps)
+                {
+                    if (v.type() == str_type && v.get_str() == "coinbasetxn")
+                    {
+                        fCoinbaseTxn = true;
+                        break;
+                    }
+                }
+            }
+        }
+
         // Update block
         static unsigned int nTransactionsUpdatedLast;
         static CBlockIndex* pindexPrev;
@@ -2187,6 +2204,7 @@ Value getmemorypool(const Array& params, bool fHelp)
         pblock->UpdateTime(pindexPrev);
         pblock->nNonce = 0;
 
+        Value coinbaseTxn;
         Array transactions;
         map<uint256, int64_t> setTxIndex;
         enum DecomposeMode dm = FindDecompose(oparam, "tx", "hex");
@@ -2198,7 +2216,8 @@ Value getmemorypool(const Array& params, bool fHelp)
         {
             setTxIndex[tx.GetHash()] = i++;
 
-            if(tx.IsCoinBase())
+            bool fIsCoinbase = tx.IsCoinBase();
+            if(fIsCoinbase && !fCoinbaseTxn)
                 continue;
 
             CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
@@ -2229,6 +2248,7 @@ Value getmemorypool(const Array& params, bool fHelp)
             nBlockSigOps += nSigOps;
             nBlockSize += ssTx.size();
 
+            Value txentry;
             switch (dm) {
             case DM_OBJ:
             {
@@ -2236,7 +2256,7 @@ Value getmemorypool(const Array& params, bool fHelp)
 
                 entry.push_back(Pair("data", HexStr(ssTx.begin(), ssTx.end())));
 
-                entry.push_back(Pair("hash", tx.GetHash().GetHex()));
+                entry.push_back(Pair("hash", Hash(ssTx.begin(), ssTx.end()).GetHex()));
 
                 if (fHaveInputs)
                 {
@@ -2253,20 +2273,25 @@ Value getmemorypool(const Array& params, bool fHelp)
                     entry.push_back(Pair("sigops", nSigOps));
                 }
 
-                transactions.push_back(entry);
+                txentry = entry;
                 break;
             }
             case DM_HEX:
             {
-                transactions.push_back(HexStr(ssTx.begin(), ssTx.end()));
+                txentry = HexStr(ssTx.begin(), ssTx.end());
                 break;
             }
             case DM_HASH:
-                transactions.push_back(tx.GetHash().GetHex());
+                txentry = Hash(ssTx.begin(), ssTx.end()).GetHex();
                 break;
             default:
                 throw JSONRPCError(-18, "Invalid transaction decomposition");
             }
+
+            if (fIsCoinbase)
+                coinbaseTxn = txentry;
+            else
+                transactions.push_back(txentry);
         }
 
         Object aux;
@@ -2289,6 +2314,8 @@ Value getmemorypool(const Array& params, bool fHelp)
         result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
         result.push_back(Pair("transactions", transactions));
         result.push_back(Pair("coinbaseaux", aux));
+        if (coinbaseTxn.type() != null_type)
+            result.push_back(Pair("coinbasevalue", coinbaseTxn));
         result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
         result.push_back(Pair("target", hashTarget.GetHex()));
         result.push_back(Pair("time", (int64_t)pblock->nTime));
