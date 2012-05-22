@@ -652,6 +652,15 @@ bool CTxMemPool::remove(CTransaction &tx)
     return true;
 }
 
+void
+CTxMemPool::clear()
+{
+    LOCK(cs);
+    mapTx.clear();
+    mapNextTx.clear();
+    ++nTransactionsUpdated;
+}
+
 
 
 
