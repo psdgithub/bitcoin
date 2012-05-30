@@ -67,12 +67,6 @@ bool IsReachable(const CNetAddr &addr);
 CAddress GetLocalAddress(const CNetAddr *paddrPeer = NULL);
 
 
-enum
-{
-    MSG_TX = 1,
-    MSG_BLOCK,
-};
-
 class CRequestTracker
 {
 public:
