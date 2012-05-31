@@ -42,8 +42,14 @@ static std::string strRPCUserColonPass;
 static int64 nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
 
-extern Value dumpprivkey(const Array& params, bool fHelp);
+extern Value dumpprivkey(const Array& params, bool fHelp); // in rpcdump.cpp
 extern Value importprivkey(const Array& params, bool fHelp);
+
+extern Value listunspent(const Array& params, bool fHelp); // in rcprawtx.cpp
+extern Value getrawtx(const Array& params, bool fHelp);
+extern Value createrawtx(const Array& params, bool fHelp);
+extern Value signrawtx(const Array& params, bool fHelp);
+extern Value sendrawtx(const Array& params, bool fHelp);
 
 const Object emptyobj;
 
@@ -116,7 +122,7 @@ HexBits(unsigned int nBits)
     return HexStr(BEGIN(uBits.cBits), END(uBits.cBits));
 }
 
-static std::string
+std::string
 HelpRequiringPassphrase()
 {
     return pwalletMain->IsCrypted()
@@ -124,7 +130,7 @@ HelpRequiringPassphrase()
         : "";
 }
 
-static inline void
+void
 EnsureWalletIsUnlocked()
 {
     if (pwalletMain->IsLocked())
@@ -2233,44 +2239,6 @@ Value getblock(const Array& params, bool fHelp)
                        (params.size() > 1) ? params[1].get_obj() : emptyobj);
 }
 
-Value sendrawtx(const Array& params, bool fHelp)
-{
-    if (fHelp || params.size() < 1 || params.size() > 1)
-        throw runtime_error(
-            "sendrawtx <hex string>\n"
-            "Submits raw transaction (serialized, hex-encoded) to local node and network.");
-
-    // parse hex string from parameter
-    vector<unsigned char> txData(ParseHex(params[0].get_str()));
-    CDataStream ssData(txData, SER_NETWORK, PROTOCOL_VERSION);
-    CTransaction tx;
-
-    // deserialize binary data stream
-    try {
-        ssData >> tx;
-    }
-    catch (std::exception &e) {
-        throw JSONRPCError(-22, "TX decode failed");
-    }
-
-    // push to local node
-    CTxDB txdb("r");
-    if (!tx.AcceptToMemoryPool(txdb))
-        throw JSONRPCError(-22, "TX rejected");
-
-    SyncWithWallets(tx, NULL, true);
-
-    // relay to network
-    CInv inv(MSG_TX, tx.GetHash());
-    RelayInventory(inv);
-
-    return tx.GetHash().GetHex();
-}
-
-
-
-
-
 
 
 
@@ -2330,6 +2298,10 @@ static const CRPCCommand vRPCCommands[] =
     { "listsinceblock",         &listsinceblock,         false },
     { "dumpprivkey",            &dumpprivkey,            false },
     { "importprivkey",          &importprivkey,          false },
+    { "listunspent",            &listunspent,            false },
+    { "getrawtx",               &getrawtx,               false },
+    { "createrawtx",            &createrawtx,            false },
+    { "signrawtx",              &signrawtx,              false },
     { "sendrawtx",              &sendrawtx,              false },
 };
 
@@ -2996,6 +2968,11 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "sendmany"               && n > 2) ConvertTo<boost::int64_t>(params[2]);
     if (strMethod == "addmultisigaddress"     && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "addmultisigaddress"     && n > 1) ConvertTo<Array>(params[1]);
+    if (strMethod == "listunspent"            && n > 0) ConvertTo<boost::int64_t>(params[0]);
+    if (strMethod == "listunspent"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "createrawtx"            && n > 0) ConvertTo<Array>(params[0]);
+    if (strMethod == "createrawtx"            && n > 1) ConvertTo<Object>(params[1]);
+    if (strMethod == "signrawtx"              && n > 1) ConvertTo<Array>(params[1]);
 
     return params;
 }
