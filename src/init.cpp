@@ -233,6 +233,7 @@ std::string HelpMessage()
         "  -gen                   " + _("Generate coins") + "\n" +
         "  -gen=0                 " + _("Don't generate coins") + "\n" +
         "  -datadir=<dir>         " + _("Specify data directory") + "\n" +
+        "  -wallet=<file>         " + _("Specify wallet file (within data directory)") + "\n" +
         "  -dbcache=<n>           " + _("Set database cache size in megabytes (default: 25)") + "\n" +
         "  -dblogsize=<n>         " + _("Set database disk log size in megabytes (default: 100)") + "\n" +
         "  -timeout=<n>           " + _("Specify connection timeout in milliseconds (default: 5000)") + "\n" +
@@ -704,7 +705,9 @@ bool AppInit2()
     printf("Loading wallet...\n");
     nStart = GetTimeMillis();
     bool fFirstRun = true;
-    pwalletMain = new CWallet("wallet.dat");
+
+    pszWalletFile = GetArg("-wallet", "wallet.dat").c_str();
+    pwalletMain = new CWallet(pszWalletFile);
     DBErrors nLoadWalletRet = pwalletMain->LoadWallet(fFirstRun);
     if (nLoadWalletRet != DB_LOAD_OK)
     {
@@ -767,7 +770,7 @@ bool AppInit2()
         pindexRescan = pindexGenesisBlock;
     else
     {
-        CWalletDB walletdb("wallet.dat");
+        CWalletDB walletdb(pszWalletFile);
         CBlockLocator locator;
         if (walletdb.ReadBestBlock(locator))
             pindexRescan = locator.GetBlockIndex();
