@@ -5,11 +5,16 @@
 #ifndef BITCOIN_UINT256_H
 #define BITCOIN_UINT256_H
 
+#include <inttypes.h>
 #include <limits.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <string>
 #include <vector>
+
+#include "myendian.h"
+#include "serialize.h"
 
 typedef long long  int64;
 typedef unsigned long long  uint64;
@@ -26,8 +31,10 @@ template<unsigned int BITS>
 class base_uint
 {
 protected:
+    /** Internally, we use a big-endian array of native-endian 32-bit unsigned integers
+     */
     enum { WIDTH=BITS/32 };
-    unsigned int pn[WIDTH];
+    uint32_t pn[WIDTH];
 public:
 
     bool operator!() const
@@ -51,17 +58,14 @@ public:
         base_uint ret;
         for (int i = 0; i < WIDTH; i++)
             ret.pn[i] = ~pn[i];
-        ret++;
+        ++ret;
         return ret;
     }
 
 
     base_uint& operator=(uint64 b)
     {
-        pn[0] = (unsigned int)b;
-        pn[1] = (unsigned int)(b >> 32);
-        for (int i = 2; i < WIDTH; i++)
-            pn[i] = 0;
+        Set64(b, 0, true);
         return *this;
     }
 
@@ -88,56 +92,79 @@ public:
 
     base_uint& operator^=(uint64 b)
     {
-        pn[0] ^= (unsigned int)b;
-        pn[1] ^= (unsigned int)(b >> 32);
+        pn[WIDTH-1] ^= b & 0xffffffff;
+        pn[WIDTH-2] ^= b >> 32;
         return *this;
     }
 
     base_uint& operator|=(uint64 b)
     {
-        pn[0] |= (unsigned int)b;
-        pn[1] |= (unsigned int)(b >> 32);
+        pn[WIDTH-1] |= b & 0xffffffff;
+        pn[WIDTH-2] |= b >> 32;
         return *this;
     }
 
     base_uint& operator<<=(unsigned int shift)
     {
-        base_uint a(*this);
-        for (int i = 0; i < WIDTH; i++)
-            pn[i] = 0;
-        int k = shift / 32;
-        shift = shift % 32;
-        for (int i = 0; i < WIDTH; i++)
+        if (shift >= BITS)
         {
-            if (i+k+1 < WIDTH && shift != 0)
-                pn[i+k+1] |= (a.pn[i] >> (32-shift));
-            if (i+k < WIDTH)
-                pn[i+k] |= (a.pn[i] << shift);
+            memset(&pn[0], 0, sizeof(pn));
+            return *this;
         }
+        if (!shift)
+            return *this;
+
+        div_t q = div(shift, 32);
+        int i;
+        if (q.rem)
+        {
+            int rrem = 32 - q.rem, j;
+            i = 0;
+            for (j = q.quot; j < WIDTH-1; ++i, ++j)
+                pn[i] = ((pn[j] << q.rem) & 0xffffffff) | (pn[j + 1] >> rrem);
+            pn[i++] = (pn[j] << q.rem) & 0xffffffff;
+        }
+        else
+            memmove(&pn[0], &pn[q.quot], sizeof(*pn) * (i = WIDTH - q.quot));
+        for ( ; i < WIDTH; ++i)
+            pn[i] = 0;
         return *this;
     }
 
     base_uint& operator>>=(unsigned int shift)
     {
-        base_uint a(*this);
-        for (int i = 0; i < WIDTH; i++)
-            pn[i] = 0;
-        int k = shift / 32;
-        shift = shift % 32;
-        for (int i = 0; i < WIDTH; i++)
+        if (shift >= BITS)
         {
-            if (i-k-1 >= 0 && shift != 0)
-                pn[i-k-1] |= (a.pn[i] << (32-shift));
-            if (i-k >= 0)
-                pn[i-k] |= (a.pn[i] >> shift);
+            memset(&pn[0], 0, sizeof(pn));
+            return *this;
         }
+        if (!shift)
+            return *this;
+
+        div_t q = div(shift, 32);
+        int i;
+        if (q.rem)
+        {
+            int rrem = 32 - q.rem, j;
+            i = WIDTH-1;
+            for (j = i - q.quot; j > 0; --i, --j)
+                pn[i] = (pn[j] >> q.rem) | ((pn[j - 1] << rrem) & 0xffffffff);
+            pn[i--] = pn[j] >> q.rem;
+        }
+        else
+        {
+            memmove(&pn[q.quot], &pn[0], sizeof(*pn) * (WIDTH - q.quot));
+            i = q.quot - 1;
+        }
+        for ( ; i >= 0; --i)
+            pn[i] = 0;
         return *this;
     }
 
     base_uint& operator+=(const base_uint& b)
     {
         uint64 carry = 0;
-        for (int i = 0; i < WIDTH; i++)
+        for (int i = WIDTH-1; i >= 0; --i)
         {
             uint64 n = carry + pn[i] + b.pn[i];
             pn[i] = n & 0xffffffff;
@@ -172,9 +199,9 @@ public:
     base_uint& operator++()
     {
         // prefix operator
-        int i = 0;
-        while (++pn[i] == 0 && i < WIDTH-1)
-            i++;
+        int i = WIDTH-1;
+        while (++pn[i] == 0 && i >= 0)
+            --i;
         return *this;
     }
 
@@ -189,9 +216,9 @@ public:
     base_uint& operator--()
     {
         // prefix operator
-        int i = 0;
-        while (--pn[i] == -1 && i < WIDTH-1)
-            i++;
+        int i = WIDTH-1;
+        while (--pn[i] == -1 && i >= 0)
+            --i;
         return *this;
     }
 
@@ -206,7 +233,7 @@ public:
 
     friend inline bool operator<(const base_uint& a, const base_uint& b)
     {
-        for (int i = base_uint::WIDTH-1; i >= 0; i--)
+        for (int i = 0; i < WIDTH; ++i)
         {
             if (a.pn[i] < b.pn[i])
                 return true;
@@ -218,7 +245,7 @@ public:
 
     friend inline bool operator<=(const base_uint& a, const base_uint& b)
     {
-        for (int i = base_uint::WIDTH-1; i >= 0; i--)
+        for (int i = 0; i < WIDTH; ++i)
         {
             if (a.pn[i] < b.pn[i])
                 return true;
@@ -230,7 +257,7 @@ public:
 
     friend inline bool operator>(const base_uint& a, const base_uint& b)
     {
-        for (int i = base_uint::WIDTH-1; i >= 0; i--)
+        for (int i = 0; i < WIDTH; ++i)
         {
             if (a.pn[i] > b.pn[i])
                 return true;
@@ -242,7 +269,7 @@ public:
 
     friend inline bool operator>=(const base_uint& a, const base_uint& b)
     {
-        for (int i = base_uint::WIDTH-1; i >= 0; i--)
+        for (int i = 0; i < WIDTH; ++i)
         {
             if (a.pn[i] > b.pn[i])
                 return true;
@@ -262,11 +289,11 @@ public:
 
     friend inline bool operator==(const base_uint& a, uint64 b)
     {
-        if (a.pn[0] != (unsigned int)b)
+        if (a.pn[WIDTH-1] != (b & 0xffffffff))
             return false;
-        if (a.pn[1] != (unsigned int)(b >> 32))
+        if (a.pn[WIDTH-2] != b >> 32)
             return false;
-        for (int i = 2; i < base_uint::WIDTH; i++)
+        for (int i = 0; i < WIDTH-2; ++i)
             if (a.pn[i] != 0)
                 return false;
         return true;
@@ -287,16 +314,13 @@ public:
     std::string GetHex() const
     {
         char psz[sizeof(pn)*2 + 1];
-        for (unsigned int i = 0; i < sizeof(pn); i++)
-            sprintf(psz + i*2, "%02x", ((unsigned char*)pn)[sizeof(pn) - i - 1]);
+        for (unsigned int i = 0; i < WIDTH; ++i)
+            sprintf(psz + i*8, "%08lx", (unsigned long)pn[i]);
         return std::string(psz, psz + sizeof(pn)*2);
     }
 
     void SetHex(const char* psz)
     {
-        for (int i = 0; i < WIDTH; i++)
-            pn[i] = 0;
-
         // skip leading spaces
         while (isspace(*psz))
             psz++;
@@ -307,20 +331,19 @@ public:
 
         // hex string to uint
         static unsigned char phexdigit[256] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,1,2,3,4,5,6,7,8,9,0,0,0,0,0,0, 0,0xa,0xb,0xc,0xd,0xe,0xf,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0xa,0xb,0xc,0xd,0xe,0xf,0,0,0,0,0,0,0,0,0 };
-        const char* pbegin = psz;
-        while (phexdigit[(unsigned char)*psz] || *psz == '0')
-            psz++;
-        psz--;
-        unsigned char* p1 = (unsigned char*)pn;
-        unsigned char* pend = p1 + WIDTH * 4;
-        while (psz >= pbegin && p1 < pend)
+        const unsigned char*pc = (const unsigned char*)psz;
+        while (phexdigit[*pc] || *pc == '0')
+            ++pc;
+        for (int j = WIDTH-1; j >= 0; --j)
         {
-            *p1 = phexdigit[(unsigned char)*psz--];
-            if (psz >= pbegin)
+            uint32_t n = 0;
+            for (int i = 0; i < 32; i += 4)
             {
-                *p1 |= (phexdigit[(unsigned char)*psz--] << 4);
-                p1++;
+                if (pc <= (const unsigned char*)psz)
+                    break;
+                n |= phexdigit[*(--pc)] << i;
             }
+            pn[j] = n;
         }
     }
 
@@ -334,16 +357,6 @@ public:
         return (GetHex());
     }
 
-    unsigned char* begin()
-    {
-        return (unsigned char*)&pn[0];
-    }
-
-    unsigned char* end()
-    {
-        return (unsigned char*)&pn[WIDTH];
-    }
-
     unsigned int size()
     {
         return sizeof(pn);
@@ -351,27 +364,37 @@ public:
 
     uint64 Get64(int n=0) const
     {
-        return pn[2*n] | (uint64)pn[2*n+1] << 32;
+        n = WIDTH-1 - (2*n);
+        return pn[n] | (uint64)pn[n-1] << 32;
     }
 
-//    unsigned int GetSerializeSize(int nType=0, int nVersion=PROTOCOL_VERSION) const
+    void Set64(int64 b, int n=0, bool clear=false)
+    {
+        if (clear)
+            for (int i = 0; i < WIDTH; ++i)
+                pn[i] = 0;
+        n = WIDTH-1 - (2*n);
+        pn[n  ] = b & 0xffffffff;
+        pn[n-1] = b >> 32;
+    }
+
     unsigned int GetSerializeSize(int nType, int nVersion) const
     {
         return sizeof(pn);
     }
 
     template<typename Stream>
-//    void Serialize(Stream& s, int nType=0, int nVersion=PROTOCOL_VERSION) const
     void Serialize(Stream& s, int nType, int nVersion) const
     {
-        s.write((char*)pn, sizeof(pn));
+        for (int i = WIDTH-1; i >= 0; --i)
+            ::Serialize(s, pn[i], nType, nVersion);
     }
 
     template<typename Stream>
-//    void Unserialize(Stream& s, int nType=0, int nVersion=PROTOCOL_VERSION)
     void Unserialize(Stream& s, int nType, int nVersion)
     {
-        s.read((char*)pn, sizeof(pn));
+        for (int i = WIDTH-1; i >= 0; --i)
+            ::Unserialize(s, pn[i], nType, nVersion);
     }
 
 
@@ -424,19 +447,7 @@ public:
 
     uint160(uint64 b)
     {
-        pn[0] = (unsigned int)b;
-        pn[1] = (unsigned int)(b >> 32);
-        for (int i = 2; i < WIDTH; i++)
-            pn[i] = 0;
-    }
-
-    uint160& operator=(uint64 b)
-    {
-        pn[0] = (unsigned int)b;
-        pn[1] = (unsigned int)(b >> 32);
-        for (int i = 2; i < WIDTH; i++)
-            pn[i] = 0;
-        return *this;
+        Set64(b, 0, true);
     }
 
     explicit uint160(const std::string& str)
@@ -447,7 +458,17 @@ public:
     explicit uint160(const std::vector<unsigned char>& vch)
     {
         if (vch.size() == sizeof(pn))
-            memcpy(pn, &vch[0], sizeof(pn));
+        {
+            int j;
+            for (int i = 0; i < WIDTH; ++i)
+            {
+                j = (WIDTH-1 - i) * 4;
+                pn[i] = vch[j]
+                     | (vch[j+1] <<  8)
+                     | (vch[j+2] << 16)
+                     | (vch[j+3] << 24);
+            }
+        }
         else
             *this = 0;
     }
@@ -539,19 +560,7 @@ public:
 
     uint256(uint64 b)
     {
-        pn[0] = (unsigned int)b;
-        pn[1] = (unsigned int)(b >> 32);
-        for (int i = 2; i < WIDTH; i++)
-            pn[i] = 0;
-    }
-
-    uint256& operator=(uint64 b)
-    {
-        pn[0] = (unsigned int)b;
-        pn[1] = (unsigned int)(b >> 32);
-        for (int i = 2; i < WIDTH; i++)
-            pn[i] = 0;
-        return *this;
+        Set64(b, 0, true);
     }
 
     explicit uint256(const std::string& str)
@@ -562,7 +571,17 @@ public:
     explicit uint256(const std::vector<unsigned char>& vch)
     {
         if (vch.size() == sizeof(pn))
-            memcpy(pn, &vch[0], sizeof(pn));
+        {
+            int j;
+            for (int i = 0; i < WIDTH; ++i)
+            {
+                j = (WIDTH-1 - i) * 4;
+                pn[i] = vch[j]
+                     | (vch[j+1] <<  8)
+                     | (vch[j+2] << 16)
+                     | (vch[j+3] << 24);
+            }
+        }
         else
             *this = 0;
     }
@@ -659,12 +678,12 @@ inline int Testuint256AdHoc(std::vector<std::string> vArg)
     int c = 3;
 
     a = c;
-    a.pn[3] = 15;
+    a.pn[4] = 15;
     printf("%s\n", a.ToString().c_str());
     uint256 k(c);
 
     a = 5;
-    a.pn[3] = 15;
+    a.pn[4] = 15;
     printf("%s\n", a.ToString().c_str());
     b = 1;
     b <<= 52;
@@ -682,7 +701,7 @@ inline int Testuint256AdHoc(std::vector<std::string> vArg)
     printf("b %s\n", b.ToString().c_str());
 
     a = 0xfffffffe;
-    a.pn[4] = 9;
+    a.pn[3] = 9;
 
     printf("%s\n", a.ToString().c_str());
     a++;
@@ -711,7 +730,10 @@ inline int Testuint256AdHoc(std::vector<std::string> vArg)
     d = a;
 
     printf("%s\n", d.ToString().c_str());
-    for (int i = uint256::WIDTH-1; i >= 0; i--) printf("%08x", d.pn[i]); printf("\n");
+
+    for (int i = 0; i < uint256::WIDTH; ++i)
+        printf("%08x", d.pn[i]);
+    printf("\n");
 
     uint256 neg = d;
     neg = ~neg;
@@ -727,6 +749,7 @@ inline int Testuint256AdHoc(std::vector<std::string> vArg)
     uint256 x1 = uint256("0xABCDEF123abcdef12345678909832180000011111111");
     uint256 x2;
     printf("%s\n", x1.ToString().c_str());
+    // NOTE: C++ doesn't define bitshifts greater than the left operand's precision, but we do
     for (int i = 0; i < 270; i += 4)
     {
         x2 = x1 << i;

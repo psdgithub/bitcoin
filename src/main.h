@@ -876,7 +876,9 @@ public:
 
     uint256 GetHash() const
     {
-        return Hash(BEGIN(nVersion), END(nNonce));
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << *this;
+        return Hash(ss.begin(), ss.end());
     }
 
     int64 GetBlockTime() const
@@ -898,8 +900,10 @@ public:
             for (int i = 0; i < nSize; i += 2)
             {
                 int i2 = std::min(i+1, nSize-1);
-                vMerkleTree.push_back(Hash(BEGIN(vMerkleTree[j+i]),  END(vMerkleTree[j+i]),
-                                           BEGIN(vMerkleTree[j+i2]), END(vMerkleTree[j+i2])));
+                CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+                ss << vMerkleTree[j+i];
+                ss << vMerkleTree[j+i2];
+                vMerkleTree.push_back(Hash(ss.begin(), ss.end()));
             }
             j += nSize;
         }
@@ -928,10 +932,12 @@ public:
             return 0;
         BOOST_FOREACH(const uint256& otherside, vMerkleBranch)
         {
+            CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
             if (nIndex & 1)
-                hash = Hash(BEGIN(otherside), END(otherside), BEGIN(hash), END(hash));
+                ss << otherside << hash;
             else
-                hash = Hash(BEGIN(hash), END(hash), BEGIN(otherside), END(otherside));
+                ss << hash << otherside;
+            hash = Hash(ss.begin(), ss.end());
             nIndex >>= 1;
         }
         return hash;

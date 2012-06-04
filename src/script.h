@@ -11,6 +11,7 @@
 #include <boost/foreach.hpp>
 #include <boost/variant.hpp>
 
+#include "myendian.h"
 #include "keystore.h"
 #include "bignum.h"
 
@@ -441,15 +442,22 @@ public:
             {
                 if (end() - pc < 2)
                     return false;
-                nSize = 0;
-                memcpy(&nSize, &pc[0], 2);
+                nSize = pc[0] | ((unsigned short)pc[1] << 8);
                 pc += 2;
             }
             else if (opcode == OP_PUSHDATA4)
             {
                 if (end() - pc < 4)
                     return false;
+#ifdef DEFINITELY_LITTLE_ENDIAN
+                // This is faster on LE with gcc -O2, but not with -O1
                 memcpy(&nSize, &pc[0], 4);
+#else
+                nSize = pc[0]
+                      | ((unsigned short)pc[1] << 8)
+                      | ((unsigned long)pc[2] << 16)
+                      | ((unsigned long)pc[3] << 24);
+#endif
                 pc += 4;
             }
             if (end() - pc < nSize)

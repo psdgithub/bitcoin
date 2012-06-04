@@ -2477,7 +2477,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
                         hashSalt = GetRandHash();
                     int64 hashAddr = addr.GetHash();
                     uint256 hashRand = hashSalt ^ (hashAddr<<32) ^ ((GetTime()+hashAddr)/(24*60*60));
-                    hashRand = Hash(BEGIN(hashRand), END(hashRand));
+                    {
+                        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+                        ss << hashRand;
+                        hashRand = Hash(ss.begin(), ss.end());
+                    }
                     multimap<uint256, CNode*> mapMix;
                     BOOST_FOREACH(CNode* pnode, vNodes)
                     {
@@ -2486,7 +2490,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
                         unsigned int nPointer;
                         memcpy(&nPointer, &pnode, sizeof(nPointer));
                         uint256 hashKey = hashRand ^ nPointer;
-                        hashKey = Hash(BEGIN(hashKey), END(hashKey));
+                        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+                        ss << hashKey;
+                        hashKey = Hash(ss.begin(), ss.end());
                         mapMix.insert(make_pair(hashKey, pnode));
                     }
                     int nRelayNodes = fReachable ? 2 : 1; // limited relaying of addresses outside our network(s)
@@ -2904,7 +2910,7 @@ bool ProcessMessages(CNode* pfrom)
     loop
     {
         // Scan for message start
-        CDataStream::iterator pstart = search(vRecv.begin(), vRecv.end(), BEGIN(pchMessageStart), END(pchMessageStart));
+        CDataStream::iterator pstart = search(vRecv.begin(), vRecv.end(), pchMessageStart, pchMessageStart+sizeof(pchMessageStart));
         int nHeaderSize = vRecv.GetSerializeSize(CMessageHeader());
         if (vRecv.end() - pstart < nHeaderSize)
         {
@@ -3095,7 +3101,11 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
                     if (hashSalt == 0)
                         hashSalt = GetRandHash();
                     uint256 hashRand = inv.hash ^ hashSalt;
-                    hashRand = Hash(BEGIN(hashRand), END(hashRand));
+                    {
+                        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+                        ss << hashRand;
+                        hashRand = Hash(ss.begin(), ss.end());
+                    }
                     bool fTrickleWait = ((hashRand & 3) != 0);
 
                     // always trickle our own transactions

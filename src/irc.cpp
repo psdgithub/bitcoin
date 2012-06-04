@@ -21,8 +21,13 @@ void ThreadIRCSeed2(void* parg);
 #pragma pack(push, 1)
 struct ircaddr
 {
-    struct in_addr ip;
-    short port;
+    union {
+        struct {
+            struct in_addr ip;
+            short port;
+        };
+        unsigned char data[6];
+    };
 };
 #pragma pack(pop)
 
@@ -33,7 +38,7 @@ string EncodeAddress(const CService& addr)
     {
         tmp.port = htons(addr.GetPort());
 
-        vector<unsigned char> vch(UBEGIN(tmp), UEND(tmp));
+        vector<unsigned char> vch(&tmp.data[0], &tmp.data[6]);
         return string("u") + EncodeBase58Check(vch);
     }
     return "";
@@ -46,9 +51,9 @@ bool DecodeAddress(string str, CService& addr)
         return false;
 
     struct ircaddr tmp;
-    if (vch.size() != sizeof(tmp))
+    if (vch.size() != sizeof(tmp.data))
         return false;
-    memcpy(&tmp, &vch[0], sizeof(tmp));
+    memcpy(&tmp.data, &vch[0], sizeof(tmp.data));
 
     addr = CService(tmp.ip, ntohs(tmp.port));
     return true;
