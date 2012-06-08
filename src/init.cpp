@@ -454,6 +454,10 @@ bool AppInit2()
                 SetLimited(net);
         }
     }
+#if defined(USE_IPV6) && ! USE_IPV6
+    else
+        SetLimited(NET_IPV6);
+#endif
 
     if (mapArgs.count("-proxy")) {
         CService addrProxy = CService(mapArgs["-proxy"], 9050);
