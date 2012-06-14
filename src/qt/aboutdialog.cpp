@@ -3,12 +3,16 @@
 #include "clientmodel.h"
 
 #include "version.h"
+#include <openssl/crypto.h>
 
 AboutDialog::AboutDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::AboutDialog)
 {
     ui->setupUi(this);
+
+    // set OpenSSL version
+    ui->openSSLVersionLabel->setText(tr("Using ") + SSLeay_version(SSLEAY_VERSION));
 }
 
 void AboutDialog::setModel(ClientModel *model)
