@@ -2973,6 +2973,7 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "createrawtx"            && n > 0) ConvertTo<Array>(params[0]);
     if (strMethod == "createrawtx"            && n > 1) ConvertTo<Object>(params[1]);
     if (strMethod == "signrawtx"              && n > 1) ConvertTo<Array>(params[1]);
+    if (strMethod == "signrawtx"              && n > 2) ConvertTo<Array>(params[2]);
 
     return params;
 }

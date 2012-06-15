@@ -145,18 +145,21 @@ Value createrawtx(const Array& params, bool fHelp)
 
 Value signrawtx(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() < 1 || params.size() > 2)
+    if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
-            "signrawtx <hex string> [<prevtx1>,<prevtx2>...]\n"
+            "signrawtx <hex string> [<prevtx1>,...] [<privatekey1>,...]\n"
             "Sign inputs for raw transaction (serialized, hex-encoded).\n"
-            "Second argument is an array of raw previous transactions that\n"
+            "Second optional argument is an array of raw previous transactions that\n"
             "this transaction depends on but are not yet in the blockchain.\n"
+            "Third optional argument is an array of base58-encoded private\n"
+            "keys that, if given, will be the only keys used to sign the transaction.\n"
             "Returns json object with keys:\n"
             "  rawtx : raw transaction with signature(s) (hex-encoded string)\n"
             "  complete : 1 if transaction has a complete set of signature (0 if not)"
             + HelpRequiringPassphrase());
 
-    EnsureWalletIsUnlocked();
+    if (params.size() < 3)
+        EnsureWalletIsUnlocked();
 
     vector<unsigned char> txData(ParseHex(params[0].get_str()));
     CDataStream ssData(txData, SER_NETWORK, PROTOCOL_VERSION);
@@ -210,6 +213,27 @@ Value signrawtx(const Array& params, bool fHelp)
         }
     }
 
+    bool fGivenKeys = false;
+    CBasicKeyStore tempKeystore;
+    if (params.size() > 2)
+    {
+        fGivenKeys = true;
+        Array keys = params[2].get_array();
+        BOOST_FOREACH(Value k, keys)
+        {
+            CBitcoinSecret vchSecret;
+            bool fGood = vchSecret.SetString(k.get_str());
+            if (!fGood)
+                throw JSONRPCError(-5,"Invalid private key");
+            CKey key;
+            bool fCompressed;
+            CSecret secret = vchSecret.GetSecret(fCompressed);
+            key.SetSecret(secret, fCompressed);
+            tempKeystore.AddKey(key);
+        }
+    }
+    const CKeyStore& keystore = (fGivenKeys ? tempKeystore : *pwalletMain);
+
     // Sign what we can:
     for (int i = 0; i < mergedTx.vin.size(); i++)
     {
@@ -227,7 +251,7 @@ Value signrawtx(const Array& params, bool fHelp)
         CScript scriptPubKey = prevTx.vout[n].scriptPubKey;
 
         txin.scriptSig.clear();
-        SignSignature(*pwalletMain, prevTx, mergedTx, i);
+        SignSignature(keystore, prevTx, mergedTx, i);
 
         // ... and merge in other signatures:
         BOOST_FOREACH(const CTransaction& txv, txVariants)
