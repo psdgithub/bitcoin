@@ -2283,54 +2283,54 @@ Value sendrawtx(const Array& params, bool fHelp)
 
 
 static const CRPCCommand vRPCCommands[] =
-{ //  name                      function                 safe mode?
-  //  ------------------------  -----------------------  ----------
-    { "help",                   &help,                   true },
-    { "stop",                   &stop,                   true },
-    { "getblockcount",          &getblockcount,          true },
-    { "getconnectioncount",     &getconnectioncount,     true },
-    { "getdifficulty",          &getdifficulty,          true },
-    { "getgenerate",            &getgenerate,            true },
-    { "setgenerate",            &setgenerate,            true },
-    { "gethashespersec",        &gethashespersec,        true },
-    { "getinfo",                &getinfo,                true },
-    { "getmininginfo",          &getmininginfo,          true },
-    { "getnewaddress",          &getnewaddress,          true },
-    { "getaccountaddress",      &getaccountaddress,      true },
-    { "setaccount",             &setaccount,             true },
-    { "getaccount",             &getaccount,             false },
-    { "getaddressesbyaccount",  &getaddressesbyaccount,  true },
-    { "sendtoaddress",          &sendtoaddress,          false },
-    { "getreceivedbyaddress",   &getreceivedbyaddress,   false },
-    { "getreceivedbyaccount",   &getreceivedbyaccount,   false },
-    { "listreceivedbyaddress",  &listreceivedbyaddress,  false },
-    { "listreceivedbyaccount",  &listreceivedbyaccount,  false },
-    { "backupwallet",           &backupwallet,           true },
-    { "keypoolrefill",          &keypoolrefill,          true },
-    { "walletpassphrase",       &walletpassphrase,       true },
-    { "walletpassphrasechange", &walletpassphrasechange, false },
-    { "walletlock",             &walletlock,             true },
-    { "encryptwallet",          &encryptwallet,          false },
-    { "validateaddress",        &validateaddress,        true },
-    { "getbalance",             &getbalance,             false },
-    { "move",                   &movecmd,                false },
-    { "sendfrom",               &sendfrom,               false },
-    { "sendmany",               &sendmany,               false },
-    { "addmultisigaddress",     &addmultisigaddress,     false },
-    { "getblock",               &getblock,               false },
-    { "getblockhash",           &getblockhash,           false },
-    { "gettransaction",         &gettransaction,         false },
-    { "listtransactions",       &listtransactions,       false },
-    { "signmessage",            &signmessage,            false },
-    { "verifymessage",          &verifymessage,          false },
-    { "getwork",                &getwork,                true },
-    { "listaccounts",           &listaccounts,           false },
-    { "settxfee",               &settxfee,               false },
-    { "getmemorypool",          &getmemorypool,          true },
-    { "listsinceblock",         &listsinceblock,         false },
-    { "dumpprivkey",            &dumpprivkey,            false },
-    { "importprivkey",          &importprivkey,          false },
-    { "sendrawtx",              &sendrawtx,              false },
+{ //  name                      function                 safe mode?  unlocked?
+  //  ------------------------  -----------------------  ----------  ---------
+    { "help",                   &help,                   true,       true },
+    { "stop",                   &stop,                   true,       true },
+    { "getblockcount",          &getblockcount,          true,       false },
+    { "getconnectioncount",     &getconnectioncount,     true,       false },
+    { "getdifficulty",          &getdifficulty,          true,       false },
+    { "getgenerate",            &getgenerate,            true,       false },
+    { "setgenerate",            &setgenerate,            true,       false },
+    { "gethashespersec",        &gethashespersec,        true,       false },
+    { "getinfo",                &getinfo,                true,       false },
+    { "getmininginfo",          &getmininginfo,          true,       false },
+    { "getnewaddress",          &getnewaddress,          true,       false },
+    { "getaccountaddress",      &getaccountaddress,      true,       false },
+    { "setaccount",             &setaccount,             true,       false },
+    { "getaccount",             &getaccount,             false,      false },
+    { "getaddressesbyaccount",  &getaddressesbyaccount,  true,       false },
+    { "sendtoaddress",          &sendtoaddress,          false,      false },
+    { "getreceivedbyaddress",   &getreceivedbyaddress,   false,      false },
+    { "getreceivedbyaccount",   &getreceivedbyaccount,   false,      false },
+    { "listreceivedbyaddress",  &listreceivedbyaddress,  false,      false },
+    { "listreceivedbyaccount",  &listreceivedbyaccount,  false,      false },
+    { "backupwallet",           &backupwallet,           true,       false },
+    { "keypoolrefill",          &keypoolrefill,          true,       false },
+    { "walletpassphrase",       &walletpassphrase,       true,       false },
+    { "walletpassphrasechange", &walletpassphrasechange, false,      false },
+    { "walletlock",             &walletlock,             true,       false },
+    { "encryptwallet",          &encryptwallet,          false,      false },
+    { "validateaddress",        &validateaddress,        true,       false },
+    { "getbalance",             &getbalance,             false,      false },
+    { "move",                   &movecmd,                false,      false },
+    { "sendfrom",               &sendfrom,               false,      false },
+    { "sendmany",               &sendmany,               false,      false },
+    { "addmultisigaddress",     &addmultisigaddress,     false,      false },
+    { "getblock",               &getblock,               false,      false },
+    { "getblockhash",           &getblockhash,           false,      false },
+    { "gettransaction",         &gettransaction,         false,      false },
+    { "listtransactions",       &listtransactions,       false,      false },
+    { "signmessage",            &signmessage,            false,      false },
+    { "verifymessage",          &verifymessage,          false,      false },
+    { "getwork",                &getwork,                true,       false },
+    { "listaccounts",           &listaccounts,           false,      false },
+    { "settxfee",               &settxfee,               false,      false },
+    { "getmemorypool",          &getmemorypool,          true,       false },
+    { "listsinceblock",         &listsinceblock,         false,      false },
+    { "dumpprivkey",            &dumpprivkey,            false,      false },
+    { "importprivkey",          &importprivkey,          false,      false },
+    { "sendrawtx",              &sendrawtx,              false,      false },
 };
 
 CRPCTable::CRPCTable()
@@ -2874,8 +2874,12 @@ json_spirit::Value CRPCTable::execute(const std::string &strMethod, const json_s
         // Execute
         Value result;
         {
-            LOCK2(cs_main, pwalletMain->cs_wallet);
-            result = pcmd->actor(params, false);
+            if (pcmd->unlocked)
+                result = pcmd->actor(params, false);
+            else {
+                LOCK2(cs_main, pwalletMain->cs_wallet);
+                result = pcmd->actor(params, false);
+            }
         }
         return result;
     }

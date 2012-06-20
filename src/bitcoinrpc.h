@@ -29,6 +29,7 @@ public:
     std::string name;
     rpcfn_type actor;
     bool okSafeMode;
+    bool unlocked;
 };
 
 /**
