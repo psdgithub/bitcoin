@@ -3261,7 +3261,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             const CInv& inv = (*pto->mapAskFor.begin()).second;
             if (!AlreadyHave(txdb, inv))
             {
-                if (!fQuietInitial || CaughtUp())
+                if (fTraceNet || !fQuietInitial || CaughtUp())
                     printf("sending getdata: %s\n", inv.ToString().c_str());
 
                 if (inv.type == MSG_BLOCK) {

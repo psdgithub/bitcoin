@@ -368,6 +368,13 @@ bool AppInit2()
     // ********************************************************* Step 3: parameter-to-internal-flags
 
     fDebug = GetBoolArg("-debug");
+
+    // -debug implies fTrace*
+    if (fDebug)
+        fTraceNet = true;
+    else
+        fTraceNet = GetBoolArg("-tracenet");
+
     bitdb.SetDetach(GetBoolArg("-detachdb", false));
 
 #if !defined(WIN32) && !defined(QT_GUI)

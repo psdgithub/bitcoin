@@ -23,6 +23,7 @@ class CRequestTracker;
 class CNode;
 class CBlockIndex;
 extern int nBestHeight;
+extern bool fTraceNet;
 
 
 
@@ -299,7 +300,7 @@ public:
         // We're using mapAskFor as a priority queue,
         // the key is the earliest time the request can be sent
         int64& nRequestTime = mapAlreadyAskedFor[inv];
-        if (!fQuietInitial || CaughtUp())
+        if (fTraceNet || !fQuietInitial || CaughtUp())
             printf("askfor %s   %"PRI64d"\n", inv.ToString().c_str(), nRequestTime);
 
         // Make sure not to reuse time indexes to keep things in the same order
