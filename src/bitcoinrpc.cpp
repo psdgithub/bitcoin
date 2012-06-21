@@ -28,7 +28,10 @@
 #include <boost/asio/ssl.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/thread/locks.hpp>
 #include <list>
+
+typedef boost::asio::ssl::stream<boost::asio::ip::tcp::socket> SSLStream;
 
 #define printf OutputDebugStringF
 // MinGW 3.4.5 gets "fatal error: had to relocate PCH" if the json headers are
@@ -2261,6 +2264,33 @@ Value getmemorypool(const Array& params, bool fHelp)
         if (IsInitialBlockDownload())
             throw JSONRPCError(-10, "Bitcoin is downloading blocks...");
 
+        do
+        {
+            Value lpval = find_value(oparam, "longpollid");
+            if (lpval.type() != null_type)
+            {
+                uint256 hashWatchedChain = hashBestChain;
+                if (lpval.type() == str_type)
+                {
+                    uint256 lpid;
+                    lpid.SetHex(lpval.get_str());
+                    if (lpid != hashWatchedChain)
+                        break;
+                }
+
+                LEAVE_CRITICAL_SECTION(pwalletMain->cs_wallet);
+                LEAVE_CRITICAL_SECTION(cs_main);
+                {
+                    boost::unique_lock<boost::mutex> lock(csBestBlock);
+                    while (hashBestChain == hashWatchedChain)
+                        cvBlockChange.wait(lock);
+                }
+                ENTER_CRITICAL_SECTION(cs_main);
+                ENTER_CRITICAL_SECTION(pwalletMain->cs_wallet);
+            }
+        }
+        while(0);
+
         static CReserveKey reservekey(pwalletMain);
 
         // Update block
@@ -2378,6 +2408,7 @@ Value getmemorypool(const Array& params, bool fHelp)
         result.push_back(Pair("transactions", transactions));
         result.push_back(Pair("coinbaseaux", aux));
         result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
+        result.push_back(Pair("longpollid", hashBestChain.GetHex()));
         result.push_back(Pair("target", hashTarget.GetHex()));
         result.push_back(Pair("time", (int64_t)pblock->nTime));
         result.push_back(Pair("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1));
