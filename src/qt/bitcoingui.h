@@ -11,7 +11,7 @@ class TransactionView;
 class OverviewPage;
 class AddressBookPage;
 class SendCoinsDialog;
-class MessagePage;
+class SignVerifyMessageDialog;
 class CoinControlPage;
 class Notificator;
 class RPCConsole;
@@ -65,7 +65,7 @@ private:
     AddressBookPage *addressBookPage;
     AddressBookPage *receiveCoinsPage;
     SendCoinsDialog *sendCoinsPage;
-    MessagePage *messagePage;
+    SignVerifyMessageDialog *signVerifyMessageDialog;
     CoinControlPage *coinControlPage;
 
     QLabel *labelEncryptionIcon;
@@ -80,8 +80,9 @@ private:
     QAction *quitAction;
     QAction *sendCoinsAction;
     QAction *addressBookAction;
-    QAction *messageAction;
+    QAction *signMessageAction;
     QAction *verifyMessageAction;
+    QAction *firstClassMessagingAction;
     QAction *aboutAction;
     QAction *receiveCoinsAction;
     QAction *optionsAction;
@@ -137,7 +138,8 @@ public slots:
     void askFee(qint64 nFeeRequired, bool *payFee);
     void handleURI(QString strURI);
 
-    void gotoMessagePage(QString addr = "");
+    void gotoSignMessageTab(QString addr = "");
+    void gotoVerifyMessageTab(QString addr = "");
 
 private slots:
     /** Switch to overview (home) page */
@@ -170,8 +172,6 @@ private slots:
     void backupWallet();
     /** Change encrypted wallet passphrase */
     void changePassphrase();
-    /** Verify a message signature */
-    void verifyMessage();
     /** Ask for pass phrase to unlock wallet temporarily */
     void unlockWallet();
 
