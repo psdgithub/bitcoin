@@ -1014,11 +1014,11 @@ public:
 
 
     bool DisconnectBlock(CTxDB& txdb, CBlockIndex* pindex);
-    bool ConnectBlock(CTxDB& txdb, CBlockIndex* pindex);
+    bool ConnectBlock(CTxDB& txdb, CBlockIndex* pindex, bool fJustCheck=false);
     bool ReadFromDisk(const CBlockIndex* pindex, bool fReadTransactions=true);
     bool SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew);
     bool AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos);
-    bool CheckBlock() const;
+    bool CheckBlock(bool fCheckPOW=true, bool fCheckMerkleRoot=true) const;
     bool AcceptBlock();
 
 private:
@@ -1604,6 +1604,7 @@ public:
                 bool fCheckInputs, bool* pfMissingInputs);
     bool addUnchecked(CTransaction &tx);
     bool remove(CTransaction &tx);
+    void clear();
 
     unsigned long size()
     {
