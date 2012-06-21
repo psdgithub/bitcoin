@@ -481,6 +481,7 @@ Value stop(const Array& params, bool fHelp)
         throw runtime_error(
             "stop\n"
             "Stop Bitcoin server.");
+
     // Shutdown will take long enough that the response should get back
     StartShutdown();
     return "Bitcoin server stopping";
@@ -494,6 +495,8 @@ Value getblockcount(const Array& params, bool fHelp)
             "getblockcount\n"
             "Returns the number of blocks in the longest block chain.");
 
+    LOCK(cs_main);
+
     return nBestHeight;
 }
 
@@ -504,6 +507,8 @@ Value getconnectioncount(const Array& params, bool fHelp)
         throw runtime_error(
             "getconnectioncount\n"
             "Returns the number of connections to other nodes.");
+
+    LOCK(cs_vNodes);
 
     return (int)vNodes.size();
 }
@@ -516,6 +521,8 @@ Value getdifficulty(const Array& params, bool fHelp)
             "getdifficulty\n"
             "Returns the proof-of-work difficulty as a multiple of the minimum difficulty.");
 
+    LOCK(cs_main);
+
     return GetDifficulty();
 }
 
@@ -526,6 +533,8 @@ Value getgenerate(const Array& params, bool fHelp)
         throw runtime_error(
             "getgenerate\n"
             "Returns true or false.");
+
+    LOCK(cs_main);
 
     return GetBoolArg("-gen");
 }
@@ -542,6 +551,8 @@ Value setgenerate(const Array& params, bool fHelp)
     bool fGenerate = true;
     if (params.size() > 0)
         fGenerate = params[0].get_bool();
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     if (params.size() > 1)
     {
@@ -564,6 +575,8 @@ Value gethashespersec(const Array& params, bool fHelp)
             "gethashespersec\n"
             "Returns a recent hashes per second performance measurement while generating.");
 
+    LOCK(cs_main);
+
     if (GetTimeMillis() - nHPSTimerStart > 8000)
         return (boost::int64_t)0;
     return (boost::int64_t)dHashesPerSec;
@@ -576,6 +589,8 @@ Value getinfo(const Array& params, bool fHelp)
         throw runtime_error(
             "getinfo\n"
             "Returns an object containing various state info.");
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     CService addrProxy;
     GetProxy(NET_IPV4, addrProxy);
@@ -609,6 +624,8 @@ Value getmininginfo(const Array& params, bool fHelp)
             "getmininginfo\n"
             "Returns an object containing mining-related information.");
 
+    LOCK(cs_main);
+
     Object obj;
     obj.push_back(Pair("blocks",        (int)nBestHeight));
     obj.push_back(Pair("currentblocksize",(uint64_t)nLastBlockSize));
@@ -639,6 +656,8 @@ Value getnewaddress(const Array& params, bool fHelp)
     string strAccount;
     if (params.size() > 0)
         strAccount = AccountFromValue(params[0]);
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     if (!pwalletMain->IsLocked())
         pwalletMain->TopUpKeyPool();
@@ -703,6 +722,8 @@ Value getaccountaddress(const Array& params, bool fHelp)
     // Parse the account first so we don't generate a key if there's an error
     string strAccount = AccountFromValue(params[0]);
 
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     Value ret;
 
     ret = GetAccountAddress(strAccount).ToString();
@@ -723,6 +744,7 @@ Value setaccount(const Array& params, bool fHelp)
     if (!address.IsValid())
         throw JSONRPCError(-5, "Invalid Bitcoin address");
 
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     string strAccount;
     if (params.size() > 1)
@@ -753,6 +775,8 @@ Value getaccount(const Array& params, bool fHelp)
     if (!address.IsValid())
         throw JSONRPCError(-5, "Invalid Bitcoin address");
 
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     string strAccount;
     map<CTxDestination, string>::iterator mi = pwalletMain->mapAddressBook.find(address.Get());
     if (mi != pwalletMain->mapAddressBook.end() && !(*mi).second.empty())
@@ -769,6 +793,8 @@ Value getaddressesbyaccount(const Array& params, bool fHelp)
             "Returns the list of addresses for the given account.");
 
     string strAccount = AccountFromValue(params[0]);
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // Find all addresses that have the given account
     Array ret;
@@ -807,6 +833,8 @@ Value settxfee(const Array& params, bool fHelp)
     if (params[0].get_real() != 0.0)
         nAmount = AmountFromValue(params[0]);        // rejects 0.0 amounts
 
+    LOCK(cs_main);
+
     if (params.size() > 1)
     {
         int64 nAmountMax;
@@ -839,6 +867,8 @@ Value sendtoaddress(const Array& params, bool fHelp)
 
     // Amount
     int64 nAmount = AmountFromValue(params[1]);
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // Wallet comments
     CWalletTx wtx;
@@ -891,6 +921,8 @@ Value signmessage(const Array& params, bool fHelp)
             "signmessage <bitcoinaddress> <message>\n"
             "Sign a message with the private key of an address");
 
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     EnsureWalletIsUnlocked();
 
     string strAddress = params[0].get_str();
@@ -930,6 +962,8 @@ Value verifymessage(const Array& params, bool fHelp)
     string strSign     = params[1].get_str();
     string strMessage  = params[2].get_str();
 
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     CBitcoinAddress addr(strAddress);
     if (!addr.IsValid())
         throw JSONRPCError(-3, "Invalid address");
@@ -962,6 +996,8 @@ Value getreceivedbyaddress(const Array& params, bool fHelp)
         throw runtime_error(
             "getreceivedbyaddress <bitcoinaddress> [minconf=1]\n"
             "Returns the total amount received by <bitcoinaddress> in transactions with at least [minconf] confirmations.");
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // Bitcoin address
     CBitcoinAddress address = CBitcoinAddress(params[0].get_str());
@@ -1017,6 +1053,8 @@ Value getreceivedbyaccount(const Array& params, bool fHelp)
     int nMinDepth = 1;
     if (params.size() > 1)
         nMinDepth = params[1].get_int();
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // Get the set of pub keys assigned to account
     string strAccount = AccountFromValue(params[0]);
@@ -1084,6 +1122,8 @@ Value getbalance(const Array& params, bool fHelp)
             "If [account] is not specified, returns the server's total available balance.\n"
             "If [account] is specified, returns the balance in the account.");
 
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     if (params.size() == 0)
         return  ValueFromAmount(pwalletMain->GetBalance());
 
@@ -1144,6 +1184,8 @@ Value movecmd(const Array& params, bool fHelp)
     if (params.size() > 4)
         strComment = params[4].get_str();
 
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     CWalletDB walletdb(pwalletMain->strWalletFile);
     if (!walletdb.TxnBegin())
         throw JSONRPCError(-20, "database error");
@@ -1177,6 +1219,8 @@ Value movecmd(const Array& params, bool fHelp)
 
 Value sendfrom(const Array& params, bool fHelp)
 {
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     if (fHelp || params.size() < 3 || params.size() > 6)
         throw runtime_error(
             "sendfrom <fromaccount> <tobitcoinaddress> <amount> [minconf=1] [comment] [comment-to]\n"
@@ -1217,6 +1261,8 @@ Value sendfrom(const Array& params, bool fHelp)
 
 Value sendmany(const Array& params, bool fHelp)
 {
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     if (fHelp || params.size() < 2 || params.size() > 4)
         throw runtime_error(
             "sendmany <fromaccount> {address:amount,...} [minconf=1] [comment]\n"
@@ -1311,6 +1357,8 @@ Value addmultisigaddress(const Array& params, bool fHelp)
     string strAccount;
     if (params.size() > 2)
         strAccount = AccountFromValue(params[2]);
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // Gather public keys
     if (nRequired < 1)
@@ -1479,6 +1527,8 @@ Value listreceivedbyaddress(const Array& params, bool fHelp)
             "  \"amount\" : total amount received by the address\n"
             "  \"confirmations\" : number of confirmations of the most recent transaction included");
 
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     return ListReceived(params, false);
 }
 
@@ -1493,6 +1543,8 @@ Value listreceivedbyaccount(const Array& params, bool fHelp)
             "  \"account\" : the account of the receiving addresses\n"
             "  \"amount\" : total amount received by addresses with this account\n"
             "  \"confirmations\" : number of confirmations of the most recent transaction included");
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     return ListReceived(params, true);
 }
@@ -1587,6 +1639,8 @@ Value listtransactions(const Array& params, bool fHelp)
     if (nFrom < 0)
         throw JSONRPCError(-8, "Negative from");
 
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     Array ret;
     CWalletDB walletdb(pwalletMain->strWalletFile);
 
@@ -1651,6 +1705,8 @@ Value listaccounts(const Array& params, bool fHelp)
     if (params.size() > 0)
         nMinDepth = params[0].get_int();
 
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     map<string, int64> mapAccountBalances;
     BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& entry, pwalletMain->mapAddressBook) {
         if (IsMine(*pwalletMain, entry.first)) // This address belongs to me
@@ -1696,6 +1752,8 @@ Value listsinceblock(const Array& params, bool fHelp)
         throw runtime_error(
             "listsinceblock [blockhash] [target-confirmations]\n"
             "Get all transactions in blocks since block [blockhash], or all transactions if omitted");
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     CBlockIndex *pindex = NULL;
     int target_confirms = 1;
@@ -1821,6 +1879,8 @@ Value gettransaction(const Array& params, bool fHelp)
     uint256 hash;
     hash.SetHex(params[0].get_str());
 
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     Object entry;
 
     AnyTxToJSON(hash, NULL, entry,
@@ -1837,6 +1897,8 @@ Value backupwallet(const Array& params, bool fHelp)
             "backupwallet <destination>\n"
             "Safely copies wallet.dat to destination, which can be a directory or a path with filename.");
 
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     string strDest = params[0].get_str();
     BackupWallet(*pwalletMain, strDest);
 
@@ -1846,6 +1908,8 @@ Value backupwallet(const Array& params, bool fHelp)
 
 Value keypoolrefill(const Array& params, bool fHelp)
 {
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     if (fHelp || params.size() > 0)
         throw runtime_error(
             "keypoolrefill\n"
@@ -1911,6 +1975,8 @@ void ThreadCleanWalletPassphrase(void* parg)
 
 Value walletpassphrase(const Array& params, bool fHelp)
 {
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     if (pwalletMain->IsCrypted() && (fHelp || params.size() != 2))
         throw runtime_error(
             "walletpassphrase <passphrase> <timeout>\n"
@@ -1950,6 +2016,8 @@ Value walletpassphrase(const Array& params, bool fHelp)
 
 Value walletpassphrasechange(const Array& params, bool fHelp)
 {
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     if (pwalletMain->IsCrypted() && (fHelp || params.size() != 2))
         throw runtime_error(
             "walletpassphrasechange <oldpassphrase> <newpassphrase>\n"
@@ -1983,6 +2051,8 @@ Value walletpassphrasechange(const Array& params, bool fHelp)
 
 Value walletlock(const Array& params, bool fHelp)
 {
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     if (pwalletMain->IsCrypted() && (fHelp || params.size() != 0))
         throw runtime_error(
             "walletlock\n"
@@ -2006,6 +2076,8 @@ Value walletlock(const Array& params, bool fHelp)
 
 Value encryptwallet(const Array& params, bool fHelp)
 {
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     if (!pwalletMain->IsCrypted() && (fHelp || params.size() != 1))
         throw runtime_error(
             "encryptwallet <passphrase>\n"
@@ -2081,6 +2153,8 @@ Value validateaddress(const Array& params, bool fHelp)
     CBitcoinAddress address(params[0].get_str());
     bool isValid = address.IsValid();
 
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     Object ret;
     ret.push_back(Pair("isvalid", isValid));
     if (isValid)
@@ -2138,14 +2212,19 @@ Value getwork(const Array& params, bool fHelp)
             "  \"target\" : little endian hash target\n"
             "If [data] is specified, tries to solve the block and returns true if it was successful.");
 
+    {
+    LOCK(cs_vNodes);
     if (vNodes.empty())
         throw JSONRPCError(-9, "Bitcoin is not connected!");
+    }
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     if (IsInitialBlockDownload())
         throw JSONRPCError(-10, "Bitcoin is downloading blocks...");
 
     typedef map<uint256, pair<CBlock*, CScript> > mapNewBlock_t;
-    static mapNewBlock_t mapNewBlock;    // FIXME: thread safety
+    static mapNewBlock_t mapNewBlock;
     static vector<CBlock*> vNewBlock;
     static CReserveKey reservekey(pwalletMain);
 
@@ -2272,8 +2351,13 @@ Value getmemorypool(const Array& params, bool fHelp)
 
     if (strMode == "template" || (strMode.empty() && find_value(oparam, "data").type() == null_type))
     {
+        {
+        LOCK(cs_vNodes);
         if (vNodes.empty())
             throw JSONRPCError(-9, "Bitcoin is not connected!");
+        }
+
+        LOCK2(cs_main, pwalletMain->cs_wallet);
 
         if (IsInitialBlockDownload())
             throw JSONRPCError(-10, "Bitcoin is downloading blocks...");
@@ -2444,7 +2528,11 @@ Value getmemorypool(const Array& params, bool fHelp)
         CBlock pblock;
         ssBlock >> pblock;
 
-        bool fAccepted = ProcessBlock(NULL, &pblock);
+        bool fAccepted;
+        {
+            LOCK(cs_main);
+            fAccepted = ProcessBlock(NULL, &pblock);
+        }
 
         if (params[0].type() == str_type)
             return fAccepted;
@@ -2461,6 +2549,8 @@ Value getblockhash(const Array& params, bool fHelp)
         throw runtime_error(
             "getblockhash <index>\n"
             "Returns hash of block in best-block-chain at <index>.");
+
+    LOCK(cs_main);
 
     int nHeight = params[0].get_int();
     if (nHeight < 0 || nHeight > nBestHeight)
@@ -2482,6 +2572,8 @@ Value getblock(const Array& params, bool fHelp)
 
     std::string strHash = params[0].get_str();
     uint256 hash(strHash);
+
+    LOCK(cs_main);
 
     if (mapBlockIndex.count(hash) == 0)
         throw JSONRPCError(-5, "Block not found");
@@ -3232,12 +3324,7 @@ json_spirit::Value CRPCTable::execute(const std::string &strMethod, const json_s
     try
     {
         // Execute
-        Value result;
-        {
-            LOCK2(cs_main, pwalletMain->cs_wallet);
-            result = pcmd->actor(params, false);
-        }
-        return result;
+        return pcmd->actor(params, false);
     }
     catch (std::exception& e)
     {
