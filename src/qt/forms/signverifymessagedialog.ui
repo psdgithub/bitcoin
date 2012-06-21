@@ -230,7 +230,7 @@
        <item>
         <widget class="QLabel" name="infoLabel_VM">
          <property name="text">
-          <string>Enter the signing address, message (be careful to correctly copy newlines, spaces, tabs and other invisible characters) and signature below to verify the message.</string>
+          <string>Enter the signing address, message (ensure you copy line breaks, spaces, tabs, etc. exactly) and signature below to verify the message. Be careful not to read more into the signature than what is in the signed message itself, to avoid being tricked by a man-in-the-middle attack.</string>
          </property>
          <property name="textFormat">
           <enum>Qt::PlainText</enum>

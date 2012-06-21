@@ -25,7 +25,8 @@
 
 SignVerifyMessageDialog::SignVerifyMessageDialog(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::SignVerifyMessageDialog)
+    ui(new Ui::SignVerifyMessageDialog),
+    model(0)
 {
     ui->setupUi(this);
 
@@ -91,11 +92,14 @@ void SignVerifyMessageDialog::showTab_VM(bool fShow)
 
 void SignVerifyMessageDialog::on_addressBookButton_SM_clicked()
 {
-    AddressBookPage dlg(AddressBookPage::ForSending, AddressBookPage::ReceivingTab, this);
-    dlg.setModel(model->getAddressTableModel());
-    if (dlg.exec())
+    if (model && model->getAddressTableModel())
     {
-        setAddress_SM(dlg.getReturnValue());
+        AddressBookPage dlg(AddressBookPage::ForSending, AddressBookPage::ReceivingTab, this);
+        dlg.setModel(model->getAddressTableModel());
+        if (dlg.exec())
+        {
+            setAddress_SM(dlg.getReturnValue());
+        }
     }
 }
 
@@ -177,11 +181,14 @@ void SignVerifyMessageDialog::on_clearButton_SM_clicked()
 
 void SignVerifyMessageDialog::on_addressBookButton_VM_clicked()
 {
-    AddressBookPage dlg(AddressBookPage::ForSending, AddressBookPage::SendingTab, this);
-    dlg.setModel(model->getAddressTableModel());
-    if (dlg.exec())
+    if (model && model->getAddressTableModel())
     {
-        setAddress_VM(dlg.getReturnValue());
+        AddressBookPage dlg(AddressBookPage::ForSending, AddressBookPage::SendingTab, this);
+        dlg.setModel(model->getAddressTableModel());
+        if (dlg.exec())
+        {
+            setAddress_VM(dlg.getReturnValue());
+        }
     }
 }
 
