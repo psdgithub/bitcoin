@@ -470,6 +470,10 @@ bool AppInit2()
                 SetLimited(net);
         }
     }
+#if defined(USE_IPV6) && ! USE_IPV6
+    else
+        SetLimited(NET_IPV6);
+#endif
 
     CService addrProxy;
     bool fProxy = false;
