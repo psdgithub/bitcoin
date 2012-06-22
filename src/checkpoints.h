@@ -29,6 +29,8 @@ namespace Checkpoints
 
     // Returns last CBlockIndex* that is a checkpoint
     const CBlockIndex* GetLastCheckpoint();
+
+    bool IsCheckpoint(int nHeight);
 }
 
 #endif

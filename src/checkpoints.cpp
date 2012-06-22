@@ -89,4 +89,11 @@ namespace Checkpoints
     {
         return lastCheckpoint;
     }
+
+    bool IsCheckpoint(int nHeight)
+    {
+        MapCheckpoints& checkpoints = (fTestNet ? mapCheckpointsTestnet : mapCheckpoints);
+
+        return checkpoints.count(nHeight) > 0;
+    }
 }

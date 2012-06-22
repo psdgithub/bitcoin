@@ -11,7 +11,6 @@
 #include "ui_interface.h"
 #include "checkpoints.h"
 #include "hub.h"
-#include "checkpoints.h"
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>

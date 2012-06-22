@@ -56,10 +56,10 @@ private:
 public:  // HACK to merge with CheckNewBlock
     bool ConnectBlock(CBlock& block, CTxDB& txdb, CBlockIndex* pindex, bool fJustCheck=false);
 private:
-    bool SetBestChainInner(CBlock& block, CTxDB& txdb, CBlockIndex *pindexNew);
-    bool SetBestChain(CBlock& block, CTxDB& txdb, CBlockIndex* pindexNew);
-    bool AddToBlockIndex(CBlock& block, unsigned int nFile, unsigned int nBlockPos);
-    bool AcceptBlock(CBlock& block);
+    bool SetBestChainInner(CBlock& block, uint256& hash, CTxDB& txdb, CBlockIndex *pindexNew);
+    bool SetBestChain(CBlock& block, uint256& hash, CTxDB& txdb, CBlockIndex* pindexNew);
+    bool AddToBlockIndex(CBlock& block, uint256& hash, unsigned int nFile, unsigned int nBlockPos);
+    bool AcceptBlock(CBlock& block, uint256& hash);
 public:
     // Loops to process callbacks (do not call manually, automatically started in the constructor)
         void ProcessCallbacks();
