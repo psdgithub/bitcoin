@@ -16,6 +16,7 @@ class CBlock;
 class CTxDB;
 class CBlockIndex;
 class CHub;
+class CNode;
 
 class CBlockStoreSignalTable
 {
@@ -25,6 +26,9 @@ public:
 
     CCriticalSection cs_sigAskForBlocks;
     boost::signals2::signal<void (const uint256, const uint256)> sigAskForBlocks;
+
+    CCriticalSection cs_sigDoS;
+    boost::function<void (CNode* pNode, const int nDoS)> sigDoS;
 };
 
 class CBlockStore
@@ -36,6 +40,17 @@ private:
 
     void CallbackAskForBlocks(const uint256 hashEnd, const uint256 hashOriginator)  { LOCK(sigtable.cs_sigAskForBlocks); sigtable.sigAskForBlocks(hashEnd, hashOriginator); }
 
+    void CallbackDoS(CNode* pNode, const int nDoS) { LOCK(sigtable.cs_sigDoS); sigtable.sigDoS(pNode, nDoS); }
+
+    CCriticalSection cs_callbacks;
+    CSemaphore sem_callbacks;
+    bool fProcessCallbacks;
+    bool fProcessingCallbacks;
+
+    std::queue<std::pair<CBlock*, CNode*> > queueFinishEmitBlockCallbacks;
+    void SubmitCallbackFinishEmitBlock(CBlock& block, CNode* pNodeDoS);
+    bool FinishEmitBlock(CBlock& block, CNode* pNodeDoS);
+
     bool Reorganize(CTxDB& txdb, CBlockIndex* pindexNew);
     bool DisconnectBlock(CBlock& block, CTxDB& txdb, CBlockIndex* pindex);
 public:  // HACK to merge with CheckNewBlock
@@ -46,6 +61,14 @@ private:
     bool AddToBlockIndex(CBlock& block, unsigned int nFile, unsigned int nBlockPos);
     bool AcceptBlock(CBlock& block);
 public:
+    // Loops to process callbacks (do not call manually, automatically started in the constructor)
+        void ProcessCallbacks();
+    // Stop callback processing threads
+    void StopProcessCallbacks();
+
+    CBlockStore();
+    ~CBlockStore()  { StopProcessCallbacks(); }
+
     bool LoadBlockIndex(bool fReadOnly=false);
 
 //Register methods
@@ -58,10 +81,17 @@ public:
     //    send the block query to that node.
     void RegisterAskForBlocks(boost::function<void (const uint256, const uint256)> func) { LOCK(sigtable.cs_sigAskForBlocks); sigtable.sigAskForBlocks.connect(func); }
 
+    // Register a handler (of the form void f(CNode* pNode, const int nDoS)) that calls pNode->Misbehaving(nDoS)
+    void RegisterDoSHandler(boost::function<void (CNode* pNode, const int nDoS)> func) { LOCK(sigtable.cs_sigDoS); sigtable.sigDoS = func; }
+
 //Blockchain access methods
     // Emit methods will verify the object, commit it to memory/disk and then place it in queue to
     //   be handled by listeners
-    bool EmitBlock(CBlock& block);
+
+    // if (!fBlocking) only initial checks will be performed before returning
+    //   This means block.nDoS may not be set to its final value before returning
+    // DoSHandler will be called with the final value of block.nDoS at some point during callbacks.
+    bool EmitBlock(CBlock& block, bool fBlocking=true, CNode* pNodeDoS=NULL);
 };
 
 #endif

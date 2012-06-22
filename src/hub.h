@@ -17,6 +17,7 @@ class CBlock;
 class CMerkleTx;
 class CTransaction;
 class CAlert;
+class CNode;
 
 class CHubSignalTable
 {
@@ -66,6 +67,8 @@ private:
 
     void SubmitCallbackCommitAlert(const CAlert &alert);
     void SubmitCallbackRemoveAlert(const CAlert &alert);
+
+    void SubmitCallbackDoS(CNode* pNode, const int nDoS);
 public:
 //Util methods
     // Loops to process callbacks (do not call manually, automatically started in the constructor)
@@ -99,8 +102,14 @@ public:
 //Blockchain access methods
     // Emit methods will verify the object, commit it to memory/disk and then place it in queue to
     //   be handled by listeners
-    bool EmitBlock(CBlock& block) { if (!pblockstore) return false; return pblockstore->EmitBlock(block); }
+
+    // if (!fBlocking) only initial checks will be performed before returning
+    //   This means block.nDoS may not be set to its final value before returning
+    // pNodeDoS->Misbehaving() will be called with the final value of block.nDoS at some point during callbacks.
+    bool EmitBlock(CBlock& block, bool fBlocking=true, CNode* pNodeDoS=NULL) { if (!pblockstore) return false; return pblockstore->EmitBlock(block, fBlocking, pNodeDoS); }
+
     bool EmitAlert(CAlert& alert);
+
     // Emitting transactions already in a block is acceptable only if it is a supporting
     //   transaction for one of our own
     // fCheckInputs is ignored (and set to true) if !IsInitialBlockDownload() && !fClient

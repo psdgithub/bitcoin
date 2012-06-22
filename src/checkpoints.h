@@ -8,6 +8,7 @@
 
 class uint256;
 class CBlockIndex;
+class CBlock;
 
 /** Block-chain checkpoints are compiled-in sanity checks.
  * They are updated every release or three.
@@ -23,8 +24,11 @@ namespace Checkpoints
     // Return the hash of the most recent checkpoint (with height GetTotalBlocksEstimate())
     uint256 GetLastCheckpointHash();
 
-    // Returns last CBlockIndex* in mapBlockIndex that is a checkpoint
-    CBlockIndex* GetLastCheckpoint(const std::map<uint256, CBlockIndex*>& mapBlockIndex);
+    // Used to keep last checkpoint cache up to date
+    void HandleCommitBlock(const CBlock& block);
+
+    // Returns last CBlockIndex* that is a checkpoint
+    const CBlockIndex* GetLastCheckpoint();
 }
 
 #endif

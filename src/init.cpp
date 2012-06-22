@@ -11,6 +11,7 @@
 #include "ui_interface.h"
 #include "checkpoints.h"
 #include "hub.h"
+#include "checkpoints.h"
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -27,6 +28,7 @@ using namespace std;
 using namespace boost;
 
 CWallet* pwalletMain;
+CBlockStore* pblockstore;
 CClientUIInterface uiInterface;
 
 //////////////////////////////////////////////////////////////////////////////
@@ -66,6 +68,7 @@ void Shutdown(void* parg)
     {
         fShutdown = true;
         if (phub) phub->StopProcessCallbacks();
+        if (pblockstore) pblockstore->StopProcessCallbacks();
         nTransactionsUpdated++;
         bitdb.Flush(false);
         StopNode();
@@ -286,6 +289,7 @@ std::string HelpMessage()
         "  -checkblocks=<n>       " + _("How many blocks to check at startup (default: 2500, 0 = all)") + "\n" +
         "  -checklevel=<n>        " + _("How thorough the block verification is (0-6, default: 1)") + "\n" +
         "  -loadblock=<file>      " + _("Imports blocks from external blk000?.dat file") + "\n" +
+        "  -blockbuffersize=<n>   " + _("The maximum number of blocks to buffer for committing to disk (default: 20)") + "\n";
         "  -autoprune             " + _("Prunes blkindex.dat of spent transactions during download (default: 1)") + "\n" +
         "  -prune                 " + _("Prunes blkindex.dat of spent transactions during startup (default: 0)") + "\n" +
         "  -?                     " + _("This help message") + "\n";
@@ -619,8 +623,9 @@ bool AppInit2()
     } catch (runtime_error& e) {
         return InitError(_("Unable to create CHub."));
     }
-    CBlockStore* pblockstore = new CBlockStore();
+    pblockstore = new CBlockStore();
     phub->ConnectToBlockStore(pblockstore);
+    phub->RegisterCommitBlock(&Checkpoints::HandleCommitBlock);
 
     if (GetBoolArg("-loadblockindextest"))
     {

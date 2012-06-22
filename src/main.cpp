@@ -50,6 +50,9 @@ CMedianFilter<int> cPeerBlockCounts(5, 0); // Amount of blocks that other nodes 
 map<uint256, CBlock*> mapOrphanBlocks;
 multimap<uint256, CBlock*> mapOrphanBlocksByPrev;
 
+CCriticalSection cs_setBlocksSeen;
+set<uint256> setBlocksSeen;
+
 map<uint256, CTransaction*> mapOrphanTransactions;
 map<uint256, map<uint256, CTransaction*> > mapOrphanTransactionsByPrev;
 
@@ -1471,22 +1474,21 @@ bool CBlockStore::Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
     }
 
     // List of what to disconnect
-    vector<CBlockIndex*> vDisconnect;
+    list<CBlockIndex*> lDisconnect;
     for (CBlockIndex* pindex = pindexBest; pindex != pfork; pindex = pindex->pprev)
-        vDisconnect.push_back(pindex);
+        lDisconnect.push_back(pindex);
 
     // List of what to connect
-    vector<CBlockIndex*> vConnect;
+    list<CBlockIndex*> lConnect;
     for (CBlockIndex* pindex = pindexNew; pindex != pfork; pindex = pindex->pprev)
-        vConnect.push_back(pindex);
-    reverse(vConnect.begin(), vConnect.end());
+        lConnect.push_front(pindex);
 
-    printf("REORGANIZE: Disconnect %i blocks; %s..%s\n", vDisconnect.size(), pfork->GetBlockHash().ToString().substr(10,15).c_str(), pindexBest->GetBlockHash().ToString().substr(10,15).c_str());
-    printf("REORGANIZE: Connect %i blocks; %s..%s\n", vConnect.size(), pfork->GetBlockHash().ToString().substr(10,15).c_str(), pindexNew->GetBlockHash().ToString().substr(10,15).c_str());
+    printf("REORGANIZE: Disconnect %i blocks; %s..%s\n", lDisconnect.size(), pfork->GetBlockHash().ToString().substr(10,15).c_str(), pindexBest->GetBlockHash().ToString().substr(10,15).c_str());
+    printf("REORGANIZE: Connect %i blocks; %s..%s\n", lConnect.size(), pfork->GetBlockHash().ToString().substr(10,15).c_str(), pindexNew->GetBlockHash().ToString().substr(10,15).c_str());
 
     // Disconnect shorter branch
-    vector<CTransaction> vResurrect;
-    BOOST_FOREACH(CBlockIndex* pindex, vDisconnect)
+    list<CTransaction> lResurrect;
+    BOOST_FOREACH(CBlockIndex* pindex, lDisconnect)
     {
         CBlock block;
         if (!block.ReadFromDisk(pindex))
@@ -1497,14 +1499,13 @@ bool CBlockStore::Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
         // Queue memory transactions to resurrect
         BOOST_FOREACH(const CTransaction& tx, block.vtx)
             if (!tx.IsCoinBase())
-                vResurrect.push_back(tx);
+                lResurrect.push_back(tx);
     }
 
     // Connect longer branch
-    vector<CBlock> vCommitted;
-    for (unsigned int i = 0; i < vConnect.size(); i++)
+    list<CBlock> lCommitted;
+    BOOST_FOREACH(CBlockIndex* pindex, lConnect)
     {
-        CBlockIndex* pindex = vConnect[i];
         CBlock block;
         if (!block.ReadFromDisk(pindex))
             return error("CBlockStore::Reorganize() : ReadFromDisk for connect failed");
@@ -1515,7 +1516,7 @@ bool CBlockStore::Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
         }
 
         // Queue memory transactions to delete
-        vCommitted.push_back(block);
+        lCommitted.push_back(block);
     }
     if (!txdb.WriteHashBestChain(pindexNew->GetBlockHash()))
         return error("CBlockStore::Reorganize() : WriteHashBestChain failed");
@@ -1525,26 +1526,26 @@ bool CBlockStore::Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
         return error("CBlockStore::Reorganize() : TxnCommit failed");
 
     // Disconnect shorter branch
-    BOOST_FOREACH(CBlockIndex* pindex, vDisconnect)
+    BOOST_FOREACH(CBlockIndex* pindex, lDisconnect)
         if (pindex->pprev)
             pindex->pprev->pnext = NULL;
 
     // Connect longer branch
-    BOOST_FOREACH(CBlockIndex* pindex, vConnect)
+    BOOST_FOREACH(CBlockIndex* pindex, lConnect)
         if (pindex->pprev)
             pindex->pprev->pnext = pindex;
 
     // Resurrect memory transactions that were in the disconnected branch
-    BOOST_FOREACH(CTransaction& tx, vResurrect)
+    BOOST_FOREACH(CTransaction& tx, lResurrect)
         mempool.accept(txdb, tx, false, NULL);
 
     // Delete redundant memory transactions that are in the connected branch
-    BOOST_FOREACH(CBlock& block, vCommitted)
+    BOOST_FOREACH(CBlock& block, lCommitted)
+    {
         BOOST_FOREACH(CTransaction& tx, block.vtx)
             mempool.remove(tx);
-
-    BOOST_FOREACH(CBlock& block, vCommitted)
         CallbackCommitBlock(block);
+    }
 
     printf("REORGANIZE: done\n");
 
@@ -1604,18 +1605,18 @@ bool CBlockStore::SetBestChain(CBlock& block, CTxDB& txdb, CBlockIndex* pindexNe
         CBlockIndex *pindexIntermediate = pindexNew;
 
         // list of blocks that need to be connected afterwards
-        std::vector<CBlockIndex*> vpindexSecondary;
+        std::list<CBlockIndex*> lpindexSecondary;
 
         // Reorganize is costly in terms of db load, as it works in a single db transaction.
         // Try to limit how much needs to be done inside
         while (pindexIntermediate->pprev && pindexIntermediate->pprev->bnChainWork > pindexBest->bnChainWork)
         {
-            vpindexSecondary.push_back(pindexIntermediate);
+            lpindexSecondary.push_back(pindexIntermediate);
             pindexIntermediate = pindexIntermediate->pprev;
         }
 
-        if (!vpindexSecondary.empty())
-            printf("Postponing %i reconnects\n", vpindexSecondary.size());
+        if (!lpindexSecondary.empty())
+            printf("Postponing %i reconnects\n", lpindexSecondary.size());
 
         // Switch to new best branch
         if (!Reorganize(txdb, pindexIntermediate))
@@ -1626,7 +1627,7 @@ bool CBlockStore::SetBestChain(CBlock& block, CTxDB& txdb, CBlockIndex* pindexNe
         }
 
         // Connect futher blocks
-        BOOST_REVERSE_FOREACH(CBlockIndex *pindex, vpindexSecondary)
+        BOOST_REVERSE_FOREACH(CBlockIndex *pindex, lpindexSecondary)
         {
             CBlock block2;
             if (!block2.ReadFromDisk(pindex))
@@ -1801,9 +1802,9 @@ bool CBlockStore::AcceptBlock(CBlock& block)
     if (!Checkpoints::CheckBlock(nHeight, hash))
         return block.DoS(100, error("AcceptBlock() : rejected by checkpoint lockin at %d", nHeight));
 
-    CBlockIndex* pPrevCheckpoint = NULL;
+    const CBlockIndex* pPrevCheckpoint = NULL;
     if (GetBoolArg("-autoprune", true))
-        pPrevCheckpoint = Checkpoints::GetLastCheckpoint(mapBlockIndex);
+        pPrevCheckpoint = Checkpoints::GetLastCheckpoint();
 
     // Write block to history file
     if (!CheckDiskSpace(GetSerializeSize(block, SER_DISK, CLIENT_VERSION)))
@@ -1817,7 +1818,7 @@ bool CBlockStore::AcceptBlock(CBlock& block)
 
     if (GetBoolArg("-autoprune", true))
     {
-        CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(mapBlockIndex);
+        const CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint();
         if (pcheckpoint == pindexBest)
         {
             CTxDB txdb;
@@ -1831,29 +1832,32 @@ bool CBlockStore::AcceptBlock(CBlock& block)
     return true;
 }
 
-bool CBlockStore::EmitBlock(CBlock& block)
+bool CBlockStore::EmitBlock(CBlock& block, bool fBlocking, CNode* pNodeDoS)
 {
     // Check for duplicate
     uint256 hash = block.GetHash();
-
-    LOCK(cs_main);
-
-    if (mapBlockIndex.count(hash))
-        return error("CBlockStore::EmitBlock() : already have block %d %s", mapBlockIndex[hash]->nHeight, hash.ToString().substr(10,15).c_str());
-    if (mapOrphanBlocks.count(hash))
-        return error("CBlockStore::EmitBlock() : already have block (orphan) %s", hash.ToString().substr(10,15).c_str());
+    {
+        LOCK(cs_setBlocksSeen);
+        if (setBlocksSeen.count(hash) > 0)
+            return error("CHub::EmitBlock() : already seen block %s", hash.ToString().substr(10,15).c_str());
+    }
 
     // Preliminary checks
     if (!block.CheckBlock())
+    {
+        if (block.nDoS && pNodeDoS)
+            CallbackDoS(pNodeDoS, block.nDoS);
         return error("CBlockStore::EmitBlock() : CheckBlock FAILED");
+    }
 
-    CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(mapBlockIndex);
+    const CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint();
     if (pcheckpoint && block.hashPrevBlock != hashBestChain)
     {
         // Extra checks to prevent "fill up memory by spamming with bogus blocks"
         int64 deltaTime = block.GetBlockTime() - pcheckpoint->nTime;
         if (deltaTime < 0)
         {
+            if (pNodeDoS) CallbackDoS(pNodeDoS, 100);
             return block.DoS(100, error("CBlockStore::EmitBlock() : block with timestamp before last checkpoint"));
         }
         CBigNum bnNewBlock;
@@ -1862,15 +1866,34 @@ bool CBlockStore::EmitBlock(CBlock& block)
         bnRequired.SetCompact(ComputeMinWork(pcheckpoint->nBits, deltaTime));
         if (bnNewBlock > bnRequired)
         {
+            if (pNodeDoS) CallbackDoS(pNodeDoS, 100);
             return block.DoS(100, error("CBlockStore::EmitBlock() : block with too little proof-of-work"));
         }
     }
 
+    {
+        LOCK(cs_setBlocksSeen);
+        setBlocksSeen.insert(hash);
+    }
+
+    if (fBlocking)
+        return FinishEmitBlock(block, pNodeDoS);
+    else
+        SubmitCallbackFinishEmitBlock(block, pNodeDoS);
+
+    return true;
+}
+
+bool CBlockStore::FinishEmitBlock(CBlock& block, CNode* pNodeDoS)
+{
+    uint256 hash = block.GetHash();
+
+    LOCK(cs_main);
 
     // If don't already have its previous block, shunt it off to holding area until we get it
     if (!mapBlockIndex.count(block.hashPrevBlock))
     {
-        printf("CBlockStore::EmitBlock: ORPHAN BLOCK, prev=%s\n", block.hashPrevBlock.ToString().substr(10,15).c_str());
+        printf("CBlockStore::FinishEmitBlock: ORPHAN BLOCK, prev=%s\n", block.hashPrevBlock.ToString().substr(10,15).c_str());
         CBlock* pblock = new CBlock(block);
         mapOrphanBlocks.insert(make_pair(hash, pblock));
         mapOrphanBlocksByPrev.insert(make_pair(pblock->hashPrevBlock, pblock));
@@ -1882,28 +1905,34 @@ bool CBlockStore::EmitBlock(CBlock& block)
 
     // Store to disk
     if (!AcceptBlock(block))
-        return error("CBlockStore::EmitBlock() : AcceptBlock FAILED");
+    {
+        if (block.nDoS && pNodeDoS)
+            CallbackDoS(pNodeDoS, block.nDoS);
+        return error("CBlockStore::FinishEmitBlock() : AcceptBlock FAILED");
+    }
 
     // Recursively process any orphan blocks that depended on this one
-    vector<uint256> vWorkQueue;
-    vWorkQueue.push_back(hash);
-    for (unsigned int i = 0; i < vWorkQueue.size(); i++)
+    queue<uint256> qWorkQueue;
+    qWorkQueue.push(hash);
+    while (!qWorkQueue.empty())
     {
-        uint256 hashPrev = vWorkQueue[i];
+        uint256 hashPrev = qWorkQueue.front();
+        qWorkQueue.pop();
         for (multimap<uint256, CBlock*>::iterator mi = mapOrphanBlocksByPrev.lower_bound(hashPrev);
              mi != mapOrphanBlocksByPrev.upper_bound(hashPrev);
              ++mi)
         {
             CBlock* pblockOrphan = (*mi).second;
+            uint256 hashOrphan = pblockOrphan->GetHash();
             if (AcceptBlock(*pblockOrphan))
-                vWorkQueue.push_back(pblockOrphan->GetHash());
-            mapOrphanBlocks.erase(pblockOrphan->GetHash());
+                qWorkQueue.push(hashOrphan);
+            mapOrphanBlocks.erase(hashOrphan);
             delete pblockOrphan;
         }
         mapOrphanBlocksByPrev.erase(hashPrev);
     }
 
-    printf("CBlockStore::EmitBlock: ACCEPTED\n");
+    printf("CBlockStore::FinishEmitBlock: ACCEPTED\n");
 
     return true;
 }
@@ -2174,6 +2203,13 @@ bool CBlockStore::LoadBlockIndex(bool fReadOnly)
             return error("LoadBlockIndex() : genesis block not accepted");
     }
 
+    // Init setBlocksSeen and checkpoints TODO this can be much more efficient
+    for (map<uint256, CBlockIndex*>::iterator it = mapBlockIndex.begin(); it != mapBlockIndex.end(); it++)
+    {
+        setBlocksSeen.insert(it->first);
+        Checkpoints::HandleCommitBlock(it->second->GetBlockHeader());
+    }
+
     return true;
 }
 
@@ -2192,15 +2228,15 @@ void PrintBlockTree()
         //    mapNext[pindex->pprev].push_back(pindex);
     }
 
-    vector<pair<int, CBlockIndex*> > vStack;
-    vStack.push_back(make_pair(0, pindexGenesisBlock));
+    stack<pair<int, CBlockIndex*> > sStack;
+    sStack.push(make_pair(0, pindexGenesisBlock));
 
     int nPrevCol = 0;
-    while (!vStack.empty())
+    while (!sStack.empty())
     {
-        int nCol = vStack.back().first;
-        CBlockIndex* pindex = vStack.back().second;
-        vStack.pop_back();
+        int nCol = sStack.top().first;
+        CBlockIndex* pindex = sStack.top().second;
+        sStack.pop();
 
         // print split or gap
         if (nCol > nPrevCol)
@@ -2247,7 +2283,7 @@ void PrintBlockTree()
 
         // iterate children
         for (unsigned int i = 0; i < vNext.size(); i++)
-            vStack.push_back(make_pair(nCol+i, vNext[i]));
+            sStack.push(make_pair(nCol+i, vNext[i]));
     }
 }
 
@@ -2255,7 +2291,6 @@ bool LoadExternalBlockFile(FILE* fileIn)
 {
     int nLoaded = 0;
     {
-        LOCK(cs_main);
         try {
             CAutoFile blkdat(fileIn, SER_DISK, CLIENT_VERSION);
             unsigned int nPos = 0;
@@ -2292,7 +2327,7 @@ bool LoadExternalBlockFile(FILE* fileIn)
                 {
                     CBlock block;
                     blkdat >> block;
-                    if (phub->EmitBlock(block))
+                    if (phub->EmitBlock(block, false))
                     {
                         nLoaded++;
                         nPos += 4 + nSize;
@@ -2462,7 +2497,8 @@ bool static AlreadyHave(CTxDB& txdb, const CInv& inv)
 
     case MSG_BLOCK:
         return mapBlockIndex.count(inv.hash) ||
-               mapOrphanBlocks.count(inv.hash);
+               mapOrphanBlocks.count(inv.hash) ||
+               setBlocksSeen.count(inv.hash);
     }
     // Don't know what it is, just say we already got one
     return true;
@@ -2500,6 +2536,7 @@ static const char *commandList[] = {
 
 bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 {
+    static CCriticalSection cs_mapReuseKey;
     static map<CService, CPubKey> mapReuseKey;
     RandAddSeedPerfmon();
     if (fDebug)
@@ -2516,6 +2553,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 
     if (strCommand == "version")
     {
+        LOCK(cs_main);
+
         // Each connection can only send one version message
         if (pfrom->nVersion != 0)
         {
@@ -2628,6 +2667,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 
     else if (strCommand == "addr")
     {
+        LOCK(cs_main);
+
         vector<CAddress> vAddr;
         vRecv >> vAddr;
 
@@ -2715,6 +2756,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
                 break;
             }
         }
+
+        int nBlockCount = 0;
+
+        LOCK(cs_main);
+
         CTxDB txdb("r");
         for (unsigned int nInv = 0; nInv < vInv.size(); nInv++)
         {
@@ -2762,6 +2808,13 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
                 }
             }
 
+            if (inv.type == MSG_BLOCK)
+                nBlockCount++;
+
+            // Don't set hashLastInvLastBlock if we are getting a hashContinue inv
+            if (nInv == nLastBlock && nBlockCount > 5)
+                pfrom->hashLastInvLastBlock = inv.hash;
+
             // Track requests for our stuff
             Inventory(inv.hash);
         } // for each item in inv bundle
@@ -2789,6 +2842,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         }
         int nBlocks = 0;
         int nTxs = 0;
+
+        LOCK(cs_main);
 
         BOOST_FOREACH(const CInv& inv, vInv)
         {
@@ -2856,6 +2911,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         uint256 hashStop;
         vRecv >> locator >> hashStop;
 
+        LOCK(cs_main);
+
         // Find the last block the caller has in the main chain
         CBlockIndex* pindex = locator.GetBlockIndex();
 
@@ -2891,6 +2948,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         CBlockLocator locator;
         uint256 hashStop;
         vRecv >> locator >> hashStop;
+
+        LOCK(cs_main);
 
         CBlockIndex* pindex = NULL;
         if (locator.IsNull())
@@ -2946,17 +3005,24 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         CInv inv(MSG_BLOCK, block.GetHash());
         pfrom->AddInventoryKnown(inv);
 
-        if (phub->EmitBlock(block))
+        phub->EmitBlock(block, false, pfrom);
+
+        // Though we request duplicates, Satoshi nodes will not return any,
+        // thanks to setInventoryKnown, however they will still count them
+        // towards the block size in the inv result, its still better to
+        // request blocks now, but #973 will optimize this further.
+        if (pfrom->hashLastInvLastBlock == inv.hash)
         {
-            LOCK(cs_mapAlreadyAskedFor);
-            mapAlreadyAskedFor.erase(inv);
+            LOCK(cs_main);
+            pfrom->PushGetBlocks(pindexBest, uint256(0));
         }
-        if (block.nDoS) pfrom->Misbehaving(block.nDoS);
     }
 
 
     else if (strCommand == "getaddr")
     {
+        LOCK(cs_main);
+
         pfrom->vAddrToSend.clear();
         vector<CAddress> vAddr = addrman.GetAddr();
         BOOST_FOREACH(const CAddress &addr, vAddr)
@@ -2979,6 +3045,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         vRecv >> order;
 
         /// we have a chance to check the order here
+
+        LOCK(cs_mapReuseKey);
 
         // Keep giving the same key to the same ip until they use it
         if (!mapReuseKey.count(pfrom->addr))
@@ -3006,6 +3074,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
                 pfrom->mapRequests.erase(mi);
             }
         }
+
+        LOCK(cs_main);
+
         if (!tracker.IsNull())
             tracker.fn(tracker.param1, vRecv);
     }
@@ -3158,10 +3229,7 @@ bool ProcessMessages(CNode* pfrom)
         bool fRet = false;
         try
         {
-            {
-                LOCK(cs_main);
-                fRet = ProcessMessage(pfrom, strCommand, vMsg);
-            }
+            fRet = ProcessMessage(pfrom, strCommand, vMsg);
             if (fShutdown)
                 return true;
         }
@@ -3337,7 +3405,10 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         }
         if (!vInv.empty())
             pto->PushMessage("inv", vInv);
+    }
 
+    {
+        LOCK(pto->cs_mapAskFor);
 
         //
         // Message: getdata
@@ -3387,8 +3458,8 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
                 else printf("\n");
             }
         }
-
     } // if LockMain
+
     return true;
 }
 
