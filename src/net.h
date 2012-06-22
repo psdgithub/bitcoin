@@ -119,6 +119,7 @@ extern std::map<CInv, CDataStream> mapRelay;
 extern std::deque<std::pair<int64, CInv> > vRelayExpiration;
 extern CCriticalSection cs_mapRelay;
 extern std::map<CInv, int64> mapAlreadyAskedFor;
+extern CCriticalSection cs_mapAlreadyAskedFor;
 
 
 
@@ -293,7 +294,11 @@ public:
     {
         // We're using mapAskFor as a priority queue,
         // the key is the earliest time the request can be sent
-        int64& nRequestTime = mapAlreadyAskedFor[inv];
+        int64 nRequestTime;
+        {
+            LOCK(cs_mapAlreadyAskedFor);
+            nRequestTime = mapAlreadyAskedFor[inv];
+        }
         if (fTraceNet || !fQuietInitial || CaughtUp())
             printf("askfor %s   %"PRI64d"\n", inv.ToString().c_str(), nRequestTime);
 

@@ -11,6 +11,7 @@
 #include "keystore.h"
 #include "script.h"
 #include "ui_interface.h"
+#include "hub.h"
 
 class CWalletTx;
 class CReserveKey;
@@ -59,7 +60,7 @@ public:
 /** A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
  * and provides the ability to create new transactions.
  */
-class CWallet : public CCryptoKeyStore
+class CWallet : public CCryptoKeyStore, public CHubListener
 {
 private:
     bool SelectCoins(int64 nTargetValue, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet) const;
@@ -146,6 +147,7 @@ public:
     void MarkDirty();
     bool AddToWallet(const CWalletTx& wtxIn);
     bool AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate = false, bool fFindBlock = false);
+    void HandleCommitTransactionToMemoryPool(const CTransaction& tx);
     bool EraseFromWallet(uint256 hash);
     void WalletUpdateSpent(const CTransaction& prevout);
     int ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate = false);
@@ -632,7 +634,6 @@ public:
 
     void AddSupportingTransactions(CTxDB& txdb);
 
-    bool AcceptWalletTransaction(CTxDB& txdb, bool fCheckInputs=true);
     bool AcceptWalletTransaction();
 
     void RelayWalletTransaction(CTxDB& txdb);

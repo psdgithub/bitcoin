@@ -16,6 +16,7 @@ struct TestingSetup {
         fPrintToConsole = true; // don't want to write to debug.log file
         noui_connect();
         bitdb.MakeMock();
+        assert(phub = new CHub());
         LoadBlockIndex(true);
         bool fFirstRun;
         pwalletMain = new CWallet("wallet.dat");

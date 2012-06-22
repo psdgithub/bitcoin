@@ -12,6 +12,7 @@
 #include "ui_interface.h"
 #include "base58.h"
 #include "bitcoinrpc.h"
+#include "hub.h"
 
 #undef printf
 #include <boost/asio.hpp>
@@ -2525,13 +2526,13 @@ Value getmemorypool(const Array& params, bool fHelp)
     {
         // Parse parameters
         CDataStream ssBlock(ParseHex(find_value(oparam, "data").get_str()), SER_NETWORK, PROTOCOL_VERSION);
-        CBlock pblock;
-        ssBlock >> pblock;
+        CBlock block;
+        ssBlock >> block;
 
         bool fAccepted;
         {
             LOCK(cs_main);
-            fAccepted = ProcessBlock(NULL, &pblock);
+            fAccepted = phub->EmitBlock(block);
         }
 
         if (params[0].type() == str_type)
