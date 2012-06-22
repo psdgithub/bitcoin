@@ -126,6 +126,7 @@ HEADERS += src/qt/bitcoingui.h \
     src/strlcpy.h \
     src/main.h \
     src/hub.h \
+    src/blockstore.h \
     src/net.h \
     src/key.h \
     src/db.h \

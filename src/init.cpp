@@ -614,24 +614,25 @@ bool AppInit2()
 
     // ********************************************************* Step 6: load blockchain
 
-    if (GetBoolArg("-loadblockindextest"))
-    {
-        CTxDB txdb("r");
-        txdb.LoadBlockIndex();
-        PrintBlockTree();
-        return false;
-    }
-
     try {
         phub = new CHub();
     } catch (runtime_error& e) {
         return InitError(_("Unable to create CHub."));
     }
+    CBlockStore* pblockstore = new CBlockStore();
+    phub->ConnectToBlockStore(pblockstore);
+
+    if (GetBoolArg("-loadblockindextest"))
+    {
+        pblockstore->LoadBlockIndex(true);
+        PrintBlockTree();
+        return false;
+    }
 
     uiInterface.InitMessage(_("Loading block index..."));
     printf("Loading block index...\n");
     nStart = GetTimeMillis();
-    if (!LoadBlockIndex())
+    if (!pblockstore->LoadBlockIndex())
         strErrors << _("Error loading blkindex.dat") << "\n";
 
     // as LoadBlockIndex can take several minutes, it's possible the user

@@ -7,6 +7,7 @@
 
 CWallet* pwalletMain;
 CClientUIInterface uiInterface;
+CBlockStore* pblockstore;
 
 extern bool fPrintToConsole;
 extern void noui_connect();
@@ -17,7 +18,9 @@ struct TestingSetup {
         noui_connect();
         bitdb.MakeMock();
         assert(phub = new CHub());
-        LoadBlockIndex(true);
+        assert(pblockstore = new CBlockStore());
+        phub->ConnectToBlockStore(pblockstore);
+        pblockstore->LoadBlockIndex();
         bool fFirstRun;
         pwalletMain = new CWallet("wallet.dat");
         pwalletMain->LoadWallet(fFirstRun);
