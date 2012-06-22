@@ -435,6 +435,25 @@ bool IsHex(const string& str)
     return (str.size() > 0) && (str.size()%2 == 0);
 }
 
+char* ToHex(const char *ptr, int len, char *outbuf)
+{ // max length is 255
+    static char hexmap[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
+                               '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+    char *outptr = outbuf;
+    unsigned char *iptr = (unsigned char *) ptr; 
+
+    while (len-- > 0)
+    {
+        *outptr++ = hexmap[*iptr>>4];
+        *outptr++ = hexmap[*iptr&15];
+        iptr++;
+     }
+
+     *outptr=0;
+     return outbuf;
+}
+
+
 vector<unsigned char> ParseHex(const char* psz)
 {
     // convert hex dump to vector
