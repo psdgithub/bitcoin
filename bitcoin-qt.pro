@@ -115,6 +115,7 @@ HEADERS += src/qt/bitcoingui.h \
     src/qt/editaddressdialog.h \
     src/qt/bitcoinaddressvalidator.h \
     src/addrman.h \
+    src/qt/tonalutils.h \
     src/base58.h \
     src/bignum.h \
     src/checkpoints.h \
@@ -232,7 +233,8 @@ SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/protocol.cpp \
     src/qt/notificator.cpp \
     src/qt/qtipcserver.cpp \
-    src/qt/rpcconsole.cpp
+    src/qt/rpcconsole.cpp \
+    src/qt/tonalutils.cpp
 
 RESOURCES += \
     src/qt/bitcoin.qrc
