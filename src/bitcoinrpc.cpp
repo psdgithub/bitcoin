@@ -49,6 +49,7 @@ static CCriticalSection cs_nWalletUnlockTime;
 extern Value getconnectioncount(const Array& params, bool fHelp);
 extern Value getpeerinfo(const Array& params, bool fHelp);
 extern Value addnode(const Array& params, bool fHelp);
+extern Value getaddednodeinfo(const Array& params, bool fHelp);
 extern Value dumpprivkey(const Array& params, bool fHelp);
 extern Value importprivkey(const Array& params, bool fHelp);
 
@@ -2304,6 +2305,7 @@ static const CRPCCommand vRPCCommands[] =
     { "getconnectioncount",     &getconnectioncount,     true },
     { "getpeerinfo",            &getpeerinfo,            true },
     { "addnode",                &addnode,                true },
+    { "getaddednodeinfo",       &getaddednodeinfo,       true },
     { "getdifficulty",          &getdifficulty,          true },
     { "getgenerate",            &getgenerate,            true },
     { "setgenerate",            &setgenerate,            true },

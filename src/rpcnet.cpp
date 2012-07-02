@@ -107,3 +107,75 @@ Value addnode(const Array& params, bool fHelp)
     return Value::null;
 }
 
+Value getaddednodeinfo(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "getaddednodeinfo [node]\n"
+            "Returns information about the given added node, or all added nodes\n"
+            "(note that onetry addnodes are not listed here).");
+
+    list<string> laddedNodes(0);
+    if (params.size() == 0)
+    {
+        LOCK(cs_vAddedNodes);
+        BOOST_FOREACH(string& strAddNode, vAddedNodes)
+            laddedNodes.push_back(strAddNode);
+    }
+    else
+    {
+        string strNode = params[0].get_str();
+        LOCK(cs_vAddedNodes);
+        BOOST_FOREACH(string& strAddNode, vAddedNodes)
+            if (strAddNode == strNode)
+            {
+                laddedNodes.push_back(strAddNode);
+                break;
+            }
+        if (laddedNodes.size() == 0)
+            throw JSONRPCError(-24, "Error: Node has not been added.");
+    }
+
+    list<pair<string, vector<CService> > > laddedAddreses(0);
+    BOOST_FOREACH(string& strAddNode, laddedNodes)
+    {
+        vector<CService> vservNode(0);
+        if(Lookup(strAddNode.c_str(), vservNode, GetDefaultPort(), fNameLookup, 0))
+            laddedAddreses.push_back(make_pair(strAddNode, vservNode));
+    }
+
+    Array ret;
+
+    LOCK(cs_vNodes);
+    for (list<pair<string, vector<CService> > >::iterator it = laddedAddreses.begin(); it != laddedAddreses.end(); it++)
+    {
+        Object obj;
+        obj.push_back(Pair("addednode", it->first));
+
+        Array addresses;
+        bool fConnected = false;
+        BOOST_FOREACH(CService& addrNode, it->second)
+        {
+            bool fFound = false;
+            Object node;
+            node.push_back(Pair("address", addrNode.ToString()));
+            BOOST_FOREACH(CNode* pnode, vNodes)
+                if (pnode->addr == addrNode)
+                {
+                    fFound = true;
+                    fConnected = true;
+                    node.push_back(Pair("connected", pnode->fInbound ? "inbound" : "outbound"));
+                    break;
+                }
+            if (!fFound)
+                node.push_back(Pair("connected", "false"));
+            addresses.push_back(node);
+        }
+        obj.push_back(Pair("connected", fConnected));
+        obj.push_back(Pair("addresses", addresses));
+        ret.push_back(obj);
+    }
+
+    return ret;
+}
+
