@@ -2,6 +2,8 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "init.h"
+#include "main.h"
 #include "net.h"
 #include "bitcoinrpc.h"
 
@@ -78,6 +80,8 @@ Value addnode(const Array& params, bool fHelp)
 
     string strNode = params[0].get_str();
 
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     if (strCommand == "onetry")
     {
         CAddress addr;
@@ -114,6 +118,8 @@ Value getaddednodeinfo(const Array& params, bool fHelp)
             "getaddednodeinfo [node]\n"
             "Returns information about the given added node, or all added nodes\n"
             "(note that onetry addnodes are not listed here).");
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     list<string> laddedNodes(0);
     if (params.size() == 0)

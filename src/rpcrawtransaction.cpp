@@ -455,6 +455,8 @@ Value sendrawtransaction(const Array& params, bool fHelp)
         throw JSONRPCError(-22, "TX decode failed");
     }
 
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
     // push to local node
     CTxDB txdb("r");
     if (!tx.AcceptToMemoryPool(txdb))
