@@ -153,6 +153,8 @@ void ThreadScriptCheck(void* parg);
 void ThreadScriptCheckQuit();
 /** Run the miner threads */
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet);
+/** Affect CreateNewBlock prioritisation of transactions */
+bool PrioritiseTransaction(const uint256 hash, const std::string strHash, double dPriorityDelta, int64 nFeeDelta);
 /** Generate a new block, without valid proof-of-work */
 CBlockTemplate* CreateNewBlock(CReserveKey& reservekey);
 /** Modify the extranonce in a block */
@@ -477,6 +479,10 @@ public:
     std::vector<CTxOut> vout;
     unsigned int nLockTime;
 
+    double dPriorityDelta;
+    int64 nFeeDelta;
+
+
     CTransaction()
     {
         SetNull();
@@ -497,6 +503,8 @@ public:
         vin.clear();
         vout.clear();
         nLockTime = 0;
+        dPriorityDelta = 0;
+        nFeeDelta = 0;
     }
 
     bool IsNull() const
