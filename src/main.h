@@ -1088,6 +1088,7 @@ public:
     mutable CCriticalSection cs;
     std::map<uint256, CTransaction> mapTx;
     std::map<COutPoint, CInPoint> mapNextTx;
+    std::map<uint256, std::pair<double, int64> > mapDeltas;
 
     bool accept(CValidationState &state, CTransaction &tx, bool fLimitFree, bool* pfMissingInputs);
     bool addUnchecked(const uint256& hash, CTransaction &tx);
@@ -1096,6 +1097,10 @@ public:
     void clear();
     void queryHashes(std::vector<uint256>& vtxid);
     void pruneSpent(const uint256& hash, CCoins &coins);
+
+    /** Affect CreateNewBlock prioritisation of transactions */
+    void PrioritiseTransaction(const uint256 hash, const std::string strHash, double dPriorityDelta, int64 nFeeDelta);
+    void ApplyDeltas(const uint256 hash, double &dPriorityDelta, int64 &nFeeDelta);
 
     unsigned long size()
     {
