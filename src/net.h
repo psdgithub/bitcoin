@@ -132,6 +132,8 @@ public:
     int64 nLastSend;
     int64 nLastRecv;
     int64 nTimeConnected;
+    uint64 nRecvBytes;
+    uint64 nSendBytes;
     std::string addrName;
     int nVersion;
     std::string strSubVer;
@@ -139,6 +141,10 @@ public:
     int64 nReleaseTime;
     int nStartingHeight;
     int nMisbehavior;
+    std::map<std::string, uint64> mapRecvMsgs;
+    std::map<std::string, uint64> mapRecvMsgBytes;
+    std::map<std::string, uint64> mapSendMsgs;
+    std::map<std::string, uint64> mapSendMsgBytes;
 };
 
 
@@ -160,9 +166,12 @@ public:
     int64 nLastRecv;
     int64 nLastSendEmpty;
     int64 nTimeConnected;
+    uint64 nRecvBytes;
+    uint64 nSendBytes;
     bool fAskedForBlocks;
     int nHeaderStart;
     unsigned int nMessageStart;
+    std::string strSendCmd;
     CAddress addr;
     std::string addrName;
     CService addrLocal;
@@ -175,6 +184,11 @@ public:
     bool fSuccessfullyConnected;
     bool fDisconnect;
     CSemaphoreGrant grantOutbound;
+    std::map<std::string, uint64> mapRecvMsgs;
+    std::map<std::string, uint64> mapRecvMsgBytes;
+    std::map<std::string, uint64> mapSendMsgs;
+    std::map<std::string, uint64> mapSendMsgBytes;
+
 protected:
     int nRefCount;
 
@@ -213,6 +227,8 @@ public:
         nLastRecv = 0;
         nLastSendEmpty = GetTime();
         nTimeConnected = GetTime();
+        nRecvBytes = 0;
+        nSendBytes = 0;
         fAskedForBlocks = false;
         nHeaderStart = -1;
         nMessageStart = -1;
@@ -339,6 +355,7 @@ public:
         nHeaderStart = vSend.size();
         vSend << CMessageHeader(pszCommand, 0);
         nMessageStart = vSend.size();
+        strSendCmd = pszCommand;
         if (fDebug)
             printf("sending: %s ", pszCommand);
     }
@@ -350,6 +367,7 @@ public:
         vSend.resize(nHeaderStart);
         nHeaderStart = -1;
         nMessageStart = -1;
+        strSendCmd = "";
         LEAVE_CRITICAL_SECTION(cs_vSend);
 
         if (fDebug)
@@ -378,6 +396,10 @@ public:
         memcpy(&nChecksum, &hash, sizeof(nChecksum));
         assert(nMessageStart - nHeaderStart >= CMessageHeader::CHECKSUM_OFFSET + sizeof(nChecksum));
         memcpy((char*)&vSend[nHeaderStart] + CMessageHeader::CHECKSUM_OFFSET, &nChecksum, sizeof(nChecksum));
+
+        nSendBytes += nSize;
+        mapSendMsgs[strSendCmd]++;
+        mapSendMsgBytes[strSendCmd] += (nMessageStart - nHeaderStart) + nSize;
 
         if (fDebug) {
             printf("(%d bytes)\n", nSize);

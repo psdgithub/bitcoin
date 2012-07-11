@@ -3087,6 +3087,8 @@ bool ProcessMessages(CNode* pfrom)
             break;
         }
 
+        pfrom->nRecvBytes += nHeaderSize + nMessageSize;
+
         // Checksum
         uint256 hash = Hash(vRecv.begin(), vRecv.begin() + nMessageSize);
         unsigned int nChecksum = 0;
@@ -3108,6 +3110,8 @@ bool ProcessMessages(CNode* pfrom)
         {
             {
                 LOCK(cs_main);
+                pfrom->mapRecvMsgs[strCommand]++;
+                pfrom->mapRecvMsgBytes[strCommand] += nHeaderSize+nMessageSize;
                 fRet = ProcessMessage(pfrom, strCommand, vMsg);
             }
             if (fShutdown)
