@@ -2411,7 +2411,39 @@ Value getblock(const Array& params, bool fHelp)
     return blockToJSON(block, pblockindex);
 }
 
+Value getnetstats(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+        throw runtime_error(
+            "getnetstats\n"
+            "Obtain various network node statistics.");
 
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    LOCK(netstats.cs);
+    Object ret, ret_cmd, ret_peers;
+
+    for (map<string, uint64>::const_iterator mi = netstats.mapCmdCount.begin(); mi != netstats.mapCmdCount.end(); ++mi) {
+        Array a;
+        string strCommand = (*mi).first;
+
+        a.resize(2);
+        a[0] = strprintf("%"PRI64u, netstats.mapCmdCount[strCommand]);
+        a[1] = strprintf("%"PRI64u, netstats.mapCmdBytes[strCommand]);
+
+        ret_cmd.push_back(Pair(strCommand, a));
+    }
+
+    netstats.countPeers();
+    ret_peers.push_back(Pair("connected", (int)netstats.nConn));
+    ret_peers.push_back(Pair("inbound", (int)netstats.nInbound));
+    ret_peers.push_back(Pair("outbound", (int)netstats.nOutbound));
+
+    ret.push_back(Pair("messages", ret_cmd));
+    ret.push_back(Pair("peers", ret_peers));
+
+    return ret;
+}
 
 
 
@@ -2482,6 +2514,7 @@ static const CRPCCommand vRPCCommands[] =
     { "decoderawtransaction",   &decoderawtransaction,   false },
     { "signrawtransaction",     &signrawtransaction,     false },
     { "sendrawtransaction",     &sendrawtransaction,     false },
+    { "getnetstats",            &getnetstats,            true },
 };
 
 CRPCTable::CRPCTable()
