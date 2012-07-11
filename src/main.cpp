@@ -998,11 +998,11 @@ void static InvalidChainFound(CBlockIndex* pindexNew)
         uiInterface.NotifyBlocksChanged();
     }
     printf("InvalidChainFound: invalid block=%s  height=%d  work=%s  date=%s\n",
-      pindexNew->GetBlockHash().ToString().substr(0,20).c_str(), pindexNew->nHeight,
+      pindexNew->GetBlockHash().ToString().substr(BLOCKSUBSTR).c_str(), pindexNew->nHeight,
       pindexNew->bnChainWork.ToString().c_str(), DateTimeStrFormat("%x %H:%M:%S",
       pindexNew->GetBlockTime()).c_str());
     printf("InvalidChainFound:  current best=%s  height=%d  work=%s  date=%s\n",
-      hashBestChain.ToString().substr(0,20).c_str(), nBestHeight, bnBestChainWork.ToString().c_str(),
+      hashBestChain.ToString().substr(BLOCKSUBSTR).c_str(), nBestHeight, bnBestChainWork.ToString().c_str(),
       DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
     if (pindexBest && bnBestInvalidWork > bnBestChainWork + pindexBest->GetBlockWork() * 6)
         printf("InvalidChainFound: WARNING: Displayed transactions may not be correct!  You may need to upgrade, or other nodes may need to upgrade.\n");
@@ -1482,8 +1482,8 @@ bool static Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
         vConnect.push_back(pindex);
     reverse(vConnect.begin(), vConnect.end());
 
-    printf("REORGANIZE: Disconnect %i blocks; %s..%s\n", vDisconnect.size(), pfork->GetBlockHash().ToString().substr(0,20).c_str(), pindexBest->GetBlockHash().ToString().substr(0,20).c_str());
-    printf("REORGANIZE: Connect %i blocks; %s..%s\n", vConnect.size(), pfork->GetBlockHash().ToString().substr(0,20).c_str(), pindexNew->GetBlockHash().ToString().substr(0,20).c_str());
+    printf("REORGANIZE: Disconnect %i blocks; %s..%s\n", vDisconnect.size(), pfork->GetBlockHash().ToString().substr(BLOCKSUBSTR).c_str(), pindexBest->GetBlockHash().ToString().substr(BLOCKSUBSTR).c_str());
+    printf("REORGANIZE: Connect %i blocks; %s..%s\n", vConnect.size(), pfork->GetBlockHash().ToString().substr(BLOCKSUBSTR).c_str(), pindexNew->GetBlockHash().ToString().substr(BLOCKSUBSTR).c_str());
 
     // Disconnect shorter branch
     vector<CTransaction> vResurrect;
@@ -1493,7 +1493,7 @@ bool static Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
         if (!block.ReadFromDisk(pindex))
             return error("Reorganize() : ReadFromDisk for disconnect failed");
         if (!block.DisconnectBlock(txdb, pindex))
-            return error("Reorganize() : DisconnectBlock %s failed", pindex->GetBlockHash().ToString().substr(0,20).c_str());
+            return error("Reorganize() : DisconnectBlock %s failed", pindex->GetBlockHash().ToString().substr(BLOCKSUBSTR).c_str());
 
         // Queue memory transactions to resurrect
         BOOST_FOREACH(const CTransaction& tx, block.vtx)
@@ -1512,7 +1512,7 @@ bool static Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
         if (!block.ConnectBlock(txdb, pindex))
         {
             // Invalid block
-            return error("Reorganize() : ConnectBlock %s failed", pindex->GetBlockHash().ToString().substr(0,20).c_str());
+            return error("Reorganize() : ConnectBlock %s failed", pindex->GetBlockHash().ToString().substr(BLOCKSUBSTR).c_str());
         }
 
         // Queue memory transactions to delete
@@ -1662,7 +1662,7 @@ bool CBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
     }
 
     printf("SetBestChain: new best=%s  height=%d  work=%s  date=%s\n",
-      hashBestChain.ToString().substr(0,20).c_str(), nBestHeight, bnBestChainWork.ToString().c_str(),
+      hashBestChain.ToString().substr(BLOCKSUBSTR).c_str(), nBestHeight, bnBestChainWork.ToString().c_str(),
       DateTimeStrFormat("%x %H:%M:%S", pindexBest->GetBlockTime()).c_str());
 
     cvBlockChange.notify_all();
@@ -1702,7 +1702,7 @@ bool CBlock::AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos)
     // Check for duplicate
     uint256 hash = GetHash();
     if (mapBlockIndex.count(hash))
-        return error("AddToBlockIndex() : %s already exists", hash.ToString().substr(0,20).c_str());
+        return error("AddToBlockIndex() : %s already exists", hash.ToString().substr(BLOCKSUBSTR).c_str());
 
     // Construct new block index object
     CBlockIndex* pindexNew = new CBlockIndex(nFile, nBlockPos, *this);
@@ -1895,9 +1895,9 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
     // Check for duplicate
     uint256 hash = pblock->GetHash();
     if (mapBlockIndex.count(hash))
-        return error("ProcessBlock() : already have block %d %s", mapBlockIndex[hash]->nHeight, hash.ToString().substr(0,20).c_str());
+        return error("ProcessBlock() : already have block %d %s", mapBlockIndex[hash]->nHeight, hash.ToString().substr(BLOCKSUBSTR).c_str());
     if (mapOrphanBlocks.count(hash))
-        return error("ProcessBlock() : already have block (orphan) %s", hash.ToString().substr(0,20).c_str());
+        return error("ProcessBlock() : already have block (orphan) %s", hash.ToString().substr(BLOCKSUBSTR).c_str());
 
     // Preliminary checks
     if (!pblock->CheckBlock())
@@ -1930,7 +1930,7 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
     // If don't already have its previous block, shunt it off to holding area until we get it
     if (!mapBlockIndex.count(pblock->hashPrevBlock))
     {
-        printf("ProcessBlock: ORPHAN BLOCK, prev=%s\n", pblock->hashPrevBlock.ToString().substr(0,20).c_str());
+        printf("ProcessBlock: ORPHAN BLOCK, prev=%s\n", pblock->hashPrevBlock.ToString().substr(BLOCKSUBSTR).c_str());
         CBlock* pblock2 = new CBlock(*pblock);
         mapOrphanBlocks.insert(make_pair(hash, pblock2));
         mapOrphanBlocksByPrev.insert(make_pair(pblock2->hashPrevBlock, pblock2));
@@ -1962,10 +1962,10 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
             nStart = GetTimeMillis();
             if (pblockOrphan->AcceptBlock()) {
                 vWorkQueue.push_back(orphanhash);
-                printf("Orphan block %s ACCEPTED %15"PRI64d"ms\n", orphanhash.ToString().substr(0,20).c_str(),
+                printf("Orphan block %s ACCEPTED %15"PRI64d"ms\n", orphanhash.ToString().substr(BLOCKSUBSTR).c_str(),
                   GetTimeMillis() - nStart);
             } else
-                printf("Orphan block %s REJECTED %15"PRI64d"ms\n", orphanhash.ToString().substr(0,20).c_str(),
+                printf("Orphan block %s REJECTED %15"PRI64d"ms\n", orphanhash.ToString().substr(BLOCKSUBSTR).c_str(),
                   GetTimeMillis() - nStart);
             mapOrphanBlocks.erase(orphanhash);
             delete pblockOrphan;
@@ -2170,7 +2170,7 @@ void PrintBlockTree()
             pindex->nHeight,
             pindex->nFile,
             pindex->nBlockPos,
-            block.GetHash().ToString().substr(0,20).c_str(),
+            block.GetHash().ToString().substr(BLOCKSUBSTR).c_str(),
             DateTimeStrFormat("%x %H:%M:%S", block.GetBlockTime()).c_str(),
             block.vtx.size());
 
@@ -2760,12 +2760,12 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         if (pindex)
             pindex = pindex->pnext;
         int nLimit = 500;
-        printf("getblocks %d to %s limit %d\n", (pindex ? pindex->nHeight : -1), hashStop.ToString().substr(0,20).c_str(), nLimit);
+        printf("getblocks %d to %s limit %d\n", (pindex ? pindex->nHeight : -1), hashStop.ToString().substr(BLOCKSUBSTR).c_str(), nLimit);
         for (; pindex; pindex = pindex->pnext)
         {
             if (pindex->GetBlockHash() == hashStop)
             {
-                printf("  getblocks stopping at %d %s\n", pindex->nHeight, pindex->GetBlockHash().ToString().substr(0,20).c_str());
+                printf("  getblocks stopping at %d %s\n", pindex->nHeight, pindex->GetBlockHash().ToString().substr(BLOCKSUBSTR).c_str());
                 break;
             }
             pfrom->PushInventory(CInv(MSG_BLOCK, pindex->GetBlockHash()));
@@ -2773,7 +2773,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             {
                 // When this block is requested, we'll send an inv that'll make them
                 // getblocks the next batch of inventory.
-                printf("  getblocks stopping at limit %d %s\n", pindex->nHeight, pindex->GetBlockHash().ToString().substr(0,20).c_str());
+                printf("  getblocks stopping at limit %d %s\n", pindex->nHeight, pindex->GetBlockHash().ToString().substr(BLOCKSUBSTR).c_str());
                 pfrom->hashContinue = pindex->GetBlockHash();
                 break;
             }
@@ -2806,7 +2806,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 
         vector<CBlock> vHeaders;
         int nLimit = 2000;
-        printf("getheaders %d to %s\n", (pindex ? pindex->nHeight : -1), hashStop.ToString().substr(0,20).c_str());
+        printf("getheaders %d to %s\n", (pindex ? pindex->nHeight : -1), hashStop.ToString().substr(BLOCKSUBSTR).c_str());
         for (; pindex; pindex = pindex->pnext)
         {
             vHeaders.push_back(pindex->GetBlockHeader());
@@ -2891,7 +2891,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         CBlock block;
         vRecv >> block;
 
-        printf("received block %s\n", block.GetHash().ToString().substr(0,20).c_str());
+        printf("received block %s\n", block.GetHash().ToString().substr(BLOCKSUBSTR).c_str());
         // block.print();
 
         CInv inv(MSG_BLOCK, block.GetHash());
