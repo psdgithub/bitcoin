@@ -94,6 +94,7 @@ bool ProcessMessages(CNode* pfrom);
 bool SendMessages(CNode* pto, bool fSendTrickle);
 bool LoadExternalBlockFile(FILE* fileIn);
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet);
+bool PrioritiseTransaction(const uint256 hash, const std::string strHash, double dPriorityDelta, int64 nFeeDelta);
 CBlock* CreateNewBlock(CReserveKey& reservekey);
 void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& nExtraNonce);
 void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash1);
@@ -398,6 +399,10 @@ public:
     mutable int nDoS;
     bool DoS(int nDoSIn, bool fIn) const { nDoS += nDoSIn; return fIn; }
 
+    double dPriorityDelta;
+    int64 nFeeDelta;
+
+
     CTransaction()
     {
         SetNull();
@@ -419,6 +424,8 @@ public:
         vout.clear();
         nLockTime = 0;
         nDoS = 0;  // Denial-of-service prevention
+        dPriorityDelta = 0;
+        nFeeDelta = 0;
     }
 
     bool IsNull() const
