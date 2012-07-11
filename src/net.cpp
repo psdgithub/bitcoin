@@ -407,6 +407,9 @@ bool GetMyExternalIP(CNetAddr& ipRet)
 
 void ThreadGetMyExternalIP(void* parg)
 {
+    // Make this thread recognisable as the message handling thread
+    RenameThread("bitcoin-ext-ip");
+
     CNetAddr addrLocalHost;
     if (GetMyExternalIP(addrLocalHost))
     {
@@ -637,6 +640,10 @@ void CNode::copyStats(CNodeStats &stats)
 void ThreadSocketHandler(void* parg)
 {
     IMPLEMENT_RANDOMIZE_STACK(ThreadSocketHandler(parg));
+
+    // Make this thread recognisable as the networking thread
+    RenameThread("bitcoin-net");
+
     try
     {
         vnThreadsRunning[THREAD_SOCKETHANDLER]++;
@@ -989,6 +996,10 @@ void ThreadSocketHandler2(void* parg)
 void ThreadMapPort(void* parg)
 {
     IMPLEMENT_RANDOMIZE_STACK(ThreadMapPort(parg));
+
+    // Make this thread recognisable as the UPnP thread
+    RenameThread("bitcoin-UPnP");
+
     try
     {
         vnThreadsRunning[THREAD_UPNP]++;
@@ -1147,6 +1158,10 @@ static const char *strDNSSeed[][2] = {
 void ThreadDNSAddressSeed(void* parg)
 {
     IMPLEMENT_RANDOMIZE_STACK(ThreadDNSAddressSeed(parg));
+
+    // Make this thread recognisable as the DNS seeding thread
+    RenameThread("bitcoin-dnsseed");
+
     try
     {
         vnThreadsRunning[THREAD_DNSSEED]++;
@@ -1316,6 +1331,10 @@ void ThreadDumpAddress2(void* parg)
 void ThreadDumpAddress(void* parg)
 {
     IMPLEMENT_RANDOMIZE_STACK(ThreadDumpAddress(parg));
+
+    // Make this thread recognisable as the address dumping thread
+    RenameThread("bitcoin-adrdump");
+
     try
     {
         ThreadDumpAddress2(parg);
@@ -1329,6 +1348,10 @@ void ThreadDumpAddress(void* parg)
 void ThreadOpenConnections(void* parg)
 {
     IMPLEMENT_RANDOMIZE_STACK(ThreadOpenConnections(parg));
+
+    // Make this thread recognisable as the connection opening thread
+    RenameThread("bitcoin-opencon");
+
     try
     {
         vnThreadsRunning[THREAD_OPENCONNECTIONS]++;
@@ -1482,6 +1505,10 @@ void ThreadOpenConnections2(void* parg)
 void ThreadOpenAddedConnections(void* parg)
 {
     IMPLEMENT_RANDOMIZE_STACK(ThreadOpenAddedConnections(parg));
+
+    // Make this thread recognisable as the connection opening thread
+    RenameThread("bitcoin-opencon");
+
     try
     {
         vnThreadsRunning[THREAD_ADDEDCONNECTIONS]++;
@@ -1611,6 +1638,10 @@ bool OpenNetworkConnection(const CAddress& addrConnect, CSemaphoreGrant *grantOu
 void ThreadMessageHandler(void* parg)
 {
     IMPLEMENT_RANDOMIZE_STACK(ThreadMessageHandler(parg));
+
+    // Make this thread recognisable as the message handling thread
+    RenameThread("bitcoin-msghand");
+
     try
     {
         vnThreadsRunning[THREAD_MESSAGEHANDLER]++;
@@ -1853,6 +1884,9 @@ void static Discover()
 
 void StartNode(void* parg)
 {
+    // Make this thread recognisable as the startup thread
+    RenameThread("bitcoin-start");
+
     if (semOutbound == NULL) {
         // initialize semaphore
         int nMaxOutbound = min(MAX_OUTBOUND_CONNECTIONS, (int)GetArg("-maxconnections", 125));

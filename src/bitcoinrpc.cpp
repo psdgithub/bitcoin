@@ -1571,11 +1571,17 @@ Value keypoolrefill(const Array& params, bool fHelp)
 
 void ThreadTopUpKeyPool(void* parg)
 {
+    // Make this thread recognisable as the key-topping-up thread
+    RenameThread("bitcoin-key-top");
+
     pwalletMain->TopUpKeyPool();
 }
 
 void ThreadCleanWalletPassphrase(void* parg)
 {
+    // Make this thread recognisable as the wallet relocking thread
+    RenameThread("bitcoin-lock-wa");
+
     int64 nMyWakeTime = GetTimeMillis() + *((int64*)parg) * 1000;
 
     ENTER_CRITICAL_SECTION(cs_nWalletUnlockTime);
@@ -2613,6 +2619,10 @@ private:
 void ThreadRPCServer(void* parg)
 {
     IMPLEMENT_RANDOMIZE_STACK(ThreadRPCServer(parg));
+
+    // Make this thread recognisable as the RPC listener
+    RenameThread("bitcoin-rpclist");
+
     try
     {
         vnThreadsRunning[THREAD_RPCLISTENER]++;
@@ -2896,6 +2906,10 @@ static CCriticalSection cs_THREAD_RPCHANDLER;
 void ThreadRPCServer3(void* parg)
 {
     IMPLEMENT_RANDOMIZE_STACK(ThreadRPCServer3(parg));
+
+    // Make this thread recognisable as the RPC handler
+    RenameThread("bitcoin-rpchand");
+
     {
         LOCK(cs_THREAD_RPCHANDLER);
         vnThreadsRunning[THREAD_RPCHANDLER]++;
