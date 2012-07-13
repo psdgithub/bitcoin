@@ -30,7 +30,7 @@ unsigned int nTransactionsUpdated = 0;
 
 map<uint256, CBlockIndex*> mapBlockIndex;
 uint256 hashGenesisBlock("0x12a765e31ffd4059bada1e25190f6e98c99d9714d334efa41a195a7e7e04bfe2");
-static CBigNum bnProofOfWorkLimit(~uint256(0) >> 20); // BBQCoin: starting difficulty is 1 / 2^12
+static CBigNum bnProofOfWorkLimit(~uint256(0) >> 5); // BBQCoin: starting difficulty is low
 CBlockIndex* pindexGenesisBlock = NULL;
 int nBestHeight = -1;
 CBigNum bnBestChainWork = 0;
@@ -827,16 +827,16 @@ uint256 static GetOrphanRoot(const CBlock* pblock)
 
 int64 static GetBlockValue(int nHeight, int64 nFees)
 {
-    int64 nSubsidy = 50 * COIN;
+    int64 nSubsidy = 42 * COIN;
 
     // Subsidy is cut in half every 4 years
-    nSubsidy >>= (nHeight / 840000); // BBQCoin: 840k blocks in ~4 years
+    nSubsidy >>= (nHeight / 24000000); // BBQCoin: 2400k blocks in ~4 years
 
     return nSubsidy + nFees;
 }
 
-static const int64 nTargetTimespan = 3.5 * 24 * 60 * 60; // BBQCoin: 3.5 days
-static const int64 nTargetSpacing = 2.5 * 60; // BBQCoin: 2.5 minutes
+static const int64 nTargetTimespan = 60 * 60; // BBQCoin: 1 hours
+static const int64 nTargetSpacing = 60; // BBQCoin: 1 minutes
 static const int64 nInterval = nTargetTimespan / nTargetSpacing;
 
 //
@@ -1941,10 +1941,10 @@ bool LoadBlockIndex(bool fAllowNew)
 {
     if (fTestNet)
     {
-        pchMessageStart[0] = 0xfc;
-        pchMessageStart[1] = 0xc1;
-        pchMessageStart[2] = 0xb7;
-        pchMessageStart[3] = 0xdc;
+        pchMessageStart[0] = 0xfe;
+        pchMessageStart[1] = 0xc5;
+        pchMessageStart[2] = 0xe7;
+        pchMessageStart[3] = 0x42;
         hashGenesisBlock = uint256("0xf5ae71e26c74beacc88382716aced69cddf3dffff24f384e1808905e0188f68f");
     }
 
@@ -1972,7 +1972,7 @@ bool LoadBlockIndex(bool fAllowNew)
         //   vMerkleTree: 97ddfbbae6
 
         // Genesis block
-        const char* pszTimestamp = "NY Times 05/Oct/2011 Steve Jobs, Apple’s Visionary, Dies at 56";
+        const char* pszTimestamp = "13/07/2012 BBQCoin started.";
         CTransaction txNew;
         txNew.vin.resize(1);
         txNew.vout.resize(1);
@@ -2001,7 +2001,7 @@ bool LoadBlockIndex(bool fAllowNew)
         assert(block.hashMerkleRoot == uint256("0x97ddfbbae6be97fd6cdf3e7ca13232a3afff2353e29badfab7f73011edd4ced9"));
 
         // If genesis block hash does not match, then generate new genesis hash.
-        if (false && block.GetHash() != hashGenesisBlock)
+        if (true && block.GetHash() != hashGenesisBlock) // set it to false!
         {
             printf("Searching for genesis block...\n");
             // This will figure out a valid hash and Nonce if you're
@@ -2344,7 +2344,7 @@ bool static AlreadyHave(CTxDB& txdb, const CInv& inv)
 // The message start string is designed to be unlikely to occur in normal data.
 // The characters are rarely used upper ascii, not valid as UTF-8, and produce
 // a large 4-byte int at any alignment.
-unsigned char pchMessageStart[4] = { 0xfb, 0xc0, 0xb6, 0xdb }; // BBQCoin: increase each by adding 2 to bitcoin's value.
+unsigned char pchMessageStart[4] = { 0xfd, 0xe4, 0xd9, 0x42 }; // BBQCoin: increase each by adding 2 to bitcoin's value.
 
 
 bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
