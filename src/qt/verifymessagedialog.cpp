@@ -24,7 +24,7 @@ VerifyMessageDialog::VerifyMessageDialog(QWidget *parent) :
 
 #if (QT_VERSION >= 0x040700)
     /* Do not move this to the XML file, Qt before 4.7 will choke on it */
-    ui->lnAddress->setPlaceholderText(tr("Enter a BBQCoin address (e.g. Ler4HNAEfwYhBmGXcFP2Po1NpRUEiK8km2)"));
+    ui->lnAddress->setPlaceholderText(tr("Enter a BBQCoin address (e.g. bPjnD7sfcZ4vBBqLYogWUp3awWVsdFYwS1)"));
     ui->lnSig->setPlaceholderText(tr("Enter BBQCoin signature"));
 #endif
 
