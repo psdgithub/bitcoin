@@ -1760,7 +1760,7 @@ bool CBlock::AcceptBlock()
     if (nBits != GetNextWorkRequired(pindexPrev, this))
         return DoS(100, error("AcceptBlock() : incorrect proof of work"));
 
-    if (nHeight > 15150 && vtx.size() != 1)
+    if (nHeight > 16300 && vtx.size() != 1)
         return error("AcceptBlock() : block contains non-generation transactions");
 
     // Check timestamp against prev
