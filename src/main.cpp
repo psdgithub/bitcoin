@@ -2283,7 +2283,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
     {
         vector<CInv> vInv;
         vRecv >> vInv;
-        if (vInv.size() > 50000)
+        if (vInv.size() > MAX_INV_SZ)
             return error("message inv size() = %d", vInv.size());
 
         // find last block in inv vector
@@ -2331,7 +2331,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
     {
         vector<CInv> vInv;
         vRecv >> vInv;
-        if (vInv.size() > 50000)
+        if (vInv.size() > MAX_INV_SZ)
             return error("message getdata size() = %d", vInv.size());
 
         BOOST_FOREACH(const CInv& inv, vInv)
