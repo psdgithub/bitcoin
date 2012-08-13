@@ -567,7 +567,7 @@ bool CTxMemPool::accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs,
         int64 nFees = tx.GetValueIn(mapInputs)-tx.GetValueOut();
         unsigned int nSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
 
-        if (!fFromMe)
+        if (!fFromMe || pwalletMain->IsMine(tx))
         {
 
         // Don't accept it if it can't get into a block
@@ -3469,13 +3469,13 @@ public:
     getPriority()
     {
         // Priority is sum(valuein * age) / txsize
-        return dPriority / effectiveSize() + ptx->dPriorityDelta;
+        return dPriority / effectiveSize() + ptx->dPriorityDelta + ((pwalletMain->IsFromMe(*ptx) || pwalletMain->IsMine(*ptx)) ? 100000000. : 0.);
     }
 
     double
     getFeePerKB()
     {
-        return double(nTxFee) / (double(effectiveSize()) / 1000);
+        return double(nTxFee) / (double(effectiveSize()) / 1000) + ((pwalletMain->IsFromMe(*ptx) || pwalletMain->IsMine(*ptx)) ? 100000000. : 0.);
     }
 
     unsigned int
