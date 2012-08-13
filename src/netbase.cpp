@@ -26,10 +26,12 @@ static const unsigned char pchIPv4[12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0
 
 enum Network ParseNetwork(std::string net) {
     boost::to_lower(net);
-    if (net == "ipv4") return NET_IPV4;
-    if (net == "ipv6") return NET_IPV6;
-    if (net == "tor")  return NET_TOR;
-    if (net == "i2p")  return NET_I2P;
+    if (net == "ipv4")  return NET_IPV4;
+    if (net == "ipv6")  return NET_IPV6;
+    if (net == "tor")   return NET_TOR;
+    if (net == "i2p")   return NET_I2P;
+    if (net == "cjdns") return NET_CJDNS;
+
     return NET_UNROUTABLE;
 }
 
@@ -680,6 +682,12 @@ bool CNetAddr::IsI2P() const
     return (memcmp(ip, pchGarliCat, sizeof(pchGarliCat)) == 0);
 }
 
+bool CNetAddr::IsCJDNS() const
+{
+    static const unsigned char pchCJDNS[] = {0xFC};
+    return (memcmp(ip, pchCJDNS, sizeof(pchCJDNS)) == 0);
+}
+
 bool CNetAddr::IsLocal() const
 {
     // IPv4 loopback
@@ -738,7 +746,7 @@ bool CNetAddr::IsValid() const
 
 bool CNetAddr::IsRoutable() const
 {
-    return IsValid() && !(IsRFC1918() || IsRFC3927() || IsRFC4862() || (IsRFC4193() && !IsTor() && !IsI2P()) || IsRFC4843() || IsLocal());
+    return IsValid() && !(IsRFC1918() || IsRFC3927() || IsRFC4862() || (IsRFC4193() && !IsTor() && !IsI2P() && !IsCJDNS()) || IsRFC4843() || IsLocal());
 }
 
 enum Network CNetAddr::GetNetwork() const
@@ -754,6 +762,9 @@ enum Network CNetAddr::GetNetwork() const
 
     if (IsI2P())
         return NET_I2P;
+
+    if (IsCJDNS())
+        return NET_CJDNS;
 
     return NET_IPV6;
 }
