@@ -114,7 +114,7 @@ bool GetTransaction(const uint256 &hash, CTransaction &tx, uint256 &hashBlock);
 
 
 
-#define BlockSubstr(hash)  hash.ToString().substr(0, 20)
+#define BlockSubstr(hash)  hash.ToString().substr(48)
 
 bool GetWalletFile(CWallet* pwallet, std::string &strWalletFileOut);
 
