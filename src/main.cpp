@@ -3248,6 +3248,56 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
     }
 
 
+    else if (strCommand == "filterload")
+    {
+        CBloomFilter filter;
+        vRecv >> filter;
+
+        if (!filter.IsWithinSizeConstraints())
+            // There is no excuse for sending a too-large filter
+            pfrom->Misbehaving(100);
+        else
+        {
+            LOCK(pfrom->cs_filter);
+            delete pfrom->pfilter;
+            pfrom->pfilter = new CBloomFilter(filter);
+        }
+    }
+
+
+    else if (strCommand == "filteradd")
+    {
+        vector<unsigned char> vData;
+        vRecv >> vData;
+
+        // Nodes must NEVER send a data item > 520 bytes (the max size for a script data object,
+        // and thus, the maximum size any matched object can have) in a filteradd message
+        if (vData.size() > 520)
+            pfrom->Misbehaving(100);
+
+        LOCK(pfrom->cs_filter);
+        if (pfrom->pfilter)
+            pfrom->pfilter->insert(vData);
+        else {
+            // 1000 and 0.001 are fairly arbitrary (and do NOT constitute protocol spec) -
+            // .1% provides fairly good privacy, even if you have significantly less items in the filter,
+            // while still cutting bandwidth usage down significantly
+            // and 1000 is a reasonable maximum for the number of items in a wallet's filter.
+            CBloomFilter* pfilter = new CBloomFilter(1000, 0.001);
+            pfilter->insert(vData);
+            pfrom->pfilter = pfilter;
+        }
+    }
+
+
+    else if (strCommand == "filterclear")
+    {
+        LOCK(pfrom->cs_filter);
+        delete pfrom->pfilter;
+        pfrom->pfilter = NULL;
+    }
+
+
     else
     {
         // Ignore unknown commands for extensibility
