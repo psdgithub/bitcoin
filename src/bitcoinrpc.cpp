@@ -1056,10 +1056,24 @@ Value sendmany(const Array& params, bool fHelp)
     if (fHelp || params.size() < 2 || params.size() > 4)
         throw runtime_error(
             "sendmany <fromaccount> {address:amount,...} [minconf=1] [comment]\n"
+            "sendmany [<fromaccount>, [sendfromaddresses...]] {address:amount,...} [minconf=1] [comment]\n"
             "amounts are double-precision floating point numbers"
             + HelpRequiringPassphrase());
 
-    string strAccount = AccountFromValue(params[0]);
+    std::string strAccount;
+    std::set<std::string> fromAddresses;
+    if (params[0].type() == str_type)
+        strAccount = AccountFromValue(params[0]);
+    else
+    {
+        Array a = params[0].get_array();
+        strAccount = AccountFromValue(a[0]);
+        BOOST_FOREACH(const Value& v, a)
+        {
+            fromAddresses.insert(v.get_str());
+        }
+    }
+
     Object sendTo = params[1].get_obj();
     int nMinDepth = 1;
     if (params.size() > 2)
@@ -1098,6 +1112,8 @@ Value sendmany(const Array& params, bool fHelp)
     int64 nBalance = GetAccountBalance(strAccount, nMinDepth);
     if (totalAmount > nBalance)
         throw JSONRPCError(-6, "Account has insufficient funds");
+
+    CScopedSendFromAddressRestriction<std::set<std::string> > addrRestriction(*pwalletMain, fromAddresses);
 
     // Send
     CReserveKey keyChange(pwalletMain);
@@ -3200,6 +3216,9 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "walletpassphrase"       && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "getblocktemplate"       && n > 0) ConvertTo<Object>(params[0]);
     if (strMethod == "listsinceblock"         && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "sendmany"               && n > 0 &&
+      boost::starts_with(boost::trim_left_copy(params[0].get_str()), "["))
+        ConvertTo<Array>(params[0]);
     if (strMethod == "sendmany"               && n > 1) ConvertTo<Object>(params[1]);
     if (strMethod == "sendmany"               && n > 2) ConvertTo<boost::int64_t>(params[2]);
     if (strMethod == "addmultisigaddress"     && n > 0) ConvertTo<boost::int64_t>(params[0]);
