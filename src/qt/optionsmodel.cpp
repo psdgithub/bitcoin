@@ -62,6 +62,24 @@ void OptionsModel::Init()
         SoftSetArg("-lang", language.toStdString());
 }
 
+void OptionsModel::Reset()
+{
+    QSettings settings;
+
+    // Remove all entries in this QSettings object
+    settings.clear();
+
+    // as there is no saved setting for OptionsModel::StartAtStartup, set to disabled
+    if(GUIUtil::GetStartOnSystemStartup())
+        GUIUtil::SetStartOnSystemStartup(false);
+
+    // Re-Init to get default values
+    Init();
+
+    // Ensure Upgrade() is not running again by setting the bImportFinished flag
+    settings.setValue("bImportFinished", true);
+}
+
 bool OptionsModel::Upgrade()
 {
     QSettings settings;
@@ -167,7 +185,7 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
         case DisplayAddresses:
             return QVariant(bDisplayAddresses);
         case DetachDatabases:
-            return QVariant(bitdb.GetDetach());
+            return settings.value("detachDB", false);
         case Language:
             return settings.value("language", "");
         default:
