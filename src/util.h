@@ -13,7 +13,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #else
-typedef int pid_t; /* define for windows compatiblity */
+typedef int pid_t; /* define for Windows compatibility */
 #endif
 #include <map>
 #include <vector>
@@ -430,7 +430,7 @@ inline int64 GetPerformanceCounter()
 #else
     timeval t;
     gettimeofday(&t, NULL);
-    nCounter = t.tv_sec * 1000000 + t.tv_usec;
+    nCounter = (int64) t.tv_sec * 1000000 + t.tv_usec;
 #endif
     return nCounter;
 }

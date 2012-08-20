@@ -78,7 +78,7 @@ void Shutdown(void* parg)
         printf("PPCoin exiting\n\n");
         fExit = true;
 #ifndef QT_GUI
-        // ensure non UI client get's exited here, but let Bitcoin-Qt reach return 0; in bitcoin.cpp
+        // ensure non-UI client gets exited here, but let Bitcoin-Qt reach 'return 0;' in bitcoin.cpp
         exit(0);
 #endif
     }
@@ -138,12 +138,12 @@ bool AppInit(int argc, char* argv[])
 bool AppInit2(int argc, char* argv[])
 {
 #ifdef _MSC_VER
-    // Turn off microsoft heap dump noise
+    // Turn off Microsoft heap dump noise
     _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
     _CrtSetReportFile(_CRT_WARN, CreateFileA("NUL", GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, 0));
 #endif
 #if _MSC_VER >= 1400
-    // Disable confusing "helpful" text message on abort, ctrl-c
+    // Disable confusing "helpful" text message on abort, Ctrl-C
     _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
 #endif
 #ifndef WIN32
@@ -256,7 +256,7 @@ bool AppInit2(int argc, char* argv[])
         // Remove tabs
         strUsage.erase(std::remove(strUsage.begin(), strUsage.end(), '\t'), strUsage.end());
 #if defined(QT_GUI) && defined(WIN32)
-        // On windows, show a message box, as there is no stderr
+        // On Windows, show a message box, as there is no stderr
         ThreadSafeMessageBox(strUsage, _("Usage"), wxOK | wxMODAL);
 #else
         fprintf(stderr, "%s", strUsage.c_str());
@@ -408,7 +408,7 @@ bool AppInit2(int argc, char* argv[])
     if (GetBoolArg("-upgradewallet", fFirstRun))
     {
         int nMaxVersion = GetArg("-upgradewallet", 0);
-        if (nMaxVersion == 0) // the -walletupgrade without argument case
+        if (nMaxVersion == 0) // the -upgradewallet without argument case
         {
             printf("Performing wallet upgrade to %i\n", FEATURE_LATEST);
             nMaxVersion = CLIENT_VERSION;
