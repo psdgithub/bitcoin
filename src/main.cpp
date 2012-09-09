@@ -349,6 +349,10 @@ bool CTransaction::AreInputsStandard(const MapPrevTx& mapInputs) const
             nArgsExpected += tmpExpected;
         }
 
+        // These are non-standard, as inputs
+        else if (whichType == TX_MULTISIG_DATA)
+            return false;
+
         if (stack.size() != (unsigned int)nArgsExpected)
             return false;
     }
@@ -477,6 +481,24 @@ bool CTransaction::CheckTransaction() const
     return true;
 }
 
+bool CTransaction::IsDataCarrier() const
+{
+    for (unsigned int i = 0; i < vout.size(); i++)
+    {
+        vector<vector<unsigned char> > vSolutions;
+        txnouttype whichType;
+
+        const CScript& script = vout[i].scriptPubKey;
+        if (!Solver(script, whichType, vSolutions))
+            return false;
+
+        if (whichType == TX_MULTISIG_DATA)
+            return true;
+    }
+
+    return false;
+}
+
 int64 CTransaction::GetMinFee(unsigned int nBlockSize, bool fAllowFree,
                               enum GetMinFee_mode mode) const
 {
@@ -503,6 +525,10 @@ int64 CTransaction::GetMinFee(unsigned int nBlockSize, bool fAllowFree,
                 nMinFee = 0;
         }
     }
+
+    // OP_DATA multisig transactions are never free
+    if (IsDataCarrier())
+        nMinFee = nBaseFee;
 
     // To limit dust spam, require MIN_TX_FEE/MIN_RELAY_TX_FEE if any output is less than 0.01
     if (nMinFee < nBaseFee)
