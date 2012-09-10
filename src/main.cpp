@@ -902,18 +902,18 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
     return bnNew.GetCompact();
 }
 
-bool CheckProofOfWork(uint256 hash, unsigned int nBits)
+bool CheckProofOfWork(uint256 hash, unsigned int nBits, bool fSilent)
 {
     CBigNum bnTarget;
     bnTarget.SetCompact(nBits);
 
     // Check range
     if (bnTarget <= 0 || bnTarget > bnProofOfWorkLimit)
-        return error("CheckProofOfWork() : nBits below minimum work");
+        return fSilent ? false : error("CheckProofOfWork() : nBits below minimum work");
 
     // Check proof of work matches claimed amount
     if (hash > bnTarget.getuint256())
-        return error("CheckProofOfWork() : hash doesn't match nBits");
+        return fSilent ? false : error("CheckProofOfWork() : hash doesn't match nBits");
 
     return true;
 }
@@ -1829,7 +1829,7 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock, bool fCheckPOW)
     if (!pblock->CheckBlock(fCheckPOW))
         return error("ProcessBlock() : CheckBlock FAILED");
 
-    bool fHasPOW = fCheckPOW || pblock->CheckBlock();
+    bool fHasPOW = fCheckPOW || CheckProofOfWork(pblock->GetHash(), pblock->nBits, true);
     if (!fHasPOW)
         pblock->strRejectReason.clear();  // was set to high-hash by 2nd CheckBlock
 
@@ -1884,8 +1884,7 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock, bool fCheckPOW)
         indexDummy.pprev = pindexPrev;
         indexDummy.nHeight = pindexPrev->nHeight + 1;
         CTxDB txdb("r");
-        if (!pblock->ConnectBlock(txdb, &indexDummy, true))
-            return false;
+        return pblock->ConnectBlock(txdb, &indexDummy, true);
     }
 
     // Recursively process any orphan blocks that depended on this one
