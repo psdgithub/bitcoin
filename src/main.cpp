@@ -2434,7 +2434,8 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
             // Ask this guy to fill in what we're missing
             PushGetBlocks(pfrom, pindexBest, GetOrphanRoot(pblock2));
         }
-        return true;
+        // The block is accepted, but not immediately processed
+        return state.Orphan();
     }
 
     // Store to disk

@@ -394,5 +394,9 @@ Value submitblock(const Array& params, bool fHelp)
         return "valid?";
     }
 
+    // NOTE: If we process an orphan, it is accepted yet not immediately processed
+    if (state.IsOrphan())
+        return "orphan";
+
     return Value::null;
 }
