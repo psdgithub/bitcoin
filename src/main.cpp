@@ -1798,7 +1798,7 @@ bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot) const
     return true;
 }
 
-bool CBlock::AcceptBlock()
+bool CBlock::AcceptBlock(bool fWriteToDisk)
 {
     // Check for duplicate
     uint256 hash = GetHash();
@@ -1851,6 +1851,9 @@ bool CBlock::AcceptBlock()
         }
     }
 
+    if (!fWriteToDisk)
+        return true;
+
     // Write block to history file
     if (!CheckDiskSpace(::GetSerializeSize(*this, SER_DISK, CLIENT_VERSION)))
         return reject("!out of disk space", error("AcceptBlock() : out of disk space"));
@@ -1886,7 +1889,7 @@ bool CBlockIndex::IsSuperMajority(int minVersion, const CBlockIndex* pstart, uns
     return (nFound >= nRequired);
 }
 
-bool ProcessBlock(CNode* pfrom, CBlock* pblock)
+bool ProcessBlock(CNode* pfrom, CBlock* pblock, bool fCheckPOW)
 {
     // Check for duplicate
     uint256 hash = pblock->GetHash();
@@ -1896,8 +1899,12 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
         return pblock->reject("duplicate", error("ProcessBlock() : already have block (orphan) %s", hash.ToString().substr(0,20).c_str()));
 
     // Preliminary checks
-    if (!pblock->CheckBlock())
+    if (!pblock->CheckBlock(fCheckPOW))
         return error("ProcessBlock() : CheckBlock FAILED");
+
+    bool fHasPOW = fCheckPOW || pblock->CheckBlock();
+    if (!fHasPOW)
+        pblock->strRejectReason.clear();  // was set to high-hash by 2nd CheckBlock
 
     CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(mapBlockIndex);
     if (pcheckpoint && pblock->hashPrevBlock != hashBestChain)
@@ -1942,8 +1949,20 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
     }
 
     // Store to disk
-    if (!pblock->AcceptBlock())
+    if (!pblock->AcceptBlock(fHasPOW))
         return error("ProcessBlock() : AcceptBlock FAILED");
+
+    if (!fHasPOW)
+    {
+        // The block isn't committed to disk since it was just a proposal, but we need to do connect checks still
+        CBlockIndex* pindexPrev = mapBlockIndex[pblock->hashPrevBlock];
+        CBlockIndex indexDummy(1, 1, *pblock);
+        indexDummy.pprev = pindexPrev;
+        indexDummy.nHeight = pindexPrev->nHeight + 1;
+        CTxDB txdb("r");
+        if (!pblock->ConnectBlock(txdb, &indexDummy, true))
+            return false;
+    }
 
     // Recursively process any orphan blocks that depended on this one
     vector<uint256> vWorkQueue;
