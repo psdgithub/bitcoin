@@ -370,7 +370,13 @@ Value submitblock(const Array& params, bool fHelp)
 
     bool fAccepted = ProcessBlock(NULL, &pblock);
     if (!fAccepted)
-        return "rejected";
+    {
+        if (pblock.strRejectReason.empty())
+            return "rejected";
+        if (pblock.strRejectReason[0] == '!')
+            throw JSONRPCError(-1, &pblock.strRejectReason.c_str()[1]);
+        return pblock.strRejectReason;
+    }
 
     return Value::null;
 }
