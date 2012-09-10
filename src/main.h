@@ -1876,25 +1876,36 @@ private:
         MODE_ERROR,   // run-time error
     } mode;
     int nDoS;
+    std::string strMsg;
 public:
     CValidationState() : mode(MODE_VALID), nDoS(0) {}
-    bool DoS(int level, bool ret = false) {
+    bool DoS(int level, const std::string &strRR, bool ret = false) {
         if (mode == MODE_ERROR)
             return ret;
         nDoS += level;
         mode = MODE_INVALID;
+        if (strMsg.empty())
+            strMsg = strRR;
         return ret;
     }
-    bool Invalid(bool ret = false) {
-        return DoS(0, ret);
+    bool DoS(int level, bool ret = false) {
+        return DoS(level, "", ret);
     }
-    bool Error() {
+    bool Invalid(const std::string &strRR, bool ret = false) {
+        return DoS(0, strRR, ret);
+    }
+    bool Invalid(bool ret = false) {
+        return DoS(0, "", ret);
+    }
+    bool Error(const std::string &msg, bool ret = false) {
+        if (mode != MODE_ERROR)
+            strMsg = msg;
         mode = MODE_ERROR;
-        return false;
+        return ret;
     }
     bool Abort(const std::string &msg) {
         AbortNode(msg);
-        return Error();
+        return Error(msg);
     }
     bool IsValid() {
         return mode == MODE_VALID;
@@ -1905,12 +1916,28 @@ public:
     bool IsError() {
         return mode == MODE_ERROR;
     }
-    bool IsInvalid(int &nDoSOut) {
-        if (IsInvalid()) {
-            nDoSOut = nDoS;
+    bool IsError(std::string &strMsgOut) {
+        if (IsError()) {
+            strMsgOut = strMsg;
             return true;
         }
         return false;
+    }
+    bool IsInvalid(int &nDoSOut, std::string &strRROut) {
+        if (IsInvalid()) {
+            nDoSOut = nDoS;
+            strRROut = strMsg;
+            return true;
+        }
+        return false;
+    }
+    bool IsInvalid(int &nDoSOut) {
+        std::string strDummy;
+        return IsInvalid(nDoSOut, strDummy);
+    }
+    bool IsInvalid(std::string &strRROut) {
+        int nDummy;
+        return IsInvalid(nDummy, strRROut);
     }
 };
 
