@@ -1874,6 +1874,7 @@ private:
         MODE_VALID,   // everything ok
         MODE_INVALID, // network rule violation (DoS value may be set)
         MODE_ERROR,   // run-time error
+        MODE_ORPHAN,  // orphan data, processing deferred
     } mode;
     int nDoS;
     std::string strMsg;
@@ -1907,8 +1908,16 @@ public:
         AbortNode(msg);
         return Error(msg);
     }
+    bool Orphan() {
+        if (IsValid())
+            mode = MODE_ORPHAN;
+        return true;
+    }
     bool IsValid() {
-        return mode == MODE_VALID;
+        return mode == MODE_VALID || mode == MODE_ORPHAN;
+    }
+    bool IsOrphan() {
+        return mode == MODE_ORPHAN;
     }
     bool IsInvalid() {
         return mode == MODE_INVALID;
