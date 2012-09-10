@@ -621,7 +621,19 @@ Value submitblock(const Array& params, bool fHelp)
     CValidationState state;
     bool fAccepted = ProcessBlock(state, NULL, &pblock);
     if (!fAccepted)
-        return "rejected"; // TODO: report validation state
+    {
+        std::string strRejectReason = state.GetRejectReason();
+        if (state.IsError())
+            throw JSONRPCError(RPC_MISC_ERROR, strRejectReason);
+        if (state.IsInvalid())
+        {
+            if (strRejectReason.empty())
+                return "rejected";
+            return strRejectReason;
+        }
+        // Should be impossible
+        return "valid?";
+    }
 
     return Value::null;
 }
