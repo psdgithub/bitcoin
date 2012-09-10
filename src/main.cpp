@@ -1751,27 +1751,27 @@ bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot) const
 
     // Size limits
     if (vtx.empty() || vtx.size() > MAX_BLOCK_SIZE || ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION) > MAX_BLOCK_SIZE)
-        return DoS(100, error("CheckBlock() : size limits failed"));
+        return reject("bad-blk-length", DoS(100, error("CheckBlock() : size limits failed")));
 
     // Check proof of work matches claimed amount
     if (fCheckPOW && !CheckProofOfWork(GetHash(), nBits))
-        return DoS(50, error("CheckBlock() : proof of work failed"));
+        return reject("high-hash", DoS(50, error("CheckBlock() : proof of work failed")));
 
     // Check timestamp
     if (GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60)
-        return error("CheckBlock() : block timestamp too far in the future");
+        return reject("time-too-new", error("CheckBlock() : block timestamp too far in the future"));
 
     // First transaction must be coinbase, the rest must not be
     if (vtx.empty() || !vtx[0].IsCoinBase())
-        return DoS(100, error("CheckBlock() : first tx is not coinbase"));
+        return reject("bad-cb-missing", DoS(100, error("CheckBlock() : first tx is not coinbase")));
     for (unsigned int i = 1; i < vtx.size(); i++)
         if (vtx[i].IsCoinBase())
-            return DoS(100, error("CheckBlock() : more than one coinbase"));
+            return reject("bad-cb-multiple", DoS(100, error("CheckBlock() : more than one coinbase")));
 
     // Check transactions
     BOOST_FOREACH(const CTransaction& tx, vtx)
         if (!tx.CheckTransaction())
-            return DoS(tx.nDoS, error("CheckBlock() : CheckTransaction failed"));
+            return reject("bad-txns", DoS(tx.nDoS, error("CheckBlock() : CheckTransaction failed")));
 
     // Check for duplicate txids. This is caught by ConnectInputs(),
     // but catching it earlier avoids a potential DoS attack:
@@ -1781,7 +1781,7 @@ bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot) const
         uniqueTx.insert(tx.GetHash());
     }
     if (uniqueTx.size() != vtx.size())
-        return DoS(100, error("CheckBlock() : duplicate transaction"));
+        return reject("bad-txns", DoS(100, error("CheckBlock() : duplicate transaction")));
 
     unsigned int nSigOps = 0;
     BOOST_FOREACH(const CTransaction& tx, vtx)
@@ -1789,11 +1789,11 @@ bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot) const
         nSigOps += tx.GetLegacySigOpCount();
     }
     if (nSigOps > MAX_BLOCK_SIGOPS)
-        return DoS(100, error("CheckBlock() : out-of-bounds SigOpCount"));
+        return reject("bad-blk-sigops", DoS(100, error("CheckBlock() : out-of-bounds SigOpCount")));
 
     // Check merkle root
     if (fCheckMerkleRoot && hashMerkleRoot != BuildMerkleTree())
-        return DoS(100, error("CheckBlock() : hashMerkleRoot mismatch"));
+        return reject("bad-txnmrklroot", DoS(100, error("CheckBlock() : hashMerkleRoot mismatch")));
 
     return true;
 }
@@ -1803,31 +1803,31 @@ bool CBlock::AcceptBlock()
     // Check for duplicate
     uint256 hash = GetHash();
     if (mapBlockIndex.count(hash))
-        return error("AcceptBlock() : block already in mapBlockIndex");
+        return reject("duplicate", error("AcceptBlock() : block already in mapBlockIndex"));
 
     // Get prev block index
     map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.find(hashPrevBlock);
     if (mi == mapBlockIndex.end())
-        return DoS(10, error("AcceptBlock() : prev block not found"));
+        return reject("bad-prevblk", DoS(10, error("AcceptBlock() : prev block not found")));
     CBlockIndex* pindexPrev = (*mi).second;
     int nHeight = pindexPrev->nHeight+1;
 
     // Check proof of work
     if (nBits != GetNextWorkRequired(pindexPrev, this))
-        return DoS(100, error("AcceptBlock() : incorrect proof of work"));
+        return reject("bad-diffbits", DoS(100, error("AcceptBlock() : incorrect proof of work")));
 
     // Check timestamp against prev
     if (GetBlockTime() <= pindexPrev->GetMedianTimePast())
-        return error("AcceptBlock() : block's timestamp is too early");
+        return reject("time-too-old", error("AcceptBlock() : block's timestamp is too early"));
 
     // Check that all transactions are finalized
     BOOST_FOREACH(const CTransaction& tx, vtx)
         if (!tx.IsFinal(nHeight, GetBlockTime()))
-            return DoS(10, error("AcceptBlock() : contains a non-final transaction"));
+            return reject("bad-txns", DoS(10, error("AcceptBlock() : contains a non-final transaction")));
 
     // Check that the block chain matches the known block chain up to a checkpoint
     if (!Checkpoints::CheckBlock(nHeight, hash))
-        return DoS(100, error("AcceptBlock() : rejected by checkpoint lock-in at %d", nHeight));
+        return reject("checkpoint-mismatch", DoS(100, error("AcceptBlock() : rejected by checkpoint lock-in at %d", nHeight)));
 
     // Reject block.nVersion=1 blocks when 95% (75% on testnet) of the network has upgraded:
     if (nVersion < 2)
@@ -1835,7 +1835,7 @@ bool CBlock::AcceptBlock()
         if ((!fTestNet && CBlockIndex::IsSuperMajority(2, pindexPrev, 950, 1000)) ||
             (fTestNet && CBlockIndex::IsSuperMajority(2, pindexPrev, 75, 100)))
         {
-            return error("AcceptBlock() : rejected nVersion=1 block");
+            return reject("bad-version", error("AcceptBlock() : rejected nVersion=1 block"));
         }
     }
     // Enforce block.nVersion=2 rule that the coinbase starts with serialized block height
@@ -1847,19 +1847,19 @@ bool CBlock::AcceptBlock()
         {
             CScript expect = CScript() << nHeight;
             if (!std::equal(expect.begin(), expect.end(), vtx[0].vin[0].scriptSig.begin()))
-                return DoS(100, error("AcceptBlock() : block height mismatch in coinbase"));
+                return reject("bad-cb-height", DoS(100, error("AcceptBlock() : block height mismatch in coinbase")));
         }
     }
 
     // Write block to history file
     if (!CheckDiskSpace(::GetSerializeSize(*this, SER_DISK, CLIENT_VERSION)))
-        return error("AcceptBlock() : out of disk space");
+        return reject("!out of disk space", error("AcceptBlock() : out of disk space"));
     unsigned int nFile = -1;
     unsigned int nBlockPos = 0;
     if (!WriteToDisk(nFile, nBlockPos))
-        return error("AcceptBlock() : WriteToDisk failed");
+        return reject("!WriteToDisk failed", error("AcceptBlock() : WriteToDisk failed"));
     if (!AddToBlockIndex(nFile, nBlockPos))
-        return error("AcceptBlock() : AddToBlockIndex failed");
+        return reject("!AddToBlockIndex failed", error("AcceptBlock() : AddToBlockIndex failed"));
 
     // Relay inventory, but don't relay old inventory during initial block download
     int nBlockEstimate = Checkpoints::GetTotalBlocksEstimate();
@@ -1891,9 +1891,9 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
     // Check for duplicate
     uint256 hash = pblock->GetHash();
     if (mapBlockIndex.count(hash))
-        return error("ProcessBlock() : already have block %d %s", mapBlockIndex[hash]->nHeight, hash.ToString().substr(0,20).c_str());
+        return pblock->reject("duplicate", error("ProcessBlock() : already have block %d %s", mapBlockIndex[hash]->nHeight, hash.ToString().substr(0,20).c_str()));
     if (mapOrphanBlocks.count(hash))
-        return error("ProcessBlock() : already have block (orphan) %s", hash.ToString().substr(0,20).c_str());
+        return pblock->reject("duplicate", error("ProcessBlock() : already have block (orphan) %s", hash.ToString().substr(0,20).c_str()));
 
     // Preliminary checks
     if (!pblock->CheckBlock())
@@ -1908,7 +1908,7 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
         {
             if (pfrom)
                 pfrom->Misbehaving(100);
-            return error("ProcessBlock() : block with timestamp before last checkpoint");
+            return pblock->reject("time-too-old", error("ProcessBlock() : block with timestamp before last checkpoint"));
         }
         CBigNum bnNewBlock;
         bnNewBlock.SetCompact(pblock->nBits);
@@ -1918,7 +1918,7 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
         {
             if (pfrom)
                 pfrom->Misbehaving(100);
-            return error("ProcessBlock() : block with too little proof-of-work");
+            return pblock->reject("bad-diffbits", error("ProcessBlock() : block with too little proof-of-work"));
         }
     }
 

@@ -837,6 +837,8 @@ public:
     // Denial-of-service detection:
     mutable int nDoS;
     bool DoS(int nDoSIn, bool fIn) const { nDoS += nDoSIn; return fIn; }
+    mutable std::string strRejectReason;
+    bool reject(const std::string& strRejectReasonIn, bool fIn) const { strRejectReason = strRejectReasonIn; return fIn; }
 
     CBlock()
     {
