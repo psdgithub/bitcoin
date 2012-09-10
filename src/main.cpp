@@ -2002,7 +2002,7 @@ bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot) const
     return true;
 }
 
-bool CBlock::AcceptBlock(CDiskBlockPos *dbp)
+bool CBlock::AcceptBlock(CDiskBlockPos *dbp, bool fWriteToDisk)
 {
     // Check for duplicate
     uint256 hash = GetHash();
@@ -2059,6 +2059,9 @@ bool CBlock::AcceptBlock(CDiskBlockPos *dbp)
         }
     }
 
+    if (!fWriteToDisk)
+        return true;
+
     // Write block to history file
     unsigned int nBlockSize = ::GetSerializeSize(*this, SER_DISK, CLIENT_VERSION);
     CDiskBlockPos blockPos;
@@ -2101,7 +2104,7 @@ bool CBlockIndex::IsSuperMajority(int minVersion, const CBlockIndex* pstart, uns
     return (nFound >= nRequired);
 }
 
-bool ProcessBlock(CNode* pfrom, CBlock* pblock, CDiskBlockPos *dbp)
+bool ProcessBlock(CNode* pfrom, CBlock* pblock, CDiskBlockPos *dbp, bool fCheckPOW)
 {
     // Check for duplicate
     uint256 hash = pblock->GetHash();
@@ -2111,8 +2114,12 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock, CDiskBlockPos *dbp)
         return pblock->reject("duplicate", error("ProcessBlock() : already have block (orphan) %s", BlockHashStr(hash).c_str()));
 
     // Preliminary checks
-    if (!pblock->CheckBlock())
+    if (!pblock->CheckBlock(fCheckPOW))
         return error("ProcessBlock() : CheckBlock FAILED");
+
+    bool fHasPOW = fCheckPOW || pblock->CheckBlock();
+    if (!fHasPOW)
+        pblock->strRejectReason.clear();  // was set to high-hash by 2nd CheckBlock
 
     CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(mapBlockIndex);
     if (pcheckpoint && pblock->hashPrevBlock != hashBestChain)
@@ -2157,8 +2164,20 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock, CDiskBlockPos *dbp)
     }
 
     // Store to disk
-    if (!pblock->AcceptBlock(dbp))
+    if (!pblock->AcceptBlock(dbp, fHasPOW))
         return error("ProcessBlock() : AcceptBlock FAILED");
+
+    if (!fHasPOW)
+    {
+        // The block isn't committed to disk since it was just a proposal, but we need to do connect checks still
+        CBlockIndex* pindexPrev = mapBlockIndex[pblock->hashPrevBlock];
+        CBlockIndex indexDummy(*pblock);
+        indexDummy.pprev = pindexPrev;
+        indexDummy.nHeight = pindexPrev->nHeight + 1;
+        CCoinsViewCache viewNew(*pcoinsTip, true);
+        if (!pblock->ConnectBlock(&indexDummy, viewNew, true))
+            return false;
+    }
 
     // Recursively process any orphan blocks that depended on this one
     vector<uint256> vWorkQueue;

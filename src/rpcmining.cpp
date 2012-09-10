@@ -196,6 +196,8 @@ Value getwork(const Array& params, bool fHelp)
 }
 
 
+static Value TestBlock(const Value& valData, bool fCheckPOW);
+
 Value getblocktemplate(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
@@ -231,6 +233,15 @@ Value getblocktemplate(const Array& params, bool fHelp)
         }
         else
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
+
+        if (strMode == "proposal")
+        {
+            const Value& dataval = find_value(oparam, "data");
+            if (dataval.type() == str_type)
+                return TestBlock(dataval, false);
+            else
+                throw JSONRPCError(-3, "Missing data String key for proposal");
+        }
     }
 
     if (strMode != "template")
@@ -349,16 +360,9 @@ Value getblocktemplate(const Array& params, bool fHelp)
     return result;
 }
 
-Value submitblock(const Array& params, bool fHelp)
+static Value TestBlock(const Value& valData, bool fCheckPOW)
 {
-    if (fHelp || params.size() < 1 || params.size() > 2)
-        throw runtime_error(
-            "submitblock <hex data> [optional-params-obj]\n"
-            "[optional-params-obj] parameter is currently ignored.\n"
-            "Attempts to submit new block to network.\n"
-            "See https://en.bitcoin.it/wiki/BIP_0022 for full specification.");
-
-    vector<unsigned char> blockData(ParseHex(params[0].get_str()));
+    vector<unsigned char> blockData(ParseHex(valData.get_str()));
     CDataStream ssBlock(blockData, SER_NETWORK, PROTOCOL_VERSION);
     CBlock pblock;
     try {
@@ -368,7 +372,7 @@ Value submitblock(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block decode failed");
     }
 
-    bool fAccepted = ProcessBlock(NULL, &pblock);
+    bool fAccepted = ProcessBlock(NULL, &pblock, NULL, fCheckPOW);
 
     // NOTE: If we process an orphan, it is accepted yet not immediately processed (so strRejectReason is "orphan")
     if (pblock.strRejectReason.empty())
@@ -381,4 +385,16 @@ Value submitblock(const Array& params, bool fHelp)
     if (pblock.strRejectReason[0] == '!')
         throw JSONRPCError(-1, &pblock.strRejectReason.c_str()[1]);
     return pblock.strRejectReason;
+}
+
+Value submitblock(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 2)
+        throw runtime_error(
+            "submitblock <hex data> [optional-params-obj]\n"
+            "[optional-params-obj] parameter is currently ignored.\n"
+            "Attempts to submit new block to network.\n"
+            "See https://en.bitcoin.it/wiki/BIP_0022 for full specification.");
+
+    return TestBlock(params[0], true);
 }
