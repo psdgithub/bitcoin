@@ -2069,16 +2069,18 @@ Value submitblock(const Array& params, bool fHelp)
     }
 
     bool fAccepted = ProcessBlock(NULL, &block);
-    if (!fAccepted)
-    {
-        if (block.strRejectReason.empty())
-            return "rejected";
-        if (block.strRejectReason[0] == '!')
-            throw JSONRPCError(-1, &block.strRejectReason.c_str()[1]);
-        return block.strRejectReason;
-    }
 
-    return Value::null;
+    // NOTE: If we process an orphan, it is accepted yet not immediately processed (so strRejectReason is "orphan")
+    if (block.strRejectReason.empty())
+    {
+        if (fAccepted)
+            return Value::null;
+        else
+            return "rejected";
+    }
+    if (block.strRejectReason[0] == '!')
+        throw JSONRPCError(-1, &block.strRejectReason.c_str()[1]);
+    return block.strRejectReason;
 }
 
 Value getblockhash(const Array& params, bool fHelp)
