@@ -369,14 +369,16 @@ Value submitblock(const Array& params, bool fHelp)
     }
 
     bool fAccepted = ProcessBlock(NULL, &pblock);
-    if (!fAccepted)
-    {
-        if (pblock.strRejectReason.empty())
-            return "rejected";
-        if (pblock.strRejectReason[0] == '!')
-            throw JSONRPCError(-1, &pblock.strRejectReason.c_str()[1]);
-        return pblock.strRejectReason;
-    }
 
-    return Value::null;
+    // NOTE: If we process an orphan, it is accepted yet not immediately processed (so strRejectReason is "orphan")
+    if (pblock.strRejectReason.empty())
+    {
+        if (fAccepted)
+            return Value::null;
+        else
+            return "rejected";
+    }
+    if (pblock.strRejectReason[0] == '!')
+        throw JSONRPCError(-1, &pblock.strRejectReason.c_str()[1]);
+    return pblock.strRejectReason;
 }

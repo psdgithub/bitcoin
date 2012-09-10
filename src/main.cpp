@@ -2152,7 +2152,8 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock, CDiskBlockPos *dbp)
             // Ask this guy to fill in what we're missing
             pfrom->PushGetBlocks(pindexBest, GetOrphanRoot(pblock2));
         }
-        return true;
+        // The block is accepted, but not immediately processed
+        return pblock->reject("orphan", true);
     }
 
     // Store to disk
