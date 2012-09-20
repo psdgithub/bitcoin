@@ -233,7 +233,8 @@ std::string HelpMessage()
         "  -dbcache=<n>           " + _("Set database cache size in megabytes (default: 25)") + "\n" +
         "  -dblogsize=<n>         " + _("Set database disk log size in megabytes (default: 100)") + "\n" +
         "  -timeout=<n>           " + _("Specify connection timeout in milliseconds (default: 5000)") + "\n" +
-        "  -proxy=<ip:port>       " + _("Connect through SOCKS proxy") + "\n" +
+        "  -proxy=<ip:port>       " + _("Exclusively connect through SOCKS proxy") + "\n" +
+        "  -proxytoo=<ip:port>    " + _("Also connect through SOCKS proxy") + "\n" +
         "  -socks=<n>             " + _("Select SOCKS version for -proxy (4 or 5, default: 5)") + "\n" +
         "  -proxy6=<ip:port>      " + _("Use separate SOCKS5 proxy to reach IPv6 peers (default: -proxy)") + "\n" +
         "  -tor=<ip:port>         " + _("Use separate SOCKS5 proxy to reach Tor hidden services (default: -proxy)") + "\n"
@@ -592,6 +593,23 @@ bool AppInit2()
             }
 #endif
             SetNameProxy(addrProxy, 5);
+        }
+    }
+
+    if (mapArgs.count("-proxytoo")) {
+        fProxyToo = true;
+        CService addrProxy = CService(mapArgs["-proxytoo"], 9050);
+        if (!addrProxy.IsValid())
+            return InitError(strprintf(_("Invalid -proxytoo address: '%s'"), mapArgs["-proxytoo"].c_str()));
+
+        if (!IsLimited(NET_IPV4))
+            SetProxy(NET_IPV4, addrProxy, nSocksVersion);
+        if (nSocksVersion > 4) {
+#ifdef USE_IPV6
+            if (!IsLimited(NET_IPV6))
+                SetProxy(NET_IPV6, addrProxy, nSocksVersion);
+#endif
+            SetNameProxy(addrProxy, nSocksVersion);
         }
     }
 
