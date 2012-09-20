@@ -93,17 +93,44 @@ Value getdifficulty(const Array& params, bool fHelp)
 
 Value settxfee(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() < 1 || params.size() > 1)
+    if (GetBoolArg("-nosafefees"))
+    {
+        if (fHelp || params.size() < 1 || params.size() > 3)
+            throw runtime_error(
+                "settxfee <default amount> [maximum amount] [force]\n"
+                "<default amount> specifies the transaction fee to include in all transactions\n"
+                "[maximum amount] specifies the upper limit of how high the client will automatically\n"
+                "                 adjust your fee as it deems necessary\n"
+                "[force] is a boolean that enables sending less than the safe minimum fee");
+    }
+    else
+    if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
-            "settxfee <amount>\n"
-            "<amount> is a real and is rounded to the nearest 0.00000001");
+            "settxfee <default amount> [maximum amount]\n"
+            "<default amount> specifies the transaction fee to include in all transactions\n"
+            "[maximum amount] specifies the upper limit of how high the client will automatically\n"
+            "                 adjust your fee as it deems necessary");
 
-    // Amount
+    // Amounts
     int64 nAmount = 0;
     if (params[0].get_real() != 0.0)
         nAmount = AmountFromValue(params[0]);        // rejects 0.0 amounts
 
+    if (params.size() > 1)
+    {
+        int64 nAmountMax;
+        if (params[1].get_real() == 0.0)
+            nAmountMax = 0;
+        else
+            nAmountMax = AmountFromValue(params[1]);
+        if (nAmountMax < nAmount)
+            throw runtime_error("Maximum fee, if provided, should be at least the amount of the default fee");
+        nTransactionFeeMax = nAmountMax;
+    }
     nTransactionFee = nAmount;
+    if (params.size() > 2)
+        fForceFee = params[2].get_bool();
+
     return true;
 }
 
