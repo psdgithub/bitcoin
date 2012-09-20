@@ -160,6 +160,7 @@ public:
     int64 nLastRecv;
     int64 nLastSendEmpty;
     int64 nTimeConnected;
+    bool fAskedForBlocks;
     int nHeaderStart;
     unsigned int nMessageStart;
     CAddress addr;
@@ -212,6 +213,7 @@ public:
         nLastRecv = 0;
         nLastSendEmpty = GetTime();
         nTimeConnected = GetTime();
+        fAskedForBlocks = false;
         nHeaderStart = -1;
         nMessageStart = -1;
         addr = addrIn;
