@@ -2055,6 +2055,27 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
 
 
 
+CMerkleBlock::CMerkleBlock(const CBlock& block, CBloomFilter& filter)
+{
+    header = block.GetBlockHeader();
+    vtx.reserve(block.vtx.size());
+
+    for(unsigned int i = 0; i < block.vtx.size(); i++)
+        if (filter.IsRelevantAndUpdate(block.vtx[i]))
+        {
+            vector<uint256> branch = block.GetMerkleBranch(i);
+            uint256 hash = block.vtx[i].GetHash();
+            vtx.push_back(make_tuple(i, hash, branch));
+        }
+}
+
+
+
+
+
+
+
+
 bool CheckDiskSpace(uint64 nAdditionalBytes)
 {
     uint64 nFreeBytesAvailable = filesystem::space(GetDataDir()).available;
@@ -2484,6 +2505,10 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             vRecv >> pfrom->strSubVer;
         if (!vRecv.empty())
             vRecv >> pfrom->nStartingHeight;
+        if (!vRecv.empty())
+            vRecv >> pfrom->fRelayTxes; // set to true after we get the first filter* message
+        else
+            pfrom->fRelayTxes = true;
 
         if (pfrom->fInbound && addrMe.IsRoutable())
         {
@@ -2702,7 +2727,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             if (fDebugNet || (vInv.size() == 1))
                 printf("received getdata for: %s\n", inv.ToString().c_str());
 
-            if (inv.type == MSG_BLOCK)
+            if (inv.type == MSG_BLOCK || inv.type == MSG_FILTERED_BLOCK)
             {
                 // Send block from disk
                 map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.find(inv.hash);
@@ -2710,7 +2735,23 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
                 {
                     CBlock block;
                     block.ReadFromDisk((*mi).second);
-                    pfrom->PushMessage("block", block);
+                    if (inv.type == MSG_BLOCK)
+                        pfrom->PushMessage("block", block);
+                    else // MSG_FILTERED_BLOCK)
+                    {
+                        LOCK(pfrom->cs_filter);
+                        if (pfrom->pfilter)
+                        {
+                            CMerkleBlock merkleBlock(block, *pfrom->pfilter);
+                            typedef boost::tuple<unsigned int, uint256, std::vector<uint256> > TupleType;
+                            BOOST_FOREACH(TupleType& tuple, merkleBlock.vtx)
+                                if (!pfrom->setInventoryKnown.count(CInv(MSG_TX, get<1>(tuple))))
+                                    pfrom->PushMessage("tx", block.vtx[get<0>(tuple)]);
+                            pfrom->PushMessage("merkleblock", merkleBlock);
+                        }
+                        // else
+                            // no response
+                    }
 
                     // Trigger them to send a getblocks request for the next batch of inventory
                     if (inv.hash == pfrom->hashContinue)
@@ -2841,7 +2882,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         if (tx.AcceptToMemoryPool(txdb, true, &fMissingInputs))
         {
             SyncWithWallets(tx, NULL, true);
-            RelayMessage(inv, vMsg);
+            RelayTransaction(tx, vMsg);
             mapAlreadyAskedFor.erase(inv);
             vWorkQueue.push_back(inv.hash);
             vEraseQueue.push_back(inv.hash);
@@ -2864,7 +2905,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
                     {
                         printf("   accepted orphan tx %s\n", inv.hash.ToString().substr(0,10).c_str());
                         SyncWithWallets(tx, NULL, true);
-                        RelayMessage(inv, vMsg);
+                        RelayTransaction(tx, vMsg);
                         mapAlreadyAskedFor.erase(inv);
                         vWorkQueue.push_back(inv.hash);
                         vEraseQueue.push_back(inv.hash);
@@ -3033,6 +3074,50 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
                 pfrom->Misbehaving(10);
             }
         }
+    }
+
+
+    else if (strCommand == "filterload")
+    {
+        CBloomFilter filter;
+        vRecv >> filter;
+
+        if (!filter.IsWithinSizeConstraints())
+            // There is no excuse for sending a too-large filter
+            pfrom->Misbehaving(100);
+        else
+        {
+            LOCK(pfrom->cs_filter);
+            if (pfrom->pfilter) delete pfrom->pfilter;
+            pfrom->pfilter = new CBloomFilter(filter);
+        }
+        pfrom->fRelayTxes = true;
+    }
+
+
+    else if (strCommand == "filteradd")
+    {
+        vector<unsigned char> vData;
+        vRecv >> vData;
+
+        LOCK(pfrom->cs_filter);
+        if (pfrom->pfilter)
+            pfrom->pfilter->insert(vData);
+        else {
+            CBloomFilter* pfilter = new CBloomFilter(1000, 0.001);
+            pfilter->insert(vData);
+            pfrom->pfilter = pfilter;
+        }
+        pfrom->fRelayTxes = true;
+    }
+
+
+    else if (strCommand == "filterclear")
+    {
+        LOCK(pfrom->cs_filter);
+        delete pfrom->pfilter;
+        pfrom->pfilter = NULL;
+        pfrom->fRelayTxes = true;
     }
 
 
