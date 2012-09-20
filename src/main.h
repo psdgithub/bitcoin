@@ -91,7 +91,7 @@ class CTxIndex;
 void RegisterWallet(CWallet* pwalletIn);
 void UnregisterWallet(CWallet* pwalletIn);
 void SyncWithWallets(const CTransaction& tx, const CBlock* pblock = NULL, bool fUpdate = false);
-bool ProcessBlock(CNode* pfrom, CBlock* pblock);
+bool ProcessBlock(CNode* pfrom, CBlock* pblock, bool fCheckPOW = true);
 bool CheckDiskSpace(uint64 nAdditionalBytes=0);
 FILE* OpenBlockFile(unsigned int nFile, unsigned int nBlockPos, const char* pszMode="rb");
 FILE* AppendBlockFile(unsigned int& nFileRet);
@@ -107,7 +107,7 @@ CBlock* CreateNewBlock(CReserveKey& reservekey);
 void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& nExtraNonce);
 void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash1);
 bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey);
-bool CheckProofOfWork(uint256 hash, unsigned int nBits);
+bool CheckProofOfWork(uint256 hash, unsigned int nBits, bool fSilent = false);
 unsigned int ComputeMinWork(unsigned int nBase, int64 nTime);
 int GetNumBlocksOfPeers();
 bool IsInitialBlockDownload();
@@ -811,6 +811,8 @@ public:
     // Denial-of-service detection:
     mutable int nDoS;
     bool DoS(int nDoSIn, bool fIn) const { nDoS += nDoSIn; return fIn; }
+    mutable std::string strRejectReason;
+    bool reject(const std::string& strRejectReasonIn, bool fIn) const { strRejectReason = strRejectReasonIn; return fIn; }
 
     CBlock()
     {
@@ -1009,7 +1011,7 @@ public:
     bool SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew);
     bool AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos);
     bool CheckBlock(bool fCheckPOW=true, bool fCheckMerkleRoot=true) const;
-    bool AcceptBlock();
+    bool AcceptBlock(bool fWriteToDisk = true);
 
 private:
     bool SetBestChainInner(CTxDB& txdb, CBlockIndex *pindexNew);
