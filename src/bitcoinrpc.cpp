@@ -9,6 +9,7 @@
 #include "ui_interface.h"
 #include "base58.h"
 #include "bitcoinrpc.h"
+#include "db.h"
 
 #undef printf
 #include <boost/asio.hpp>
@@ -170,7 +171,6 @@ Value help(const Array& params, bool fHelp)
     return tableRPC.help(strCommand);
 }
 
-
 Value stop(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
@@ -181,6 +181,25 @@ Value stop(const Array& params, bool fHelp)
     StartShutdown();
     return "Bitcoin server stopping";
 }
+
+Value stopdetach(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "stopdetach <detach>\n"
+            "<detach> is true or false (default true) to detach or not for this stop only\n"
+            "Stop Bitcoin server with an override of the detachdb config value.");
+    bool fDetach = true;
+    if (params.size() > 0)
+        fDetach = params[0].get_bool();
+    bitdb.SetDetach(fDetach);
+    StartShutdown();
+    if (true == fDetach)
+        return "Bitcoin server stopping for detach";
+    else
+        return "Bitcoin server stopping (not detached)";
+}
+
 
 
 
@@ -194,6 +213,7 @@ static const CRPCCommand vRPCCommands[] =
   //  ------------------------  -----------------------  ------  --------
     { "help",                   &help,                   true,   true },
     { "stop",                   &stop,                   true,   true },
+    { "stopdetach",             &stopdetach,             true,   true },
     { "getblockcount",          &getblockcount,          true,   false },
     { "getconnectioncount",     &getconnectioncount,     true,   false },
     { "getpeerinfo",            &getpeerinfo,            true,   false },
