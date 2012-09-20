@@ -3281,9 +3281,11 @@ bool ProcessMessages(CNode* pfrom)
 
         // Ask a connected node for block updates
         if (!pfrom->fClient && !pfrom->fOneShot &&
+            (pfrom->nStartingHeight > nBestHeight) &&
             (pfrom->nVersion < NOBLKS_VERSION_START ||
              pfrom->nVersion >= NOBLKS_VERSION_END) &&
-             (nAskedForBlocks < 1 || vNodes.size() <= 1))
+             (nAskedForBlocks < 1 || vNodes.size() <= 1 ||
+             ((GetTime() - nTimeBestReceived) > (60 * 60))))
         {
             nAskedForBlocks++;
             pfrom->fAskedForBlocks = true;
