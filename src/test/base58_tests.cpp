@@ -81,7 +81,12 @@ BOOST_AUTO_TEST_CASE(base58_DecodeBase58)
         BOOST_CHECK_EQUAL_COLLECTIONS(result.begin(), result.end(), expected.begin(), expected.end());
     }
     BOOST_CHECK(!DecodeBase58("invalid", result));
+
+    BOOST_CHECK(!DecodeBase58(" \t\n\v\f\r skip \r\f\v\n\t a", result));
+    BOOST_CHECK( DecodeBase58(" \t\n\v\f\r skip \r\f\v\n\t ", result));
+    const unsigned char *puc = U("\x97\x1a\x55");
+    std::vector<unsigned char> expected(puc, puc+3);
+    BOOST_CHECK_EQUAL_COLLECTIONS(result.begin(), result.end(), expected.begin(), expected.end());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-
