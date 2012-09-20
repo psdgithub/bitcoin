@@ -1015,7 +1015,7 @@ public:
     bool AcceptBlock(bool fWriteToDisk = true);
 
 private:
-    bool SetBestChainInner(CTxDB& txdb, CBlockIndex *pindexNew);
+    bool SetBestChainInner(CTxDB& txdb, CBlockIndex *pindexNew, unsigned int& neverseen);
 };
 
 
