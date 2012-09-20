@@ -121,6 +121,11 @@ bool GetTransaction(const uint256 &hash, CTransaction &tx, uint256 &hashBlock);
 
 
 
+static inline std::string BlockHashStr(const uint256& hash)
+{
+    return hash.ToString();
+}
+
 bool GetWalletFile(CWallet* pwallet, std::string &strWalletFileOut);
 
 /** Position on disk for a particular transaction. */
@@ -965,9 +970,9 @@ public:
     void print() const
     {
         printf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%d)\n",
-            GetHash().ToString().substr(0,20).c_str(),
+            BlockHashStr(GetHash()).c_str(),
             nVersion,
-            hashPrevBlock.ToString().substr(0,20).c_str(),
+            BlockHashStr(hashPrevBlock).c_str(),
             hashMerkleRoot.ToString().substr(0,10).c_str(),
             nTime, nBits, nNonce,
             vtx.size());
@@ -1143,7 +1148,7 @@ public:
         return strprintf("CBlockIndex(pprev=%08x, pnext=%08x, nFile=%d, nBlockPos=%-6d nHeight=%d, merkle=%s, hashBlock=%s)",
             pprev, pnext, nFile, nBlockPos, nHeight,
             hashMerkleRoot.ToString().substr(0,10).c_str(),
-            GetBlockHash().ToString().substr(0,20).c_str());
+            BlockHashStr(GetBlockHash()).c_str());
     }
 
     void print() const
@@ -1211,8 +1216,8 @@ public:
         str += CBlockIndex::ToString();
         str += strprintf("\n                hashBlock=%s, hashPrev=%s, hashNext=%s)",
             GetBlockHash().ToString().c_str(),
-            hashPrev.ToString().substr(0,20).c_str(),
-            hashNext.ToString().substr(0,20).c_str());
+            BlockHashStr(hashPrev).c_str(),
+            BlockHashStr(hashNext).c_str());
         return str;
     }
 
