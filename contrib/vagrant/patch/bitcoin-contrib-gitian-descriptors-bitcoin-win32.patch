@@ -12,7 +12,7 @@ diff --git a/contrib/gitian-descriptors/gitian-win32.yml b/contrib/gitian-descri
  files:
  - "qt-win32-4.7.4-gitian.zip"
  - "boost-win32-1.49.0-gitian2.zip"
- - "bitcoin-deps-0.0.4.zip"
+ - "bitcoin-deps-0.0.5.zip"
 +- "src-local.tar.xz"
  script: |
    #
