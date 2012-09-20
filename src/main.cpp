@@ -1462,7 +1462,7 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex, bool fJustCheck)
             if (txdb.ReadTxIndex(hashTx, txindexOld)) {
                 BOOST_FOREACH(CDiskTxPos &pos, txindexOld.vSpent)
                     if (pos.IsNull())
-                        return false;
+                        return error("ConnectBlock() : contains overwriting transaction, forbidden by BIP 30");
             }
         }
 
@@ -1501,7 +1501,7 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex, bool fJustCheck)
     }
 
     if (vtx[0].GetValueOut() > GetBlockValue(pindex->nHeight, nFees))
-        return false;
+        return error("ConnectBlock() : coinbase pays too much (actual=%lld vs limit=%lld)", (long long)vtx[0].GetValueOut(), (long long)GetBlockValue(pindex->nHeight, nFees));
 
     if (fJustCheck)
         return true;
@@ -1633,11 +1633,17 @@ bool CBlock::SetBestChainInner(CTxDB& txdb, CBlockIndex *pindexNew)
     uint256 hash = GetHash();
 
     // Adding to current best branch
-    if (!ConnectBlock(txdb, pindexNew) || !txdb.WriteHashBestChain(hash))
+    if (!ConnectBlock(txdb, pindexNew))
     {
         txdb.TxnAbort();
         InvalidChainFound(pindexNew);
         return false;
+    }
+    if (!txdb.WriteHashBestChain(hash))
+    {
+        txdb.TxnAbort();
+        InvalidChainFound(pindexNew);
+        return error("SetBestChain() : WriteHashBestChain failed");
     }
     if (!txdb.TxnCommit())
         return error("SetBestChain() : TxnCommit failed");
