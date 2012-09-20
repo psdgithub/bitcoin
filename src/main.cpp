@@ -539,7 +539,7 @@ int64 CTransaction::GetMinFee(unsigned int nBlockSize, bool fAllowFree,
 
     // OP_DATA multisig transactions are never free
     if (IsDataCarrier())
-        nMinFee = nBaseFee;
+        nMinFee += nBaseFee;
 
     // To limit dust spam, add MIN_TX_FEE/MIN_RELAY_TX_FEE for any output that is less than 0.01
     BOOST_FOREACH(const CTxOut& txout, vout)
