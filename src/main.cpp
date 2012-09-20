@@ -1992,6 +1992,7 @@ bool CBlockIndex::IsSuperMajority(int minVersion, const CBlockIndex* pstart, uns
 
 bool ProcessBlock(CNode* pfrom, CBlock* pblock, bool fCheckPOW)
 {
+    int64 nStart = GetTimeMillis();
     // Check for duplicate
     uint256 hash = pblock->GetHash();
     if (mapBlockIndex.count(hash))
@@ -2064,6 +2065,8 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock, bool fCheckPOW)
         return pblock->ConnectBlock(txdb, &indexDummy, true);
     }
 
+    printf("Block ACCEPTED %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+
     // Recursively process any orphan blocks that depended on this one
     vector<uint256> vWorkQueue;
     vWorkQueue.push_back(hash);
@@ -2075,15 +2078,21 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock, bool fCheckPOW)
              ++mi)
         {
             CBlock* pblockOrphan = (*mi).second;
-            if (pblockOrphan->AcceptBlock())
-                vWorkQueue.push_back(pblockOrphan->GetHash());
-            mapOrphanBlocks.erase(pblockOrphan->GetHash());
+            uint256 orphanhash = pblockOrphan->GetHash();
+            nStart = GetTimeMillis();
+            if (pblockOrphan->AcceptBlock()) {
+                vWorkQueue.push_back(orphanhash);
+                printf("Orphan block %s ACCEPTED %15"PRI64d"ms\n", orphanhash.ToString().substr(0,20).c_str(),
+                  GetTimeMillis() - nStart);
+            } else
+                printf("Orphan block %s REJECTED %15"PRI64d"ms\n", orphanhash.ToString().substr(0,20).c_str(),
+                  GetTimeMillis() - nStart);
+            mapOrphanBlocks.erase(orphanhash);
             delete pblockOrphan;
         }
         mapOrphanBlocksByPrev.erase(hashPrev);
     }
 
-    printf("ProcessBlock: ACCEPTED\n");
     return true;
 }
 
