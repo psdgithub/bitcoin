@@ -76,7 +76,7 @@ extern CCriticalSection cs_setpwalletRegistered;
 extern std::set<CWallet*> setpwalletRegistered;
 extern unsigned char pchMessageStart[4];
 extern bool fImporting;
-extern const char *pszWalletFile;
+extern std::string strWalletFile;
 
 // Settings
 extern int64 nTransactionFee;
