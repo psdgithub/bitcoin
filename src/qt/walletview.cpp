@@ -58,6 +58,10 @@ WalletView::WalletView(QWidget *parent):
     addWidget(transactionsPage);
     addWidget(receiveCoinsPage);
     addWidget(sendCoinsPage);
+#ifdef FIRST_CLASS_MESSAGING
+    signVerifyMessageDialog = new SignVerifyMessageDialog(NULL);
+    addWidget(signVerifyMessageDialog);
+#endif
 
     // Clicking on a transaction on the overview pre-selects the transaction on the transaction history page
     connect(overviewPage, SIGNAL(transactionClicked(QModelIndex)), transactionView, SLOT(focusTransaction(QModelIndex)));
@@ -112,6 +116,9 @@ void WalletView::setWalletModel(WalletModel *walletModel)
     overviewPage->setWalletModel(walletModel);
     receiveCoinsPage->setModel(walletModel);
     sendCoinsPage->setModel(walletModel);
+#ifdef FIRST_CLASS_MESSAGING
+    signVerifyMessageDialog->setModel(walletModel);
+#endif
 
     if (walletModel)
     {
@@ -175,11 +182,17 @@ void WalletView::gotoSendCoinsPage(QString addr)
 
 void WalletView::gotoSignMessageTab(QString addr)
 {
+#ifdef FIRST_CLASS_MESSAGING
+    setCurrentWidget(signVerifyMessageDialog);
+
+    signVerifyMessageDialog->showTab_SM(false);
+#else
     // calls show() in showTab_SM()
     SignVerifyMessageDialog *signVerifyMessageDialog = new SignVerifyMessageDialog(this);
     signVerifyMessageDialog->setAttribute(Qt::WA_DeleteOnClose);
     signVerifyMessageDialog->setModel(walletModel);
     signVerifyMessageDialog->showTab_SM(true);
+#endif
 
     if (!addr.isEmpty())
         signVerifyMessageDialog->setAddress_SM(addr);
@@ -187,11 +200,17 @@ void WalletView::gotoSignMessageTab(QString addr)
 
 void WalletView::gotoVerifyMessageTab(QString addr)
 {
+#ifdef FIRST_CLASS_MESSAGING
+    setCurrentWidget(signVerifyMessageDialog);
+
+    signVerifyMessageDialog->showTab_VM(false);
+#else
     // calls show() in showTab_VM()
     SignVerifyMessageDialog *signVerifyMessageDialog = new SignVerifyMessageDialog(this);
     signVerifyMessageDialog->setAttribute(Qt::WA_DeleteOnClose);
     signVerifyMessageDialog->setModel(walletModel);
     signVerifyMessageDialog->showTab_VM(true);
+#endif
 
     if (!addr.isEmpty())
         signVerifyMessageDialog->setAddress_VM(addr);
