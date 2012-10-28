@@ -67,6 +67,7 @@ public:
     QAction * getAddressBookAction() { return addressBookAction; }
     QAction * getReceiveCoinsAction() { return receiveCoinsAction; }
     QAction * getSendCoinsAction() { return sendCoinsAction; }
+    QAction * getFirstClassMessagingAction() { return firstClassMessagingAction; }
 
 protected:
     void changeEvent(QEvent *e);
@@ -93,6 +94,7 @@ private:
     QAction *addressBookAction;
     QAction *signMessageAction;
     QAction *verifyMessageAction;
+    QAction *firstClassMessagingAction;
     QAction *aboutAction;
     QAction *receiveCoinsAction;
     QAction *optionsAction;

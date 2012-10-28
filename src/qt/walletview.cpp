@@ -66,6 +66,9 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
     addWidget(addressBookPage);
     addWidget(receiveCoinsPage);
     addWidget(sendCoinsPage);
+#ifdef FIRST_CLASS_MESSAGING
+    addWidget(signVerifyMessageDialog);
+#endif
 
     // Clicking on a transaction on the overview page simply sends you to transaction history page
     connect(overviewPage, SIGNAL(transactionClicked(QModelIndex)), this, SLOT(gotoHistoryPage()));
@@ -185,8 +188,15 @@ void WalletView::gotoSendCoinsPage(QString addr)
 
 void WalletView::gotoSignMessageTab(QString addr)
 {
+#ifdef FIRST_CLASS_MESSAGING
+    gui->getFirstClassMessagingAction()->setChecked(true);
+    setCurrentWidget(signVerifyMessageDialog);
+
+    signVerifyMessageDialog->showTab_SM(false);
+#else
     // call show() in showTab_SM()
     signVerifyMessageDialog->showTab_SM(true);
+#endif
 
     if (!addr.isEmpty())
         signVerifyMessageDialog->setAddress_SM(addr);
@@ -194,8 +204,15 @@ void WalletView::gotoSignMessageTab(QString addr)
 
 void WalletView::gotoVerifyMessageTab(QString addr)
 {
+#ifdef FIRST_CLASS_MESSAGING
+    gui->getFirstClassMessagingAction()->setChecked(true);
+    setCurrentWidget(signVerifyMessageDialog);
+
+    signVerifyMessageDialog->showTab_VM(false);
+#else
     // call show() in showTab_VM()
     signVerifyMessageDialog->showTab_VM(true);
+#endif
 
     if (!addr.isEmpty())
         signVerifyMessageDialog->setAddress_VM(addr);

@@ -272,6 +272,19 @@ void BitcoinGUI::createActions(bool fIsTestnet)
     connect(changePassphraseAction, SIGNAL(triggered()), walletFrame, SLOT(changePassphrase()));
     connect(signMessageAction, SIGNAL(triggered()), this, SLOT(gotoSignMessageTab()));
     connect(verifyMessageAction, SIGNAL(triggered()), this, SLOT(gotoVerifyMessageTab()));
+
+#ifdef FIRST_CLASS_MESSAGING
+    firstClassMessagingAction = new QAction(QIcon(":/icons/edit"), tr("S&ignatures"), this);
+    firstClassMessagingAction->setToolTip(signMessageAction->toolTip() + QString(". / ") + verifyMessageAction->toolTip() + QString("."));
+    firstClassMessagingAction->setCheckable(true);
+    tabGroup->addAction(firstClassMessagingAction);
+
+    connect(signMessageAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
+    connect(verifyMessageAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
+    connect(firstClassMessagingAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
+    // Always start with the sign message tab for FIRST_CLASS_MESSAGING
+    connect(firstClassMessagingAction, SIGNAL(triggered()), this, SLOT(gotoSignMessageTab()));
+#endif
 }
 
 void BitcoinGUI::createMenuBar()
@@ -287,8 +300,10 @@ void BitcoinGUI::createMenuBar()
     // Configure the menus
     QMenu *file = appMenuBar->addMenu(tr("&File"));
     file->addAction(backupWalletAction);
+#ifndef FIRST_CLASS_MESSAGING
     file->addAction(signMessageAction);
     file->addAction(verifyMessageAction);
+#endif
     file->addSeparator();
     file->addAction(quitAction);
 
@@ -314,6 +329,9 @@ void BitcoinGUI::createToolBars()
     toolbar->addAction(receiveCoinsAction);
     toolbar->addAction(historyAction);
     toolbar->addAction(addressBookAction);
+#ifdef FIRST_CLASS_MESSAGING
+    toolbar->addAction(firstClassMessagingAction);
+#endif
 }
 
 void BitcoinGUI::setClientModel(ClientModel *clientModel)
@@ -402,7 +420,9 @@ void BitcoinGUI::createTrayIconMenu()
     trayIconMenu->addSeparator();
     trayIconMenu->addAction(sendCoinsAction);
     trayIconMenu->addAction(receiveCoinsAction);
+#ifndef FIRST_CLASS_MESSAGING
     trayIconMenu->addSeparator();
+#endif
     trayIconMenu->addAction(signMessageAction);
     trayIconMenu->addAction(verifyMessageAction);
     trayIconMenu->addSeparator();

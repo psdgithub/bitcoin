@@ -107,8 +107,14 @@ void WalletStack::gotoSendCoinsPage(QString addr)
 
 void WalletStack::gotoSignMessageTab(QString addr)
 {
+#ifdef FIRST_CLASS_MESSAGING
+    QMap<QString, WalletView*>::const_iterator i;
+    for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
+        i.value()->gotoSignMessageTab(addr);
+#else
     WalletView *walletView = (WalletView*)currentWidget();
     if (walletView) walletView->gotoSignMessageTab(addr);
+#endif
 }
 
 void WalletStack::gotoVerifyMessageTab(QString addr)
