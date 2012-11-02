@@ -15,7 +15,7 @@ using namespace std;
 
 static const unsigned char bit_mask[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
 
-CBloomFilter::CBloomFilter(unsigned int nElements, double nFPRate) :
+CBloomFilter::CBloomFilter(unsigned int nElements, double nFPRate, unsigned int nTweakIn) :
 // The ideal size for a bloom filter with a given number of elements and false positive rate is:
 // - nElements * log(fp rate) / ln(2)^2
 // We ignore filter parameters which will create a bloom filter larger than the protocol limits
@@ -23,7 +23,8 @@ vData(min((unsigned int)(-1  / LN2SQUARED * nElements * log(nFPRate)), MAX_BLOOM
 // The ideal number of hash functions is filter size * ln(2) / number of elements
 // Again, we ignore filter parameters which will create a bloom filter with more hash functions than the protocol limits
 // See http://en.wikipedia.org/wiki/Bloom_filter for an explination of these formulas
-nHashFuncs(min((unsigned int)(vData.size() * 8 / nElements * LN2), MAX_HASH_FUNCS))
+nHashFuncs(min((unsigned int)(vData.size() * 8 / nElements * LN2), MAX_HASH_FUNCS)),
+nTweak(nTweakIn)
 {
 }
 
@@ -35,7 +36,7 @@ inline uint32_t ROTL32 ( uint32_t x, int8_t r )
 unsigned int CBloomFilter::Hash(unsigned int nHashNum, const vector<unsigned char>& vDataToHash) const
 {
     // The following is MurmurHash3 (x86_32), see http://code.google.com/p/smhasher/source/browse/trunk/MurmurHash3.cpp
-    uint32_t h1 = nHashNum * (numeric_limits<uint32_t>::max() / (nHashFuncs-1));
+    uint32_t h1 = nHashNum * (numeric_limits<uint32_t>::max() / (nHashFuncs-1)) + nTweak;
     const uint32_t c1 = 0xcc9e2d51;
     const uint32_t c2 = 0x1b873593;
 

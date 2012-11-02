@@ -3329,11 +3329,12 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         if (pfrom->pfilter)
             pfrom->pfilter->insert(vData);
         else {
+            uint64 nTweak = GetRand(std::numeric_limits<unsigned int>::max());
             // 1000 and 0.001 are fairly arbitrary (and do NOT constitute protocol spec) -
             // .1% provides fairly good privacy, even if you have significantly less items in the filter,
             // while still cutting bandwidth usage down significantly
             // and 1000 is a reasonable maximum for the number of items in a wallet's filter.
-            CBloomFilter* pfilter = new CBloomFilter(1000, 0.001);
+            CBloomFilter* pfilter = new CBloomFilter(1000, 0.001, (unsigned int)nTweak);
             pfilter->insert(vData);
             pfrom->pfilter = pfilter;
         }
