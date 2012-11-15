@@ -203,7 +203,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             ssKey >> hash;
             CWalletTx& wtx = pwallet->mapWallet[hash];
             ssValue >> wtx;
-            if (wtx.CheckTransaction() && (wtx.GetHash() == hash))
+            if (wtx.CheckTransaction().fSuccess && (wtx.GetHash() == hash))
                 wtx.BindWallet(pwallet);
             else
             {

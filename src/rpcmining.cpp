@@ -377,19 +377,19 @@ static Value TestBlock(const Value& valData, bool fCheckPOW)
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block decode failed");
     }
 
-    bool fAccepted = ProcessBlock(NULL, &pblock, NULL, fCheckPOW);
+    CValidationResult vres = ProcessBlock(NULL, &pblock, NULL, fCheckPOW);
 
     // NOTE: If we process an orphan, it is accepted yet not immediately processed (so strRejectReason is "orphan")
-    if (pblock.strRejectReason.empty())
+    if (vres.strRejectReason.empty())
     {
-        if (fAccepted)
+        if (vres.fSuccess)
             return Value::null;
         else
             return "rejected";
     }
-    if (pblock.strRejectReason[0] == '!')
-        throw JSONRPCError(-1, &pblock.strRejectReason.c_str()[1]);
-    return pblock.strRejectReason;
+    if (vres.strRejectReason[0] == '!')
+        throw JSONRPCError(-1, &vres.strRejectReason.c_str()[1]);
+    return vres.strRejectReason;
 }
 
 Value submitblock(const Array& params, bool fHelp)
