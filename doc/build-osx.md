@@ -157,13 +157,8 @@ It's now available at `./bitcoind`. We have to first create the RPC
 configuration file, though. Run `./bitcoind` to get the filename where it
 should be put, or just try the below command.
 
-    echo "rpcuser=bitcoinrpc
-    rpcpassword=HdAseQSRkirfoNuUSzqzixyL9sM1T6ABfzV1nyNmbuwg" > "/Users/${USER}/Library/Application Support/Bitcoin/bitcoin.conf"
+    echo -e "rpcuser=bitcoinrpc\nrpcpassword=$(xxd -l 16 -p /dev/urandom)" > "/Users/${USER}/Library/Application Support/Bitcoin/bitcoin.conf"
     chmod 600 "/Users/${USER}/Library/Application Support/Bitcoin/bitcoin.conf"
-
-You should change that password to something else, though. When you run
-`./bitcoind` initially before doing this step, it will generate for you an
-`rpcuser` and `rpcpassword` to use.
 
 When next you run it, it will start downloading the blockchain, but it won't
 output anything while it's doing this. This process may take several hours.
