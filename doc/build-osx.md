@@ -104,51 +104,27 @@ step may become unnecessary in future versions of `bitcoind`.
 
 ### Building `bitcoind`
 
-1. Clone the github tree to get the source code:
+1. Clone the github tree to get the source code and go into the directory.
 
         git clone git@github.com:bitcoin/bitcoin.git bitcoin
+        cd bitcoin
 
 2.  If you used Homebrew, you must modify source in order to pick up the
     `openssl` library.
 
-    Edit the makefile.osx to change it a bit. Here's a diff that shows what
-    you need to change, or you can just use this as a patch by doing
-    `echo '$patch-text' | patch`, where $patch-text is the patch text below.
+    Edit the makefile.osx to change it a bit. There's a diff in
+    `contrib/homebrew/makefile.osx.patch` that shows what you need to
+    change, or you can just patch by doing
 
-        diff --git a/src/makefile.osx b/src/makefile.osx
-        index 9629545..ffac9a3 100644
-        --- a/src/makefile.osx
-        +++ b/src/makefile.osx
-        @@ -7,17 +7,19 @@
-         # Originally by Laszlo Hanyecz (solar@heliacal.net)
-
-         CXX=llvm-g++
-        -DEPSDIR=/opt/local
-        +DEPSDIR?=/opt/local
-
-         INCLUDEPATHS= \
-          -I"$(CURDIR)" \
-          -I"$(CURDIR)"/obj \
-          -I"$(DEPSDIR)/include" \
-        - -I"$(DEPSDIR)/include/db48"
-        + -I"$(DEPSDIR)/include/db48" \
-        + -I"/usr/local/Cellar/openssl/1.0.1c/include"
-
-         LIBPATHS= \
-          -L"$(DEPSDIR)/lib" \
-        - -L"$(DEPSDIR)/lib/db48"
-        + -L"$(DEPSDIR)/lib/db48" \
-        + -L"/usr/local/Cellar/openssl/1.0.1c/lib"
-
-         USE_UPNP:=1
-         USE_IPV6:=1
+        patch -p1 < contrib/homebrew/makefile.osx.patch.
 
 3.  Build bitcoind:
 
-        cd bitcoin/src
-        make -f makefile.osx USE_IPV6=1 DEPSDIR=/usr/local
+        cd src
+        make -f makefile.osx USE_IPV6=1
 
-    Don't forget to add USE_QRCODE=1 if you installed `qrencode`.
+    Don't forget to add `USE_QRCODE=1` if you installed `qrencode`. Also,
+    add `DEPSDIR=/usr/local` if you're using Homebrew instead of MacPorts.
 
 Running
 -------

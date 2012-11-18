@@ -1,0 +1,27 @@
+diff --git a/src/makefile.osx b/src/makefile.osx
+index 9629545..ffac9a3 100644
+--- a/src/makefile.osx
++++ b/src/makefile.osx
+@@ -7,17 +7,19 @@
+ # Originally by Laszlo Hanyecz (solar@heliacal.net)
+
+ CXX=llvm-g++
+-DEPSDIR=/opt/local
++DEPSDIR?=/opt/local
+
+ INCLUDEPATHS= \
+  -I"$(CURDIR)" \
+  -I"$(CURDIR)"/obj \
+  -I"$(DEPSDIR)/include" \
+- -I"$(DEPSDIR)/include/db48"
++ -I"$(DEPSDIR)/include/db48" \
++ -I"/usr/local/Cellar/openssl/1.0.1c/include"
+
+ LIBPATHS= \
+  -L"$(DEPSDIR)/lib" \
+- -L"$(DEPSDIR)/lib/db48"
++ -L"$(DEPSDIR)/lib/db48" \
++ -L"/usr/local/Cellar/openssl/1.0.1c/lib"
+
+ USE_UPNP:=1
+ USE_IPV6:=1
