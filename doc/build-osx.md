@@ -87,26 +87,26 @@ step may become unnecessary in future versions of `bitcoind`.
 
 1. Install the easy ones.
 
-       brew install boost miniupnpc openssl
+        brew install boost miniupnpc openssl
 
 2. Revert berkeley-db formula to an older version.
 
-       cd /usr/local
-       git checkout e6a374d Library/Formula/berkeley-db.rb
+        cd /usr/local
+        git checkout e6a374d Library/Formula/berkeley-db.rb
 
 3. You may have to unlink it if you've already installed the latest version.
 
-       brew unlink berkeley-db
+        brew unlink berkeley-db
 
 4. Install berkeley-db 4.8 now that you've got the right formula in place.
 
-       brew install berkeley-db
+        brew install berkeley-db
 
 ### Building `bitcoind`
 
 1. Clone the github tree to get the source code:
 
-       git clone git@github.com:bitcoin/bitcoin.git bitcoin
+        git clone git@github.com:bitcoin/bitcoin.git bitcoin
 
 2.  If you used Homebrew, you must modify source in order to pick up the
     `openssl` library.
