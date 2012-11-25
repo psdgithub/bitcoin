@@ -792,7 +792,7 @@ CValidationResult CTxMemPool::accept(CTransaction &tx, bool fCheckInputs,
         int64 nFees = tx.GetValueIn(view)-tx.GetValueOut();
         unsigned int nSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
 
-        if (!fFromMe)
+        if (!fFromMe || pwalletMain->IsMine(tx))
         {
 
         // Don't accept it if it can't get into a block
@@ -3892,6 +3892,7 @@ public:
     bool fInvalid;
     unsigned int nSize;
     unsigned int nEffectiveSizeCached;
+    bool fBias;
 
     CTxInfo()
     {
@@ -3903,6 +3904,7 @@ public:
         fInvalid = false;
         nSize = 0;
         nEffectiveSizeCached = 0;
+        fBias = false;
     }
 
     void print() const
@@ -3951,18 +3953,21 @@ public:
             }
         }
         nEffectiveSizeCached = nEffectiveSize;
+
         return nEffectiveSize;
     }
 
     double getPriority()
     {
         // Priority is sum(valuein * age) / txsize
-        return dPriority / effectiveSize() + ptx->dPriorityDelta;
+        unsigned int nSize = effectiveSize();
+        return dPriority / nSize + ptx->dPriorityDelta + (fBias ? 100000000. : 0.);
     }
 
     double getFeePerKB()
     {
-        return double(nTxFee) / (double(effectiveSize()) / 1000);
+        unsigned int nSize = effectiveSize();
+        return double(nTxFee) / (double(nSize) / 1000) + (fBias ? 100000000. : 0.);
     }
 
     unsigned int GetLegacySigOpCount()
@@ -4127,6 +4132,7 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
             txinfo.hash = hash;
             txinfo.pmapInfoById = &mapInfoById;
             txinfo.ptx = &tx;
+            txinfo.fBias = pwalletMain->IsFromMe(tx) || pwalletMain->IsMine(tx);
 
             double& dPriority = txinfo.dPriority;
             uint64& nTxFee = txinfo.nTxFee;
