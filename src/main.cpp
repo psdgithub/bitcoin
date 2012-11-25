@@ -2852,6 +2852,29 @@ bool static AlreadyHave(const CInv& inv)
 // a large 4-byte int at any alignment.
 unsigned char pchMessageStart[4] = { 0xf9, 0xbe, 0xb4, 0xd9 };
 
+// List of commands we openly advertise to remote nodes
+static const char *commandList[] = {
+    "addr",
+    "alert",
+    "block",
+    "cmdlist",
+    "headers",
+    "inv",
+    "filteradd",
+    "filterclear",
+    "filterload",
+    "getaddr",
+    "getblocks",
+    "getcmds",
+    "getdata",
+    "getheaders",
+    "mempool",
+    "ping",
+    "pong",
+    "tx",
+    "version",
+    "verack",
+};
 
 bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 {
@@ -3483,6 +3506,15 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         delete pfrom->pfilter;
         pfrom->pfilter = NULL;
         pfrom->fRelayTxes = true;
+    }
+
+
+    else if (strCommand == "getcmds")
+    {
+        vector<string> vCmds;
+        for (unsigned int i = 0; i < ARRAYLEN(commandList); i++)
+            vCmds.push_back(commandList[i]);
+        pfrom->PushMessage("cmdlist", vCmds);
     }
 
 
