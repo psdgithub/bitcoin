@@ -725,6 +725,35 @@ bool AppInit2()
     BOOST_FOREACH(string strDest, mapMultiArgs["-seednode"])
         AddOneShot(strDest);
 
+    // ********************************************************* HACK
+    {
+        filesystem::path datadir = GetDataDir();
+        filesystem::path blocksdir = datadir / "blocks";
+        if (GetBoolArg("-upgradehack", true) &&
+            !filesystem::exists(blocksdir / "blk00000.dat") &&
+            filesystem::exists(datadir / "blk0001.dat"))
+        {
+            printf("Executing upgrade hack...\n");
+            try
+            {
+                filesystem::create_directories(blocksdir);
+#define COPY_OR_LINK(a, b)  \
+                try {  \
+                    filesystem::create_hard_link(datadir / a, blocksdir / b);  \
+                    printf("Done linking " #b "\n");  \
+                } catch (...) {  \
+                    filesystem::copy_file(datadir / a, blocksdir / b);  \
+                    printf("Done copying " #b "\n");  \
+                }
+                COPY_OR_LINK("blk0001.dat", "blk00000.dat")
+                mapArgs["-reindex"] = "1";
+                COPY_OR_LINK("blk0002.dat", "blk00001.dat")
+                COPY_OR_LINK("blk0003.dat", "blk00002.dat")
+            } catch (...) {
+            }
+        }
+    }
+
     // ********************************************************* Step 7: load block chain
 
     fReindex = GetBoolArg("-reindex");
