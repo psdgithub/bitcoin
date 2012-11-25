@@ -3588,6 +3588,8 @@ bool ProcessMessages(CNode* pfrom)
 
         // Checksum
         CDataStream& vRecv = msg.vRecv;
+        int nHeaderSize = vRecv.GetSerializeSize(CMessageHeader());
+        pfrom->nRecvBytes += nHeaderSize + nMessageSize;
         uint256 hash = Hash(vRecv.begin(), vRecv.begin() + nMessageSize);
         unsigned int nChecksum = 0;
         memcpy(&nChecksum, &hash, sizeof(nChecksum));
@@ -3604,6 +3606,8 @@ bool ProcessMessages(CNode* pfrom)
         {
             {
                 LOCK(cs_main);
+                pfrom->mapRecvMsgs[strCommand]++;
+                pfrom->mapRecvMsgBytes[strCommand] += nHeaderSize+nMessageSize;
                 fRet = ProcessMessage(pfrom, strCommand, vRecv);
             }
             if (fShutdown)
