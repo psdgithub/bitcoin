@@ -3,6 +3,10 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/trim.hpp>
+
 #include "wallet.h"
 #include "walletdb.h"
 #include "crypter.h"
@@ -26,6 +30,25 @@ struct CompareValueOnly
         return t1.first < t2.first;
     }
 };
+
+void CWallet::setSendFromAddressRestriction(string addresses)
+{
+    boost::trim(addresses);
+    if (addresses.empty())
+        this->sendFromAddressRestriction.clear();
+    else
+        boost::split(sendFromAddressRestriction, addresses, boost::is_any_of(";,"));
+}
+
+void CWallet::setSendFromAddressRestriction(set<string> addresses)
+{
+    sendFromAddressRestriction = addresses;
+}
+
+void CWallet::clearSendFromAddressRestriction()
+{
+    sendFromAddressRestriction.clear();
+}
 
 CPubKey CWallet::GenerateNewKey()
 {
@@ -966,7 +989,6 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed) const
     vCoins.clear();
 
     {
-        LOCK(cs_wallet);
         for (map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
         {
             const CWalletTx* pcoin = &(*it).second;
@@ -980,7 +1002,18 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed) const
             if (pcoin->IsCoinBase() && pcoin->GetBlocksToMaturity() > 0)
                 continue;
 
-            for (unsigned int i = 0; i < pcoin->vout.size(); i++) {
+            for (unsigned int i = 0; i < pcoin->vout.size(); i++)
+            {
+                if (!this->sendFromAddressRestriction.empty())
+                {
+                    CTxDestination dest;
+                    if(!ExtractDestination(pcoin->vout[i].scriptPubKey, dest))
+                        continue;
+                    std::string addr = CBitcoinAddress(dest).ToString();
+                    if (!this->sendFromAddressRestriction.count(addr))
+                        continue;
+                }
+
                 if (!(pcoin->IsSpent(i)) && IsMine(pcoin->vout[i]) &&
                     !IsLockedCoin((*it).first, i) && pcoin->vout[i].nValue > 0)
                     vCoins.push_back(COutput(pcoin, i, pcoin->GetDepthInMainChain()));
