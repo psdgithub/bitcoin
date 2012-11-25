@@ -92,6 +92,7 @@ extern boost::condition_variable cvBlockChange;
 extern CCriticalSection cs_setpwalletRegistered;
 extern std::set<CWallet*> setpwalletRegistered;
 extern unsigned char pchMessageStart[4];
+extern int nAskedForBlocks;
 extern bool fImporting;
 extern bool fReindex;
 extern unsigned int nCoinCacheSize;
