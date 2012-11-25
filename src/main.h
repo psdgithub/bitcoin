@@ -142,6 +142,8 @@ bool SendMessages(CNode* pto, bool fSendTrickle);
 void ThreadImport(void *parg);
 /** Run the miner threads */
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet);
+/** Affect CreateNewBlock prioritisation of transactions */
+bool PrioritiseTransaction(const uint256 hash, const std::string strHash, double dPriorityDelta, int64 nFeeDelta);
 /** Generate a new block, without valid proof-of-work */
 CBlock* CreateNewBlock(CReserveKey& reservekey);
 /** Modify the extranonce in a block */
@@ -447,6 +449,10 @@ public:
     mutable int nDoS;
     bool DoS(int nDoSIn, bool fIn) const { nDoS += nDoSIn; return fIn; }
 
+    double dPriorityDelta;
+    int64 nFeeDelta;
+
+
     CTransaction()
     {
         SetNull();
@@ -468,6 +474,8 @@ public:
         vout.clear();
         nLockTime = 0;
         nDoS = 0;  // Denial-of-service prevention
+        dPriorityDelta = 0;
+        nFeeDelta = 0;
     }
 
     bool IsNull() const
