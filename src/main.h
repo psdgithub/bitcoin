@@ -107,6 +107,7 @@ extern bool fForceFee;
 static const uint64 nMinDiskSpace = 52428800;
 
 
+class CValidationResult;
 class CReserveKey;
 class CCoinsDB;
 class CBlockTreeDB;
@@ -123,7 +124,7 @@ void UnregisterWallet(CWallet* pwalletIn);
 /** Push an updated transaction to all registered wallets */
 void SyncWithWallets(const uint256 &hash, const CTransaction& tx, const CBlock* pblock = NULL, bool fUpdate = false);
 /** Process an incoming block */
-bool ProcessBlock(CNode* pfrom, CBlock* pblock, CDiskBlockPos *dbp = NULL);
+CValidationResult ProcessBlock(CNode* pfrom, CBlock* pblock, CDiskBlockPos *dbp = NULL, bool fCheckPOW = true);
 /** Check whether enough disk space is available for an incoming block */
 bool CheckDiskSpace(uint64 nAdditionalBytes=0);
 /** Open a block file (blk?????.dat) */
@@ -157,7 +158,7 @@ void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash
 /** Check mined block */
 bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey);
 /** Check whether a block hash satisfies the proof-of-work requirement specified by nBits */
-bool CheckProofOfWork(uint256 hash, unsigned int nBits);
+bool CheckProofOfWork(uint256 hash, unsigned int nBits, bool fSilent = false);
 /** Calculate the minimum amount of work a received block needs, without knowing its direct parent */
 unsigned int ComputeMinWork(unsigned int nBase, int64 nTime);
 /** Get the number of active peers */
@@ -191,6 +192,21 @@ static inline std::string BlockHashStr(const uint256& hash)
 }
 
 bool GetWalletFile(CWallet* pwallet, std::string &strWalletFileOut);
+
+/** Holds the results of transaction and block validation
+ */
+class CValidationResult
+{
+public:
+    mutable bool fSuccess;
+    // Denial-of-service detection:
+    mutable int nDoS;
+    mutable std::string strRejectReason;
+
+    CValidationResult(bool fSuccessIn, int nDoSIn = 0, const std::string& strRejectReasonIn = "")
+    : fSuccess(fSuccessIn), nDoS(nDoSIn), strRejectReason(strRejectReasonIn)
+    {}
+};
 
 class CDiskBlockPos
 {
@@ -449,10 +465,6 @@ public:
     std::vector<CTxOut> vout;
     unsigned int nLockTime;
 
-    // Denial-of-service detection:
-    mutable int nDoS;
-    bool DoS(int nDoSIn, bool fIn) const { nDoS += nDoSIn; return fIn; }
-
     double dPriorityDelta;
     int64 nFeeDelta;
 
@@ -477,7 +489,6 @@ public:
         vin.clear();
         vout.clear();
         nLockTime = 0;
-        nDoS = 0;  // Denial-of-service prevention
         dPriorityDelta = 0;
         nFeeDelta = 0;
     }
@@ -647,16 +658,16 @@ public:
 
     // Check whether all inputs of this transaction are valid (no double spends, scripts & sigs, amounts)
     // This does not modify the UTXO set
-    bool CheckInputs(CCoinsViewCache &view, enum CheckSig_mode csmode, unsigned int flags = SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_STRICTENC) const;
+    CValidationResult CheckInputs(CCoinsViewCache &view, enum CheckSig_mode csmode, unsigned int flags = SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_STRICTENC) const;
 
     // Apply the effects of this transaction on the UTXO set represented by view
     bool UpdateCoins(CCoinsViewCache &view, CTxUndo &txundo, int nHeight, const uint256 &txhash) const;
 
     // Context-independent validity checks
-    bool CheckTransaction() const;
+    CValidationResult CheckTransaction() const;
 
     // Try to accept this transaction into the memory pool
-    bool AcceptToMemoryPool(bool fCheckInputs=true, bool* pfMissingInputs=NULL);
+    CValidationResult AcceptToMemoryPool(bool fCheckInputs=true, bool* pfMissingInputs=NULL);
 
 protected:
     static const CTxOut &GetOutputFor(const CTxIn& input, CCoinsViewCache& mapInputs);
@@ -1067,7 +1078,7 @@ public:
     int GetDepthInMainChain() const { CBlockIndex *pindexRet; return GetDepthInMainChain(pindexRet); }
     bool IsInMainChain() const { return GetDepthInMainChain() > 0; }
     int GetBlocksToMaturity() const;
-    bool AcceptToMemoryPool(bool fCheckInputs=true);
+    CValidationResult AcceptToMemoryPool(bool fCheckInputs=true);
 };
 
 
@@ -1153,10 +1164,6 @@ public:
     // memory only
     mutable std::vector<uint256> vMerkleTree;
 
-    // Denial-of-service detection:
-    mutable int nDoS;
-    bool DoS(int nDoSIn, bool fIn) const { nDoS += nDoSIn; return fIn; }
-
     CBlock()
     {
         SetNull();
@@ -1179,7 +1186,6 @@ public:
         CBlockHeader::SetNull();
         vtx.clear();
         vMerkleTree.clear();
-        nDoS = 0;
     }
 
     uint256 BuildMerkleTree() const
@@ -1316,7 +1322,7 @@ public:
     bool DisconnectBlock(CBlockIndex *pindex, CCoinsViewCache &coins);
 
     // Apply the effects of this block (with given index) on the UTXO set represented by coins
-    bool ConnectBlock(CBlockIndex *pindex, CCoinsViewCache &coins, bool fJustCheck=false);
+    CValidationResult ConnectBlock(CBlockIndex *pindex, CCoinsViewCache &coins, bool fJustCheck=false);
 
     // Read a block from disk
     bool ReadFromDisk(const CBlockIndex* pindex);
@@ -1325,11 +1331,11 @@ public:
     bool AddToBlockIndex(const CDiskBlockPos &pos);
 
     // Context-independent validity checks
-    bool CheckBlock(bool fCheckPOW=true, bool fCheckMerkleRoot=true) const;
+    CValidationResult CheckBlock(bool fCheckPOW=true, bool fCheckMerkleRoot=true) const;
 
     // Store block on disk
     // if dbp is provided, the file is known to already reside on disk
-    bool AcceptBlock(CDiskBlockPos *dbp = NULL);
+    CValidationResult AcceptBlock(CDiskBlockPos *dbp = NULL, bool fWriteToDisk = true);
 };
 
 
@@ -1837,8 +1843,6 @@ public:
 
 
 
-
-
 class CTxMemPool
 {
 public:
@@ -1846,7 +1850,7 @@ public:
     std::map<uint256, CTransaction> mapTx;
     std::map<COutPoint, CInPoint> mapNextTx;
 
-    bool accept(CTransaction &tx, bool fCheckInputs, bool* pfMissingInputs);
+    CValidationResult accept(CTransaction &tx, bool fCheckInputs, bool* pfMissingInputs);
     bool addUnchecked(const uint256& hash, CTransaction &tx);
     bool remove(CTransaction &tx);
     void clear();
