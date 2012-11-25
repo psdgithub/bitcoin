@@ -70,6 +70,7 @@ int64 nTransactionFee = 0;
 int64 nTransactionFeeMax = CENT;
 bool fForceFee = false;
 
+std::string strWalletFile;
 
 
 //////////////////////////////////////////////////////////////////////////////

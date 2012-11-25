@@ -95,6 +95,7 @@ extern unsigned char pchMessageStart[4];
 extern bool fImporting;
 extern bool fReindex;
 extern unsigned int nCoinCacheSize;
+extern std::string strWalletFile;
 
 // Settings
 extern int64 nTransactionFee;

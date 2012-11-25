@@ -70,7 +70,7 @@ bool OptionsModel::Upgrade()
     settings.setValue("bImportFinished", true);
 
     // Move settings from old wallet.dat (if any):
-    CWalletDB walletdb("wallet.dat");
+    CWalletDB walletdb(strWalletFile.c_str());
 
     QList<QString> intOptions;
     intOptions << "nDisplayUnit" << "nTransactionFee";
