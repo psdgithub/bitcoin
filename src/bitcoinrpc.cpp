@@ -23,6 +23,8 @@
 #include <boost/asio/ssl.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/shared_ptr.hpp>
+#include <fstream>
+#include <iostream>
 #include <list>
 #include <openssl/hmac.h>
 
@@ -241,6 +243,8 @@ static const CRPCCommand vRPCCommands[] =
     { "listaddressgroupings",   &listaddressgroupings,   false,  false },
     { "signmessage",            &signmessage,            false,  false },
     { "verifymessage",          &verifymessage,          false,  false },
+    { "signfile",               &signfile,               false,  false },
+    { "verifyfile",             &verifyfile,             false,  false },
     { "prioritisetransaction",  &prioritisetransaction,  true,   false },
     { "getwork",                &getwork,                true,   false },
     { "listaccounts",           &listaccounts,           false,  false },
@@ -1296,8 +1300,29 @@ Object CallRPC(const string& strMethod, const Array& params)
     return reply;
 }
 
+void HashFile(Value& value)
+{
+    // Read the file into RAM
+    ifstream file(value.get_str().c_str(), ios::in | ios::binary | ios::ate);
+    if (!file.is_open())
+        throw runtime_error(string("Can't read input file ") + value.get_str());
+    int size = file.tellg();
+    char *memblock = new char[size];
+    file.seekg(0, ios::beg);
+    file.read(memblock, size);
+    file.close();
+    string str(memblock, size);
+    delete[] memblock;
 
+    // Hash it
+    CHashWriter ss(SER_GETHASH, 0);
+    ss << strMessageMagic;
+    ss << str;
 
+    // Keep the hex string of the hash
+    Value value2(ss.GetHash().ToString());
+    value = value2;
+}
 
 template<typename T>
 void ConvertTo(Value& value, bool fAllowNull=false)
@@ -1378,6 +1403,8 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "gettxout"               && n > 2) ConvertTo<bool>(params[2]);
     if (strMethod == "lockunspent"            && n > 0) ConvertTo<bool>(params[0]);
     if (strMethod == "lockunspent"            && n > 1) ConvertTo<Array>(params[1]);
+    if (strMethod == "signfile"               && n > 1) HashFile(params[1]);
+    if (strMethod == "verifyfile"             && n > 2) HashFile(params[2]);
 
     return params;
 }
