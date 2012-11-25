@@ -177,6 +177,27 @@ void OptionsDialog::setSaveButtonState(bool fState)
     ui->okButton->setEnabled(fState);
 }
 
+void OptionsDialog::on_resetButton_clicked()
+{
+    if(model)
+    {
+        disableApplyButton();
+
+        /* disable restart warning messages display */
+        fRestartWarningDisplayed_Lang = fRestartWarningDisplayed_Proxy = true;
+
+        /* reset all options and save the default values (QSettings) */
+        model->Reset();
+        mapper->toFirst();
+        mapper->submit();
+
+        QMessageBox::warning(this, tr("Warning"), tr("Some settings may require a client restart to take effect."), QMessageBox::Ok);
+
+        /* re-enable restart warning messages display */
+        fRestartWarningDisplayed_Lang = fRestartWarningDisplayed_Proxy = false;
+    }
+}
+
 void OptionsDialog::on_okButton_clicked()
 {
     mapper->submit();
