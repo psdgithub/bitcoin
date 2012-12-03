@@ -41,6 +41,13 @@ static int64 nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
 
 
+// Bitcoin RPC error codes, introduced in v0.7.1 and used in some bugfixes
+enum _Future_RPCErrorCode
+{
+    RPC_WALLET_ERROR                = -4,  // Unspecified problem with wallet (key not found etc.)
+};
+
+
 Object JSONRPCError(int code, const string& message)
 {
     Object error;
