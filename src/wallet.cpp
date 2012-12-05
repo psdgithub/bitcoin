@@ -3,6 +3,7 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "main.h"
 #include "wallet.h"
 #include "walletdb.h"
 #include "crypter.h"
@@ -1962,6 +1963,34 @@ bool CWallet::SetAccount(const CBitcoinAddress address, const std::string strAcc
     }
 
     return SetAddressBookName(dest, strAccount);
+}
+
+bool CWallet::IsMyAddress(const CBitcoinAddress& address) const
+{
+    CScript scriptPubKey;
+    scriptPubKey.SetDestination(address.Get());
+    return ::IsMine(*this, scriptPubKey);
+}
+
+int64 CWallet::GetAddressTally(const CBitcoinAddress address, int nMinDepth)
+{
+    if (!IsMyAddress(address))
+        return 0;
+
+    int64 nAmount = 0;
+    CScript scriptPubKey;
+    scriptPubKey.SetDestination(address.Get());
+    for (map<uint256, CWalletTx>::iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
+    {
+        const CWalletTx& wtx = (*it).second;
+        if (wtx.IsCoinBase() || !IsFinalTx(wtx))
+            continue;
+
+        BOOST_FOREACH(const CTxOut& txout, wtx.vout)
+            if (txout.scriptPubKey == scriptPubKey && wtx.GetDepthInMainChain() >= nMinDepth)
+                nAmount += txout.nValue;
+    }
+    return nAmount;
 }
 
 void CWallet::GetKeyBirthTimes(std::map<CKeyID, int64> &mapKeyBirth) const {
