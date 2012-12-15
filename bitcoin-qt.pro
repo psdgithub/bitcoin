@@ -27,7 +27,7 @@ contains(RELEASE, 1) {
     macx:QMAKE_CFLAGS += -mmacosx-version-min=10.5 -arch i386 -isysroot /Developer/SDKs/MacOSX10.5.sdk
     macx:QMAKE_OBJECTIVE_CFLAGS += -mmacosx-version-min=10.5 -arch i386 -isysroot /Developer/SDKs/MacOSX10.5.sdk
 
-    !windows:!macx {
+    !win32:!macx {
         # Linux: static link
         LIBS += -Wl,-Bstatic
     }
@@ -68,7 +68,7 @@ contains(BITCOIN_NEED_QT_PLUGINS, 1) {
     QTPLUGIN += qcncodecs qjpcodecs qtwcodecs qkrcodecs qtaccessiblewidgets
 }
 
-!windows {
+!win32 {
     # for extra security against potential buffer overflows
     QMAKE_CXXFLAGS += -fstack-protector
     QMAKE_LFLAGS += -fstack-protector
@@ -224,7 +224,7 @@ OTHER_FILES += \
 # platform specific defaults, if not overridden on command line
 isEmpty(BOOST_LIB_SUFFIX) {
     macx:BOOST_LIB_SUFFIX = -mt
-    windows:BOOST_LIB_SUFFIX = -mgw44-mt-1_43
+    win32:BOOST_LIB_SUFFIX = -mgw44-mt-1_43
 }
 
 isEmpty(BOOST_THREAD_LIB_SUFFIX) {
@@ -251,11 +251,11 @@ isEmpty(BOOST_INCLUDE_PATH) {
     macx:BOOST_INCLUDE_PATH = /opt/local/include
 }
 
-windows:LIBS += -lws2_32
-windows:DEFINES += WIN32
-windows:RC_FILE = src/qt/res/bitcoin-qt.rc
+win32:LIBS += -lws2_32
+win32:DEFINES += WIN32
+win32:RC_FILE = src/qt/res/bitcoin-qt.rc
 
-windows:!contains(MINGW_THREAD_BUGFIX, 0) {
+win32:!contains(MINGW_THREAD_BUGFIX, 0) {
     # At least qmake's win32-g++-cross profile is missing the -lmingwthrd
     # thread-safety flag. GCC has -mthreads to enable this, but it doesn't
     # work with static linking. -lmingwthrd must come BEFORE -lmingw, so
@@ -281,11 +281,11 @@ INCLUDEPATH += $$BOOST_INCLUDE_PATH $$BDB_INCLUDE_PATH $$OPENSSL_INCLUDE_PATH
 LIBS += $$join(BOOST_LIB_PATH,,-L,) $$join(BDB_LIB_PATH,,-L,) $$join(OPENSSL_LIB_PATH,,-L,)
 LIBS += -lssl -lcrypto -ldb_cxx$$BDB_LIB_SUFFIX
 # -lgdi32 has to happen after -lcrypto (see  #681)
-windows:LIBS += -lgdi32
+win32:LIBS += -lgdi32
 LIBS += -lboost_system$$BOOST_LIB_SUFFIX -lboost_filesystem$$BOOST_LIB_SUFFIX -lboost_program_options$$BOOST_LIB_SUFFIX -lboost_thread$$BOOST_THREAD_LIB_SUFFIX
 
 contains(RELEASE, 1) {
-    !windows:!macx {
+    !win32:!macx {
         # Linux: turn dynamic linking back on for c/c++ runtime libraries
         LIBS += -Wl,-Bdynamic
     }
