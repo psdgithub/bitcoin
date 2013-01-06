@@ -1921,7 +1921,6 @@ CTxDestination CWallet::GetAccountAddress(const std::string strAccount, bool bFo
     {
         CScript scriptPubKey;
         scriptPubKey.SetDestination(account.vchPubKey.GetID());
-        // TODO: Is this IsValid() check really necessary here?
         for (map<uint256, CWalletTx>::iterator it = mapWallet.begin();
              it != mapWallet.end() && account.vchPubKey.IsValid() && !bKeyUsed;
              ++it)
@@ -1943,7 +1942,6 @@ CTxDestination CWallet::GetAccountAddress(const std::string strAccount, bool bFo
         if (!GetKeyFromPool(account.vchPubKey, false))
             return CTxDestination();
 
-        // TODO: Do something with the return code
         SetAddressBookName(account.vchPubKey.GetID(), strAccount);
         walletdb.WriteAccount(strAccount, account);
     }
