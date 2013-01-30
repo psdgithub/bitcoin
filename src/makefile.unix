@@ -34,6 +34,10 @@ LIBS+= \
    -l dl \
    -l pthread
 
+TESTLIBS += \
+ -Wl,-Bstatic \
+   -l boost_unit_test_framework$(BOOST_LIB_SUFFIX)
+
 
 # Hardening
 # Make some classes of vulnerabilities unexploitable in case one is discovered.
@@ -136,7 +140,7 @@ obj/test/test_bitcoin.o: $(wildcard test/*.cpp) $(HEADERS)
 	$(CXX) -c $(CXXFLAGS) -o $@ test/test_bitcoin.cpp
 
 test_bitcoin: obj/test/test_bitcoin.o $(filter-out obj/nogui/init.o,$(OBJS:obj/%=obj/nogui/%))
-	$(CXX) $(CXXFLAGS) -o $@ $(LIBPATHS) $^ -Wl,-Bstatic -lboost_unit_test_framework $(LIBS)
+	$(CXX) $(CXXFLAGS) -o $@ $(LIBPATHS) $^ $(TESTLIBS) $(LIBS)
 
 clean:
 	-rm -f bitcoin bitcoind test_bitcoin
