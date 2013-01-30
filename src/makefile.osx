@@ -171,5 +171,6 @@ clean:
 	-rm -f obj/*.P
 	-rm -f obj-test/*.P
 	-rm -f obj/build.h
+	-cd leveldb && $(MAKE) clean || true
 
 FORCE:
