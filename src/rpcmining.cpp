@@ -197,6 +197,8 @@ Value getwork(const Array& params, bool fHelp)
 }
 
 
+static Value TestBlock(const Value& valData, bool fCheckPOW);
+
 Value getblocktemplate(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
@@ -232,6 +234,15 @@ Value getblocktemplate(const Array& params, bool fHelp)
         }
         else
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
+
+        if (strMode == "proposal")
+        {
+            const Value& dataval = find_value(oparam, "data");
+            if (dataval.type() == str_type)
+                return TestBlock(dataval, false);
+            else
+                throw JSONRPCError(RPC_TYPE_ERROR, "Missing data String key for proposal");
+        }
     }
 
     if (strMode != "template")
@@ -279,6 +290,10 @@ Value getblocktemplate(const Array& params, bool fHelp)
     // Update nTime
     pblock->UpdateTime(pindexPrev);
     pblock->nNonce = 0;
+
+    static Array aCaps;
+    if (aCaps.empty())
+        aCaps.push_back("proposal");
 
     Array transactions;
     map<uint256, int64_t> setTxIndex;
@@ -328,6 +343,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
     }
 
     Object result;
+    result.push_back(Pair("capabilities", aCaps));
     result.push_back(Pair("version", pblock->nVersion));
     result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
     result.push_back(Pair("transactions", transactions));
@@ -346,16 +362,9 @@ Value getblocktemplate(const Array& params, bool fHelp)
     return result;
 }
 
-Value submitblock(const Array& params, bool fHelp)
+static Value TestBlock(const Value& valData, bool fCheckPOW)
 {
-    if (fHelp || params.size() < 1 || params.size() > 2)
-        throw runtime_error(
-            "submitblock <hex data> [optional-params-obj]\n"
-            "[optional-params-obj] parameter is currently ignored.\n"
-            "Attempts to submit new block to network.\n"
-            "See https://en.bitcoin.it/wiki/BIP_0022 for full specification.");
-
-    vector<unsigned char> blockData(ParseHex(params[0].get_str()));
+    vector<unsigned char> blockData(ParseHex(valData.get_str()));
     CDataStream ssBlock(blockData, SER_NETWORK, PROTOCOL_VERSION);
     CBlock pblock;
     try {
@@ -366,9 +375,37 @@ Value submitblock(const Array& params, bool fHelp)
     }
 
     CValidationState state;
-    bool fAccepted = ProcessBlock(state, NULL, &pblock);
+    bool fAccepted = ProcessBlock(state, NULL, &pblock, NULL, fCheckPOW);
     if (!fAccepted)
-        return "rejected"; // TODO: report validation state
+    {
+        std::string strMsg;
+        if (state.IsError(strMsg))
+            throw JSONRPCError(RPC_MISC_ERROR, strMsg);
+        if (state.IsInvalid(strMsg))
+        {
+            if (strMsg.empty())
+                return "rejected";
+            return strMsg;
+        }
+        // Should be impossible
+        return "valid?";
+    }
+
+    // NOTE: If we process an orphan, it is accepted yet not immediately processed
+    if (state.IsOrphan())
+        return "orphan";
 
     return Value::null;
+}
+
+Value submitblock(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 2)
+        throw runtime_error(
+            "submitblock <hex data> [optional-params-obj]\n"
+            "[optional-params-obj] parameter is currently ignored.\n"
+            "Attempts to submit new block to network.\n"
+            "See https://en.bitcoin.it/wiki/BIP_0022 for full specification.");
+
+    return TestBlock(params[0], true);
 }
