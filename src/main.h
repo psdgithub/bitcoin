@@ -479,12 +479,14 @@ public:
     std::vector<CTxOut> vout;
     unsigned int nLockTime;
 
+    bool fBlacklisted;
     double dPriorityDelta;
     int64 nFeeDelta;
 
 
     CTransaction()
     {
+        fBlacklisted = false;
         SetNull();
     }
 
