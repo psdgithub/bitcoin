@@ -28,6 +28,8 @@ struct CBlockIndexWorkComparator;
 static const unsigned int MAX_BLOCK_SIZE = 1000000;
 /** The maximum size for mined blocks */
 static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
+/** The maximum size for transactions we're willing to relay/mine **/
+static const unsigned int MAX_STANDARD_TX_SIZE = MAX_BLOCK_SIZE_GEN/5;
 /** The maximum allowed number of signature check operations in a block (network rule) */
 static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
 /** The maximum number of orphan transactions kept in memory */
@@ -133,6 +135,8 @@ FILE* OpenBlockFile(const CDiskBlockPos &pos, bool fReadOnly = false);
 FILE* OpenUndoFile(const CDiskBlockPos &pos, bool fReadOnly = false);
 /** Import blocks from an external file */
 bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp = NULL);
+/** Initialize a new block tree database + block data on disk */
+bool InitBlockIndex();
 /** Load the block tree and coins database from disk */
 bool LoadBlockIndex();
 /** Verify consistency of the block and coin databases */
