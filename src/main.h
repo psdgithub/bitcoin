@@ -640,7 +640,10 @@ public:
                        const CBlockIndex* pindexBlock, bool fBlock, bool fMiner, bool fStrictPayToScriptHash=true);
     bool ClientConnectInputs();
     bool CheckTransaction() const;
-    bool AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs=true, bool* pfMissingInputs=NULL);
+
+    // Try to accept this transaction into the memory pool
+    // AcceptToMemoryPool(txdb, fCheckInputs=true, pfMissingInputs=NULL) => AcceptToMemoryPool_new(txdb, fCheckInputs, ?, pfMissingInputs)
+    bool AcceptToMemoryPool_new(CTxDB& txdb, bool fCheckInputs=true, bool fLimitFree = true, bool* pfMissingInputs=NULL);
 
 protected:
     const CTxOut& GetOutputFor(const CTxIn& input, const MapPrevTx& inputs) const;
@@ -695,8 +698,10 @@ public:
     int GetDepthInMainChain() const { CBlockIndex *pindexRet; return GetDepthInMainChain(pindexRet); }
     bool IsInMainChain() const { return GetDepthInMainChain() > 0; }
     int GetBlocksToMaturity() const;
-    bool AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs=true);
-    bool AcceptToMemoryPool();
+    // AcceptToMemoryPool(txdb, fCheckInputs=true) => AcceptToMemoryPool_new(txdb, fCheckInputs, ?)
+    bool AcceptToMemoryPool_new(CTxDB& txdb, bool fCheckInputs=true, bool fLimitFree=true);
+    // AcceptToMemoryPool() => AcceptToMemoryPool_new(true, ?)
+    bool AcceptToMemoryPool_new(bool fCheckInputs=true, bool fLimitFree=true);
 };
 
 
@@ -1358,8 +1363,9 @@ public:
     std::map<uint256, CTransaction> mapTx;
     std::map<COutPoint, CInPoint> mapNextTx;
 
-    bool accept(CTxDB& txdb, CTransaction &tx,
-                bool fCheckInputs, bool* pfMissingInputs);
+    // accept(txdb, tx, fCheckInputs, pfMissingInputs) => accept_new(txdb, tx, fCheckInputs, ?, pfMissingInputs)
+    bool accept_new(CTxDB& txdb, CTransaction &tx,
+                bool fCheckInputs, bool fLimitFree, bool* pfMissingInputs);
     bool addUnchecked(const uint256& hash, CTransaction &tx);
     bool remove(CTransaction &tx);
     void clear();
