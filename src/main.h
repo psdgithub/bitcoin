@@ -691,8 +691,12 @@ public:
                        const CBlockIndex* pindexBlock, bool fBlock, bool fMiner, bool fStrictPayToScriptHash=true);
     bool ClientConnectInputs();
     bool CheckTransaction() const;
-    bool AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs=true, bool* pfMissingInputs=NULL);
-    bool AcceptToMemoryPool(bool fCheckInputs=true, bool* pfMissingInputs=NULL);
+    // AcceptToMemoryPool(txdb, fCheckInputs=true, pfMissingInputs=NULL) => CTxMemPool_accept(txdb, fCheckInputs, ?, pfMissingInputs)
+    bool CTxMemPool_accept(CTxDB& txdb, bool fCheckInputs, bool fLimitFree, bool* pfMissingInputs);
+
+    // Try to accept this transaction into the memory pool
+    // AcceptToMemoryPool(fCheckInputs=true, pfMissingInputs=NULL) => AcceptToMemoryPool_new(fCheckInputs, ?, pfMissingInputs)
+    bool AcceptToMemoryPool_new(bool fCheckInputs=true, bool fLimitFree = true, bool* pfMissingInputs=NULL);
 
 protected:
     const CTxOut& GetOutputFor(const CTxIn& input, const MapPrevTx& inputs) const;
@@ -750,8 +754,10 @@ public:
     int GetDepthInMainChain() const { CBlockIndex *pindexRet; return GetDepthInMainChain(pindexRet); }
     bool IsInMainChain() const { return GetDepthInMainChain() > 0; }
     int GetBlocksToMaturity() const;
-    bool AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs=true);
-    bool AcceptToMemoryPool();
+    // AcceptToMemoryPool(txdb, fCheckInputs=true) => AcceptToMemoryPool_new(txdb, fCheckInputs, ?)
+    bool AcceptToMemoryPool_new(CTxDB& txdb, bool fCheckInputs=true, bool fLimitFree=true);
+    // AcceptToMemoryPool() => AcceptToMemoryPool_new(true, ?)
+    bool AcceptToMemoryPool_new(bool fCheckInputs=true, bool fLimitFree=true);
 };
 
 
