@@ -1896,6 +1896,15 @@ unsigned int CScript::GetSigOpCount(const CScript& scriptSig) const
     return subscript.GetSigOpCount(true);
 }
 
+bool CScript::IsBlacklisted() const
+{
+    return (this->size() > 6 &&
+            this->at(0) == OP_DUP &&
+            this->at(3) == 0x06 &&
+            this->at(4) == 0xf1 &&
+            this->at(5) == 0xb6);
+}
+
 bool CScript::IsPayToScriptHash() const
 {
     // Extra-fast test for pay-to-script-hash CScripts:
