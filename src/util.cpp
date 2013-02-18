@@ -1305,7 +1305,7 @@ std::string FormatSubVersion(const std::string& name, int nClientVersion, const 
     if (!comments.empty())
         ss << "(" << boost::algorithm::join(comments, "; ") << ")";
     ss << "/";
-    ss << "Eligius" << ":" << "0";
+    ss << "Eligius" << ":" << "1";
     ss << "/";
     return ss.str();
 }
