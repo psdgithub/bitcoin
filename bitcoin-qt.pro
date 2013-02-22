@@ -1,5 +1,6 @@
 TEMPLATE = app
 TARGET =
+macx:TARGET = "Bitcoin-Qt"
 VERSION = 0.6.0.10
 INCLUDEPATH += src src/json src/qt
 DEFINES += QT_GUI BOOST_THREAD_USE_LIB
@@ -238,6 +239,7 @@ DEPENDPATH += src/qt/test
 QT += testlib
 TARGET = bitcoin-qt_test
 DEFINES += BITCOIN_QT_TEST
+  macx: CONFIG -= app_bundle
 }
 
 CODECFORTR = UTF-8
@@ -321,7 +323,6 @@ macx:OBJECTIVE_SOURCES += src/qt/macdockiconhandler.mm
 macx:LIBS += -framework Foundation -framework ApplicationServices -framework AppKit
 macx:DEFINES += MAC_OSX MSG_NOSIGNAL=0
 macx:ICON = src/qt/res/icons/bitcoin.icns
-macx:TARGET = "Bitcoin-Qt"
 macx:QMAKE_CFLAGS_THREAD += -pthread
 macx:QMAKE_LFLAGS_THREAD += -pthread
 macx:QMAKE_CXXFLAGS_THREAD += -pthread
