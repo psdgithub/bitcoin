@@ -1,7 +1,7 @@
 TEMPLATE = app
 TARGET =
 macx:TARGET = "Bitcoin-Qt"
-VERSION = 0.6.0.10
+VERSION = 0.6.0.11
 INCLUDEPATH += src src/json src/qt
 DEFINES += QT_GUI BOOST_THREAD_USE_LIB
 CONFIG += no_include_pwd
