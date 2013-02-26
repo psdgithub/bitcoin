@@ -118,7 +118,7 @@ Tento produkt zahrnuje programy vyvinuté OpenSSL Projektem pro použití v Open
         <translation>&amp;Uprav</translation>
     </message>
     <message>
-        <location line="+250"/>
+        <location line="+252"/>
         <source>Export Address Book Data</source>
         <translation>Exportuj data adresáře</translation>
     </message>
@@ -141,7 +141,7 @@ Tento produkt zahrnuje programy vyvinuté OpenSSL Projektem pro použití v Open
 <context>
     <name>AddressTableModel</name>
     <message>
-        <location filename="../addresstablemodel.cpp" line="+142"/>
+        <location filename="../addresstablemodel.cpp" line="+144"/>
         <source>Label</source>
         <translation>Označení</translation>
     </message>
@@ -300,17 +300,17 @@ Tento produkt zahrnuje programy vyvinuté OpenSSL Projektem pro použití v Open
 <context>
     <name>BitcoinGUI</name>
     <message>
-        <location filename="../bitcoingui.cpp" line="+257"/>
+        <location filename="../bitcoingui.cpp" line="+260"/>
         <source>Sign &amp;message...</source>
         <translation>Po&amp;depiš zprávu...</translation>
     </message>
     <message>
-        <location line="+237"/>
+        <location line="+257"/>
         <source>Synchronizing with network...</source>
         <translation>Synchronizuji se sítí...</translation>
     </message>
     <message>
-        <location line="-299"/>
+        <location line="-319"/>
         <source>&amp;Overview</source>
         <translation>&amp;Přehled</translation>
     </message>
@@ -400,7 +400,7 @@ Tento produkt zahrnuje programy vyvinuté OpenSSL Projektem pro použití v Open
         <translation>Změň &amp;heslo...</translation>
     </message>
     <message numerus="yes">
-        <location line="+241"/>
+        <location line="+261"/>
         <source>~%n block(s) remaining</source>
         <translation>
             <numerusform>zbývá ~%n blok</numerusform>
@@ -414,7 +414,7 @@ Tento produkt zahrnuje programy vyvinuté OpenSSL Projektem pro použití v Open
         <translation>Staženo %1 z %2 bloků transakční historie (%3 % hotovo).</translation>
     </message>
     <message>
-        <location line="-242"/>
+        <location line="-262"/>
         <source>&amp;Export...</source>
         <translation>&amp;Export...</translation>
     </message>
@@ -464,7 +464,7 @@ Tento produkt zahrnuje programy vyvinuté OpenSSL Projektem pro použití v Open
         <translation>&amp;Ověř zprávu...</translation>
     </message>
     <message>
-        <location line="-186"/>
+        <location line="-189"/>
         <source>Bitcoin</source>
         <translation>Bitcoin</translation>
     </message>
@@ -474,7 +474,7 @@ Tento produkt zahrnuje programy vyvinuté OpenSSL Projektem pro použití v Open
         <translation>Peněženka</translation>
     </message>
     <message>
-        <location line="+168"/>
+        <location line="+171"/>
         <source>&amp;About Bitcoin</source>
         <translation>O &amp;Bitcoinu</translation>
     </message>
@@ -484,12 +484,17 @@ Tento produkt zahrnuje programy vyvinuté OpenSSL Projektem pro použití v Open
         <translation>&amp;Zobraz/Skryj</translation>
     </message>
     <message>
-        <location line="+39"/>
+        <location line="+28"/>
+        <source>S&amp;ignatures</source>
+        <translation>&amp;Podpis</translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>&amp;File</source>
         <translation>&amp;Soubor</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+10"/>
         <source>&amp;Settings</source>
         <translation>&amp;Nastavení</translation>
     </message>
@@ -504,7 +509,7 @@ Tento produkt zahrnuje programy vyvinuté OpenSSL Projektem pro použití v Open
         <translation>Panel s listy</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Actions toolbar</source>
         <translation>Panel akcí</translation>
     </message>
@@ -521,7 +526,7 @@ Tento produkt zahrnuje programy vyvinuté OpenSSL Projektem pro použití v Open
         <translation>Bitcoin klient</translation>
     </message>
     <message numerus="yes">
-        <location line="+69"/>
+        <location line="+71"/>
         <source>%n active connection(s) to Bitcoin network</source>
         <translation>
             <numerusform>%n aktivní spojení do Bitcoinové sítě</numerusform>
@@ -619,7 +624,7 @@ Adresa: %4
 </translation>
     </message>
     <message>
-        <location line="+100"/>
+        <location line="+120"/>
         <location line="+15"/>
         <source>URI handling</source>
         <translation>Zpracování URI</translation>
@@ -722,17 +727,17 @@ Adresa: %4
         <translation>Uprav odesílací adresu</translation>
     </message>
     <message>
-        <location line="+60"/>
+        <location line="+76"/>
         <source>The entered address &quot;%1&quot; is already in the address book.</source>
         <translation>Zadaná adresa &quot;%1&quot; už v adresáři je.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-5"/>
         <source>The entered address &quot;%1&quot; is not a valid Bitcoin address.</source>
         <translation>Zadaná adresa &quot;%1&quot; není platná Bitcoinová adresa.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+10"/>
         <source>Could not unlock wallet.</source>
         <translation>Nemohu odemknout peněženku.</translation>
     </message>
@@ -1439,12 +1444,11 @@ Adresa: %4
     </message>
     <message>
         <location line="+13"/>
-        <location line="+124"/>
         <source>&amp;Sign Message</source>
         <translation>&amp;Podepiš zprávu</translation>
     </message>
     <message>
-        <location line="-118"/>
+        <location line="+6"/>
         <source>You can sign messages with your addresses to prove you own them. Be careful not to sign anything vague, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
         <translation>Podepsáním zprávy svými adresami můžeš prokázat, že je skutečně vlastníš. Buď opatrný a nepodepisuj nic vágního; například při phishingových útocích můžeš být lákán, abys něco takového podepsal. Podepisuj pouze zcela úplná a detailní prohlášení, se kterými souhlasíš.</translation>
     </message>
@@ -1491,7 +1495,12 @@ Adresa: %4
         <translation>Podepiš zprávu, čímž prokážeš, že jsi vlastníkem této Bitcoinové adresy</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Sign &amp;Message</source>
+        <translation>Po&amp;depiš zprávu</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all sign message fields</source>
         <translation>Vymaž všechna pole formuláře pro podepsání zrávy</translation>
     </message>
@@ -1503,12 +1512,11 @@ Adresa: %4
     </message>
     <message>
         <location line="-87"/>
-        <location line="+70"/>
         <source>&amp;Verify Message</source>
         <translation>&amp;Ověř zprávu</translation>
     </message>
     <message>
-        <location line="-64"/>
+        <location line="+6"/>
         <source>Enter the signing address, message (ensure you copy line breaks, spaces, tabs, etc. exactly) and signature below to verify the message. Be careful not to read more into the signature than what is in the signed message itself, to avoid being tricked by a man-in-the-middle attack.</source>
         <translation>K ověření podpisu zprávy zadej podepisující adresu, zprávu (ověř si, že správně kopíruješ zalomení řádků, mezery, tabulátory apod.) a podpis. Dávej pozor na to, abys nezkopíroval do podpisu víc, než co je v samotné podepsané zprávě, abys nebyl napálen man-in-the-middle útokem.</translation>
     </message>
@@ -1523,7 +1531,12 @@ Adresa: %4
         <translation>Ověř zprávu, aby ses ujistil, že byla podepsána danou Bitcoinovou adresou</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Verify &amp;Message</source>
+        <translation>&amp;Ověř zprávu</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all verify message fields</source>
         <translation>Vymaž všechna pole formuláře pro ověření zrávy</translation>
     </message>
@@ -1617,17 +1630,8 @@ Adresa: %4
         <source>Open until %1</source>
         <translation>Otřevřeno dokud %1</translation>
     </message>
-    <message numerus="yes">
-        <location line="-2"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>Otevřeno pro 1 blok</numerusform>
-            <numerusform>Otevřeno pro %n bloky</numerusform>
-            <numerusform>Otevřeno pro %n bloků</numerusform>
-        </translation>
-    </message>
     <message>
-        <location line="+8"/>
+        <location line="+6"/>
         <source>%1/offline</source>
         <translation>%1/offline</translation>
     </message>
@@ -1790,8 +1794,17 @@ Adresa: %4
         <source>, has not been successfully broadcast yet</source>
         <translation>, ještě nebylo rozesláno</translation>
     </message>
+    <message numerus="yes">
+        <location line="-35"/>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
     <message>
-        <location line="+35"/>
+        <location line="+70"/>
         <source>unknown</source>
         <translation>neznámo</translation>
     </message>
@@ -1833,11 +1846,11 @@ Adresa: %4
     </message>
     <message numerus="yes">
         <location line="+57"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>Otevřeno pro 1 blok</numerusform>
-            <numerusform>Otevřeno pro %n bloky</numerusform>
-            <numerusform>Otevřeno pro %n bloků</numerusform>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -2227,7 +2240,7 @@ Adresa: %4
     <message>
         <location line="+2"/>
         <source>Error initializing database environment %s! To recover, BACKUP THAT DIRECTORY, then remove everything from it except for wallet.dat.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nastala chyba při inicializaci databázového prostředí %s! Řešení: ZAZÁLOHUJ TENTO ADRESÁŘ, a pak v něm smaž vše kromě wallet.dat.</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -2237,12 +2250,12 @@ Adresa: %4
     <message>
         <location line="+19"/>
         <source>Warning: error reading wallet.dat! All keys read correctly, but transaction data or address book entries might be missing or incorrect.</source>
-        <translation type="unfinished"></translation>
+        <translation>Upozornění: nastala chyba při čtení souboru wallet.dat! Všechny klíče se přečetly správně, ale data o transakcích nebo záznamy v adresáři mohou chybět či být nesprávné.</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Warning: wallet.dat corrupt, data salvaged! Original wallet.dat saved as wallet.{timestamp}.bak in %s; if your balance or transactions are incorrect you should restore from a backup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Upozornění: soubor wallet.dat je poškozený, data jsou však zachráněna! Původní soubor wallet.dat je uložený jako wallet.{timestamp}.bak v %s. Pokud je stav tvého účtu nebo transakce nesprávné, zřejmě bys měl obnovit zálohu.</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -2252,7 +2265,7 @@ Adresa: %4
     <message>
         <location line="+5"/>
         <source>Attempt to recover private keys from a corrupt wallet.dat</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokusit se zachránit soukromé klíče z poškozeného souboru wallet.dat</translation>
     </message>
     <message>
         <location line="+32"/>
@@ -2457,7 +2470,7 @@ Adresa: %4
     <message>
         <location line="+1"/>
         <source>wallet.dat corrupt, salvage failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Soubor wallet.dat je poškozen, jeho záchrana se nezdařila</translation>
     </message>
     <message>
         <location line="-43"/>

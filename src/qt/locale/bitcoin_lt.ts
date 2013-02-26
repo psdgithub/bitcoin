@@ -117,7 +117,7 @@ Platinama pagal MIT/X11 licenciją, kurią rasite faile COPYING arba http://www.
         <translation>&amp;Keisti</translation>
     </message>
     <message>
-        <location line="+250"/>
+        <location line="+252"/>
         <source>Export Address Book Data</source>
         <translation>Eksportuoti adresų knygelės duomenis</translation>
     </message>
@@ -140,7 +140,7 @@ Platinama pagal MIT/X11 licenciją, kurią rasite faile COPYING arba http://www.
 <context>
     <name>AddressTableModel</name>
     <message>
-        <location filename="../addresstablemodel.cpp" line="+142"/>
+        <location filename="../addresstablemodel.cpp" line="+144"/>
         <source>Label</source>
         <translation>Žymė</translation>
     </message>
@@ -299,17 +299,17 @@ Platinama pagal MIT/X11 licenciją, kurią rasite faile COPYING arba http://www.
 <context>
     <name>BitcoinGUI</name>
     <message>
-        <location filename="../bitcoingui.cpp" line="+257"/>
+        <location filename="../bitcoingui.cpp" line="+260"/>
         <source>Sign &amp;message...</source>
         <translation>Pasirašyti ži&amp;nutę...</translation>
     </message>
     <message>
-        <location line="+237"/>
+        <location line="+257"/>
         <source>Synchronizing with network...</source>
         <translation>Sinchronizavimas su tinklu ...</translation>
     </message>
     <message>
-        <location line="-299"/>
+        <location line="-319"/>
         <source>&amp;Overview</source>
         <translation>&amp;Apžvalga</translation>
     </message>
@@ -399,7 +399,7 @@ Platinama pagal MIT/X11 licenciją, kurią rasite faile COPYING arba http://www.
         <translation>&amp;Keisti slaptafrazę...</translation>
     </message>
     <message numerus="yes">
-        <location line="+241"/>
+        <location line="+261"/>
         <source>~%n block(s) remaining</source>
         <translation>
             <numerusform>~liko %n blokas</numerusform>
@@ -413,7 +413,7 @@ Platinama pagal MIT/X11 licenciją, kurią rasite faile COPYING arba http://www.
         <translation>Atsisiuntė %1 iš %2 sandorių istorijos blokų (%3% done).</translation>
     </message>
     <message>
-        <location line="-242"/>
+        <location line="-262"/>
         <source>&amp;Export...</source>
         <translation>&amp;Eksportuoti...</translation>
     </message>
@@ -463,7 +463,7 @@ Platinama pagal MIT/X11 licenciją, kurią rasite faile COPYING arba http://www.
         <translation>&amp;Tikrinti žinutę...</translation>
     </message>
     <message>
-        <location line="-186"/>
+        <location line="-189"/>
         <source>Bitcoin</source>
         <translation>Bitcoin</translation>
     </message>
@@ -473,7 +473,7 @@ Platinama pagal MIT/X11 licenciją, kurią rasite faile COPYING arba http://www.
         <translation>Piniginė</translation>
     </message>
     <message>
-        <location line="+168"/>
+        <location line="+171"/>
         <source>&amp;About Bitcoin</source>
         <translation>&amp;Apie Bitcoin</translation>
     </message>
@@ -483,12 +483,17 @@ Platinama pagal MIT/X11 licenciją, kurią rasite faile COPYING arba http://www.
         <translation>&amp;Rodyti / Slėpti</translation>
     </message>
     <message>
-        <location line="+39"/>
+        <location line="+28"/>
+        <source>S&amp;ignatures</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>&amp;File</source>
         <translation>&amp;Failas</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+10"/>
         <source>&amp;Settings</source>
         <translation>&amp;Nustatymai</translation>
     </message>
@@ -503,7 +508,7 @@ Platinama pagal MIT/X11 licenciją, kurią rasite faile COPYING arba http://www.
         <translation>Kortelių įrankinė</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Actions toolbar</source>
         <translation>Veiksmų įrankinė</translation>
     </message>
@@ -520,7 +525,7 @@ Platinama pagal MIT/X11 licenciją, kurią rasite faile COPYING arba http://www.
         <translation>Bitcoin klientas</translation>
     </message>
     <message numerus="yes">
-        <location line="+69"/>
+        <location line="+71"/>
         <source>%n active connection(s) to Bitcoin network</source>
         <translation>
             <numerusform>%n Bitcoin tinklo aktyvus ryšys</numerusform>
@@ -617,7 +622,7 @@ Tipas: %3
 Adresas: %4</translation>
     </message>
     <message>
-        <location line="+100"/>
+        <location line="+120"/>
         <location line="+15"/>
         <source>URI handling</source>
         <translation>URI apdorojimas</translation>
@@ -720,17 +725,17 @@ Adresas: %4</translation>
         <translation>Keisti siuntimo adresą</translation>
     </message>
     <message>
-        <location line="+60"/>
+        <location line="+76"/>
         <source>The entered address &quot;%1&quot; is already in the address book.</source>
         <translation>Įvestas adresas „%1“ jau yra adresų knygelėje.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-5"/>
         <source>The entered address &quot;%1&quot; is not a valid Bitcoin address.</source>
         <translation>Įvestas adresas „%1“ nėra galiojantis Bitcoin adresas.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+10"/>
         <source>Could not unlock wallet.</source>
         <translation>Nepavyko atrakinti piniginės.</translation>
     </message>
@@ -1437,12 +1442,11 @@ Adresas: %4</translation>
     </message>
     <message>
         <location line="+13"/>
-        <location line="+124"/>
         <source>&amp;Sign Message</source>
         <translation>&amp;Pasirašyti žinutę</translation>
     </message>
     <message>
-        <location line="-118"/>
+        <location line="+6"/>
         <source>You can sign messages with your addresses to prove you own them. Be careful not to sign anything vague, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1489,7 +1493,12 @@ Adresas: %4</translation>
         <translation>Registruotis žinute įrodymuii, kad turite šį adresą</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Sign &amp;Message</source>
+        <translation>Registruoti praneši&amp;mą</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all sign message fields</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1501,12 +1510,11 @@ Adresas: %4</translation>
     </message>
     <message>
         <location line="-87"/>
-        <location line="+70"/>
         <source>&amp;Verify Message</source>
         <translation>&amp;Patikrinti žinutę</translation>
     </message>
     <message>
-        <location line="-64"/>
+        <location line="+6"/>
         <source>Enter the signing address, message (ensure you copy line breaks, spaces, tabs, etc. exactly) and signature below to verify the message. Be careful not to read more into the signature than what is in the signed message itself, to avoid being tricked by a man-in-the-middle attack.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1521,7 +1529,12 @@ Adresas: %4</translation>
         <translation>Patikrinkite žinutę, jog įsitikintumėte, kad ją pasirašė nurodytas Bitcoin adresas</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Verify &amp;Message</source>
+        <translation>&amp;Patikrinti žinutę</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all verify message fields</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1615,17 +1628,8 @@ Adresas: %4</translation>
         <source>Open until %1</source>
         <translation>Atidaryta iki %1</translation>
     </message>
-    <message numerus="yes">
-        <location line="-2"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>Atverti %n blokui</numerusform>
-            <numerusform>Atverti %n blokams</numerusform>
-            <numerusform>Atverti %n blokų</numerusform>
-        </translation>
-    </message>
     <message>
-        <location line="+8"/>
+        <location line="+6"/>
         <source>%1/offline</source>
         <translation>%1/neprisijungęs</translation>
     </message>
@@ -1788,8 +1792,17 @@ Adresas: %4</translation>
         <source>, has not been successfully broadcast yet</source>
         <translation>, transliavimas dar nebuvo sėkmingas</translation>
     </message>
+    <message numerus="yes">
+        <location line="-35"/>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
     <message>
-        <location line="+35"/>
+        <location line="+70"/>
         <source>unknown</source>
         <translation>nežinomas</translation>
     </message>
@@ -1831,11 +1844,11 @@ Adresas: %4</translation>
     </message>
     <message numerus="yes">
         <location line="+57"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>Atidaryta %n blokui</numerusform>
-            <numerusform>Atidaryta %n blokams</numerusform>
-            <numerusform>Atidaryta %n blokų</numerusform>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>

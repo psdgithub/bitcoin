@@ -121,7 +121,7 @@ Eric Young (eay@cryptsoft.com) y el software UPnP escrito por Thomas Bernard.</t
         <translation>&amp;Editar</translation>
     </message>
     <message>
-        <location line="+250"/>
+        <location line="+252"/>
         <source>Export Address Book Data</source>
         <translation>Exportar datos de la libreta de direcciones</translation>
     </message>
@@ -144,7 +144,7 @@ Eric Young (eay@cryptsoft.com) y el software UPnP escrito por Thomas Bernard.</t
 <context>
     <name>AddressTableModel</name>
     <message>
-        <location filename="../addresstablemodel.cpp" line="+142"/>
+        <location filename="../addresstablemodel.cpp" line="+144"/>
         <source>Label</source>
         <translation>Etiqueta</translation>
     </message>
@@ -303,17 +303,17 @@ Eric Young (eay@cryptsoft.com) y el software UPnP escrito por Thomas Bernard.</t
 <context>
     <name>BitcoinGUI</name>
     <message>
-        <location filename="../bitcoingui.cpp" line="+257"/>
+        <location filename="../bitcoingui.cpp" line="+260"/>
         <source>Sign &amp;message...</source>
         <translation>Firmar &amp;mensaje...</translation>
     </message>
     <message>
-        <location line="+237"/>
+        <location line="+257"/>
         <source>Synchronizing with network...</source>
         <translation>Sincronizando con la red…</translation>
     </message>
     <message>
-        <location line="-299"/>
+        <location line="-319"/>
         <source>&amp;Overview</source>
         <translation>&amp;Vista general</translation>
     </message>
@@ -403,7 +403,7 @@ Eric Young (eay@cryptsoft.com) y el software UPnP escrito por Thomas Bernard.</t
         <translation>&amp;Cambiar la contraseña…</translation>
     </message>
     <message numerus="yes">
-        <location line="+241"/>
+        <location line="+261"/>
         <source>~%n block(s) remaining</source>
         <translation>
             <numerusform>~%n bloque restante</numerusform>
@@ -416,7 +416,7 @@ Eric Young (eay@cryptsoft.com) y el software UPnP escrito por Thomas Bernard.</t
         <translation>Descargados %1 de %2 bloques del historial de transacciones (%3% hecho).</translation>
     </message>
     <message>
-        <location line="-242"/>
+        <location line="-262"/>
         <source>&amp;Export...</source>
         <translation>&amp;Exportar…</translation>
     </message>
@@ -466,7 +466,7 @@ Eric Young (eay@cryptsoft.com) y el software UPnP escrito por Thomas Bernard.</t
         <translation>&amp;Verificar mensaje</translation>
     </message>
     <message>
-        <location line="-186"/>
+        <location line="-189"/>
         <source>Bitcoin</source>
         <translation>Bitcoin</translation>
     </message>
@@ -476,7 +476,7 @@ Eric Young (eay@cryptsoft.com) y el software UPnP escrito por Thomas Bernard.</t
         <translation>Monedero</translation>
     </message>
     <message>
-        <location line="+168"/>
+        <location line="+171"/>
         <source>&amp;About Bitcoin</source>
         <translation>&amp;Acerca de Bitcoin</translation>
     </message>
@@ -486,12 +486,17 @@ Eric Young (eay@cryptsoft.com) y el software UPnP escrito por Thomas Bernard.</t
         <translation>Mo&amp;strar/ocultar</translation>
     </message>
     <message>
-        <location line="+39"/>
+        <location line="+28"/>
+        <source>S&amp;ignatures</source>
+        <translation>&amp;Firma</translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>&amp;File</source>
         <translation>&amp;Archivo</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+10"/>
         <source>&amp;Settings</source>
         <translation>&amp;Configuración</translation>
     </message>
@@ -506,7 +511,7 @@ Eric Young (eay@cryptsoft.com) y el software UPnP escrito por Thomas Bernard.</t
         <translation>Barra de pestañas</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Actions toolbar</source>
         <translation>Barra de acciones</translation>
     </message>
@@ -523,7 +528,7 @@ Eric Young (eay@cryptsoft.com) y el software UPnP escrito por Thomas Bernard.</t
         <translation>Cliente Bitcoin</translation>
     </message>
     <message numerus="yes">
-        <location line="+69"/>
+        <location line="+71"/>
         <source>%n active connection(s) to Bitcoin network</source>
         <translation>
             <numerusform>%n conexión activa hacia la red Bitcoin</numerusform>
@@ -616,7 +621,7 @@ Dirección: %4
 </translation>
     </message>
     <message>
-        <location line="+100"/>
+        <location line="+120"/>
         <location line="+15"/>
         <source>URI handling</source>
         <translation>Gestión de URI</translation>
@@ -719,17 +724,17 @@ Dirección: %4
         <translation>Editar dirección de envío</translation>
     </message>
     <message>
-        <location line="+60"/>
+        <location line="+76"/>
         <source>The entered address &quot;%1&quot; is already in the address book.</source>
         <translation>La dirección introducida &quot;%1&quot; ya está presente en la libreta de direcciones.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-5"/>
         <source>The entered address &quot;%1&quot; is not a valid Bitcoin address.</source>
         <translation>La dirección introducida &quot;%1&quot; no es una dirección Bitcoin válida.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+10"/>
         <source>Could not unlock wallet.</source>
         <translation>No se pudo desbloquear el monedero.</translation>
     </message>
@@ -1436,12 +1441,11 @@ Dirección: %4
     </message>
     <message>
         <location line="+13"/>
-        <location line="+124"/>
         <source>&amp;Sign Message</source>
         <translation>&amp;Firme mensaje</translation>
     </message>
     <message>
-        <location line="-118"/>
+        <location line="+6"/>
         <source>You can sign messages with your addresses to prove you own them. Be careful not to sign anything vague, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
         <translation>Puede firmar mensajes con sus direcciones para demostrar que las posee. Tenga cuidado de no firmar cualquier cosa vaga, ya que los ataques de phishing pueden tratar de engañarle para suplantar su identidad. Firme solo declaraciones totalmente detalladas con las que usted esté de acuerdo.</translation>
     </message>
@@ -1488,7 +1492,12 @@ Dirección: %4
         <translation>Firme el mensaje para demostrar que posee esta dirección Bitcoin</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Sign &amp;Message</source>
+        <translation>Firmar &amp;mensaje</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all sign message fields</source>
         <translation>Limpiar todos los campos de la firma de mensaje</translation>
     </message>
@@ -1500,12 +1509,11 @@ Dirección: %4
     </message>
     <message>
         <location line="-87"/>
-        <location line="+70"/>
         <source>&amp;Verify Message</source>
         <translation>&amp;Verificar mensaje</translation>
     </message>
     <message>
-        <location line="-64"/>
+        <location line="+6"/>
         <source>Enter the signing address, message (ensure you copy line breaks, spaces, tabs, etc. exactly) and signature below to verify the message. Be careful not to read more into the signature than what is in the signed message itself, to avoid being tricked by a man-in-the-middle attack.</source>
         <translation>Introduzca la dirección para la firma, el mensaje (asegurándose de copiar tal cual los saltos de línea, espacios, tabulaciones, etc.) y la firma a continuación para verificar el mensaje. Tenga cuidado de no asumir más información de lo que dice el propio mensaje firmado para evitar fraudes basados en ataques de tipo man-in-the-middle.</translation>
     </message>
@@ -1520,7 +1528,12 @@ Dirección: %4
         <translation>Verifique el mensaje para comprobar que fue firmado con la dirección Bitcoin indicada</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Verify &amp;Message</source>
+        <translation>Verificar &amp;mensaje</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all verify message fields</source>
         <translation>Limpiar todos los campos de la verificación de mensaje</translation>
     </message>
@@ -1614,16 +1627,8 @@ Dirección: %4
         <source>Open until %1</source>
         <translation>Abierto hasta %1</translation>
     </message>
-    <message numerus="yes">
-        <location line="-2"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>Abierto para %n bloque</numerusform>
-            <numerusform>Abierto para %n bloques</numerusform>
-        </translation>
-    </message>
     <message>
-        <location line="+8"/>
+        <location line="+6"/>
         <source>%1/offline</source>
         <translation>%1/fuera de línea</translation>
     </message>
@@ -1784,8 +1789,16 @@ Dirección: %4
         <source>, has not been successfully broadcast yet</source>
         <translation>, no ha sido emitido satisfactoriamente todavía</translation>
     </message>
+    <message numerus="yes">
+        <location line="-35"/>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
     <message>
-        <location line="+35"/>
+        <location line="+70"/>
         <source>unknown</source>
         <translation>desconocido</translation>
     </message>
@@ -1827,10 +1840,10 @@ Dirección: %4
     </message>
     <message numerus="yes">
         <location line="+57"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>Abierto por %n bloque</numerusform>
-            <numerusform>Abierto por %n bloques</numerusform>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -2224,7 +2237,7 @@ Dirección: %4
     <message>
         <location line="+2"/>
         <source>Error initializing database environment %s! To recover, BACKUP THAT DIRECTORY, then remove everything from it except for wallet.dat.</source>
-        <translation type="unfinished"></translation>
+        <translation>¡Error al inicializar el entorno de base de datos %s! Para restaurarlo, HAGA UNA COPIA DE SEGURIDAD DEL DIRECTORIO y borre todos sus contenidos excepto wallet.dat.</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -2234,12 +2247,12 @@ Dirección: %4
     <message>
         <location line="+19"/>
         <source>Warning: error reading wallet.dat! All keys read correctly, but transaction data or address book entries might be missing or incorrect.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aviso: ¡Error al leer wallet.dat! Todas las claves se han leído correctamente, pero podrían faltar o ser incorrectos los datos de transacciones o las entradas de la libreta de direcciones.</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Warning: wallet.dat corrupt, data salvaged! Original wallet.dat saved as wallet.{timestamp}.bak in %s; if your balance or transactions are incorrect you should restore from a backup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aviso: ¿Recuperados datos de wallet.dat corrupto! El wallet.dat original se ha guardado como wallet.{timestamp}.bak en %s; si hubiera errores en su saldo o transacciones, deberá restaurar una copia de respaldo.</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -2250,7 +2263,7 @@ Dirección: %4
     <message>
         <location line="+5"/>
         <source>Attempt to recover private keys from a corrupt wallet.dat</source>
-        <translation type="unfinished"></translation>
+        <translation>Intento de recuperar claves privadas de un wallet.dat corrupto</translation>
     </message>
     <message>
         <location line="+32"/>
@@ -2458,7 +2471,7 @@ Dirección: %4
     <message>
         <location line="+1"/>
         <source>wallet.dat corrupt, salvage failed</source>
-        <translation type="unfinished"></translation>
+        <translation>wallet.dat corrupto. Ha fallado la recuperación.</translation>
     </message>
     <message>
         <location line="-43"/>

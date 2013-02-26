@@ -118,7 +118,7 @@ Este produto inclui software desenvolvido pelo Projecto OpenSSL para uso no Open
         <translation>&amp;Editar</translation>
     </message>
     <message>
-        <location line="+250"/>
+        <location line="+252"/>
         <source>Export Address Book Data</source>
         <translation>Exportar de dados do Livro de Endereços</translation>
     </message>
@@ -141,7 +141,7 @@ Este produto inclui software desenvolvido pelo Projecto OpenSSL para uso no Open
 <context>
     <name>AddressTableModel</name>
     <message>
-        <location filename="../addresstablemodel.cpp" line="+142"/>
+        <location filename="../addresstablemodel.cpp" line="+144"/>
         <source>Label</source>
         <translation>Rótulo</translation>
     </message>
@@ -300,17 +300,17 @@ Este produto inclui software desenvolvido pelo Projecto OpenSSL para uso no Open
 <context>
     <name>BitcoinGUI</name>
     <message>
-        <location filename="../bitcoingui.cpp" line="+257"/>
+        <location filename="../bitcoingui.cpp" line="+260"/>
         <source>Sign &amp;message...</source>
         <translation>Assinar &amp;mensagem...</translation>
     </message>
     <message>
-        <location line="+237"/>
+        <location line="+257"/>
         <source>Synchronizing with network...</source>
         <translation>Sincronizando com a rede...</translation>
     </message>
     <message>
-        <location line="-299"/>
+        <location line="-319"/>
         <source>&amp;Overview</source>
         <translation>&amp;Visão geral</translation>
     </message>
@@ -400,7 +400,7 @@ Este produto inclui software desenvolvido pelo Projecto OpenSSL para uso no Open
         <translation>&amp;Mudar Palavra-passe...</translation>
     </message>
     <message numerus="yes">
-        <location line="+241"/>
+        <location line="+261"/>
         <source>~%n block(s) remaining</source>
         <translation>
             <numerusform>~%n bloco restante</numerusform>
@@ -413,7 +413,7 @@ Este produto inclui software desenvolvido pelo Projecto OpenSSL para uso no Open
         <translation>Recuperados %1 de %2 blocos do histórico de transações (%3% completo)</translation>
     </message>
     <message>
-        <location line="-242"/>
+        <location line="-262"/>
         <source>&amp;Export...</source>
         <translation>&amp;Exportar...</translation>
     </message>
@@ -463,7 +463,7 @@ Este produto inclui software desenvolvido pelo Projecto OpenSSL para uso no Open
         <translation>&amp;Verificar mensagem...</translation>
     </message>
     <message>
-        <location line="-186"/>
+        <location line="-189"/>
         <source>Bitcoin</source>
         <translation>Bitcoin</translation>
     </message>
@@ -473,7 +473,7 @@ Este produto inclui software desenvolvido pelo Projecto OpenSSL para uso no Open
         <translation>Carteira</translation>
     </message>
     <message>
-        <location line="+168"/>
+        <location line="+171"/>
         <source>&amp;About Bitcoin</source>
         <translation>&amp;Sobre o Bitcoin</translation>
     </message>
@@ -483,12 +483,17 @@ Este produto inclui software desenvolvido pelo Projecto OpenSSL para uso no Open
         <translation>&amp;Mostrar / Ocultar</translation>
     </message>
     <message>
-        <location line="+39"/>
+        <location line="+28"/>
+        <source>S&amp;ignatures</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>&amp;File</source>
         <translation>&amp;Ficheiro</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+10"/>
         <source>&amp;Settings</source>
         <translation>&amp;Configurações</translation>
     </message>
@@ -503,7 +508,7 @@ Este produto inclui software desenvolvido pelo Projecto OpenSSL para uso no Open
         <translation>Barra de separadores</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Actions toolbar</source>
         <translation>Barra de ações</translation>
     </message>
@@ -520,7 +525,7 @@ Este produto inclui software desenvolvido pelo Projecto OpenSSL para uso no Open
         <translation>Cliente Bitcoin</translation>
     </message>
     <message numerus="yes">
-        <location line="+69"/>
+        <location line="+71"/>
         <source>%n active connection(s) to Bitcoin network</source>
         <translation>
             <numerusform>%n ligação ativa à rede Bitcoin</numerusform>
@@ -612,7 +617,7 @@ Tipo: %3
 Endereço: %4</translation>
     </message>
     <message>
-        <location line="+100"/>
+        <location line="+120"/>
         <location line="+15"/>
         <source>URI handling</source>
         <translation>Manuseamento URI</translation>
@@ -715,17 +720,17 @@ Endereço: %4</translation>
         <translation>Editar endereço de saída</translation>
     </message>
     <message>
-        <location line="+60"/>
+        <location line="+76"/>
         <source>The entered address &quot;%1&quot; is already in the address book.</source>
         <translation>O endereço introduzido &quot;%1&quot; já se encontra no livro de endereços.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-5"/>
         <source>The entered address &quot;%1&quot; is not a valid Bitcoin address.</source>
         <translation>O endereço introduzido &quot;%1&quot; não é um endereço bitcoin válido.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+10"/>
         <source>Could not unlock wallet.</source>
         <translation>Impossível desbloquear carteira.</translation>
     </message>
@@ -1432,12 +1437,11 @@ Endereço: %4</translation>
     </message>
     <message>
         <location line="+13"/>
-        <location line="+124"/>
         <source>&amp;Sign Message</source>
         <translation>&amp;Assinar Mensagem</translation>
     </message>
     <message>
-        <location line="-118"/>
+        <location line="+6"/>
         <source>You can sign messages with your addresses to prove you own them. Be careful not to sign anything vague, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
         <translation>Pode assinar mensagens com os seus endereços para provar que são seus. Tenha atenção ao assinar mensagens ambíguas, pois ataques de phishing podem tentar enganá-lo, de modo a assinar a sua identidade para os atacantes. Apenas assine declarações completamente detalhadas com as quais concorde.</translation>
     </message>
@@ -1484,7 +1488,12 @@ Endereço: %4</translation>
         <translation>Assine uma mensagem para provar que é dono deste endereço Bitcoin</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Sign &amp;Message</source>
+        <translation>Assinar &amp;Mensagem</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all sign message fields</source>
         <translation>Repôr todos os campos de assinatura de mensagem</translation>
     </message>
@@ -1496,12 +1505,11 @@ Endereço: %4</translation>
     </message>
     <message>
         <location line="-87"/>
-        <location line="+70"/>
         <source>&amp;Verify Message</source>
         <translation>&amp;Verificar Mensagem</translation>
     </message>
     <message>
-        <location line="-64"/>
+        <location line="+6"/>
         <source>Enter the signing address, message (ensure you copy line breaks, spaces, tabs, etc. exactly) and signature below to verify the message. Be careful not to read more into the signature than what is in the signed message itself, to avoid being tricked by a man-in-the-middle attack.</source>
         <translation>Introduza o endereço de assinatura, mensagem (assegure-se de copiar quebras de linha, espaços, tabuladores, etc. exactamente) e assinatura abaixo para verificar a mensagem. Tenha atenção para não ler mais na assinatura do que o que estiver na mensagem assinada, para evitar ser enganado por um atacante que se encontre entre si e quem assinou a mensagem.</translation>
     </message>
@@ -1516,7 +1524,12 @@ Endereço: %4</translation>
         <translation>Verifique a mensagem para assegurar que foi assinada com o endereço Bitcoin especificado</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Verify &amp;Message</source>
+        <translation>Verificar &amp;Mensagem</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all verify message fields</source>
         <translation>Repôr todos os campos de verificação de mensagem</translation>
     </message>
@@ -1610,16 +1623,8 @@ Endereço: %4</translation>
         <source>Open until %1</source>
         <translation>Aberto até %1</translation>
     </message>
-    <message numerus="yes">
-        <location line="-2"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>Aberto para %n bloco</numerusform>
-            <numerusform>Aberto para %n blocos</numerusform>
-        </translation>
-    </message>
     <message>
-        <location line="+8"/>
+        <location line="+6"/>
         <source>%1/offline</source>
         <translation>%1/desligado</translation>
     </message>
@@ -1780,8 +1785,16 @@ Endereço: %4</translation>
         <source>, has not been successfully broadcast yet</source>
         <translation>, ainda não foi transmitida com sucesso</translation>
     </message>
+    <message numerus="yes">
+        <location line="-35"/>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
     <message>
-        <location line="+35"/>
+        <location line="+70"/>
         <source>unknown</source>
         <translation>desconhecido</translation>
     </message>
@@ -1823,10 +1836,10 @@ Endereço: %4</translation>
     </message>
     <message numerus="yes">
         <location line="+57"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>Aberto para %n bloco</numerusform>
-            <numerusform>Aberto para %n blocos</numerusform>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -2215,7 +2228,7 @@ Endereço: %4</translation>
     <message>
         <location line="+2"/>
         <source>Error initializing database environment %s! To recover, BACKUP THAT DIRECTORY, then remove everything from it except for wallet.dat.</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro ao inicializar o ambiente de recuperação de base de dados %s! Para recuperar, COPIE A PASTA PARA OUTRO LOCAL, e então remova tudo de dentro dela excepto o ficheiro wallet.dat.</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -2225,12 +2238,12 @@ Endereço: %4</translation>
     <message>
         <location line="+19"/>
         <source>Warning: error reading wallet.dat! All keys read correctly, but transaction data or address book entries might be missing or incorrect.</source>
-        <translation type="unfinished"></translation>
+        <translation>Atenção: erro ao ler wallet.dat! Todas as chaves foram lidas correctamente, mas dados de transação ou do livro de endereços podem estar em falta ou incorrectos.</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Warning: wallet.dat corrupt, data salvaged! Original wallet.dat saved as wallet.{timestamp}.bak in %s; if your balance or transactions are incorrect you should restore from a backup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Atenção: wallet.dat corrupto, dados recuperados! wallet.dat original salvo como wallet.{timestamp}.bak em %s; se o seu saldo ou transações estiverem incorrectos deverá recuperar de uma cópia de segurança.</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -2240,7 +2253,7 @@ Endereço: %4</translation>
     <message>
         <location line="+5"/>
         <source>Attempt to recover private keys from a corrupt wallet.dat</source>
-        <translation type="unfinished"></translation>
+        <translation>Tentar recuperar chaves privadas de um wallet.dat corrupto</translation>
     </message>
     <message>
         <location line="+32"/>
@@ -2445,7 +2458,7 @@ Endereço: %4</translation>
     <message>
         <location line="+1"/>
         <source>wallet.dat corrupt, salvage failed</source>
-        <translation type="unfinished"></translation>
+        <translation>carteira corrupta, salvamento falhou</translation>
     </message>
     <message>
         <location line="-43"/>

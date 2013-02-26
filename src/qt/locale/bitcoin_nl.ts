@@ -119,7 +119,7 @@ Dit product bevat software ontwikkeld door het OpenSSL Project voor gebruik in d
         <translation>&amp;Bewerk</translation>
     </message>
     <message>
-        <location line="+250"/>
+        <location line="+252"/>
         <source>Export Address Book Data</source>
         <translation>Exporteer Gegevens van het Adresboek</translation>
     </message>
@@ -142,7 +142,7 @@ Dit product bevat software ontwikkeld door het OpenSSL Project voor gebruik in d
 <context>
     <name>AddressTableModel</name>
     <message>
-        <location filename="../addresstablemodel.cpp" line="+142"/>
+        <location filename="../addresstablemodel.cpp" line="+144"/>
         <source>Label</source>
         <translation>Label</translation>
     </message>
@@ -301,17 +301,17 @@ Dit product bevat software ontwikkeld door het OpenSSL Project voor gebruik in d
 <context>
     <name>BitcoinGUI</name>
     <message>
-        <location filename="../bitcoingui.cpp" line="+257"/>
+        <location filename="../bitcoingui.cpp" line="+260"/>
         <source>Sign &amp;message...</source>
         <translation>&amp;Onderteken bericht...</translation>
     </message>
     <message>
-        <location line="+237"/>
+        <location line="+257"/>
         <source>Synchronizing with network...</source>
         <translation>Synchroniseren met netwerk...</translation>
     </message>
     <message>
-        <location line="-299"/>
+        <location line="-319"/>
         <source>&amp;Overview</source>
         <translation>&amp;Overzicht</translation>
     </message>
@@ -401,7 +401,7 @@ Dit product bevat software ontwikkeld door het OpenSSL Project voor gebruik in d
         <translation>&amp;Wijzig Wachtwoord</translation>
     </message>
     <message numerus="yes">
-        <location line="+241"/>
+        <location line="+261"/>
         <source>~%n block(s) remaining</source>
         <translation>
             <numerusform>~%n blok resterend</numerusform>
@@ -414,7 +414,7 @@ Dit product bevat software ontwikkeld door het OpenSSL Project voor gebruik in d
         <translation>%1 van %2 blokken van transactiehistorie opgehaald (%3% klaar).</translation>
     </message>
     <message>
-        <location line="-242"/>
+        <location line="-262"/>
         <source>&amp;Export...</source>
         <translation>&amp;Exporteer...</translation>
     </message>
@@ -464,7 +464,7 @@ Dit product bevat software ontwikkeld door het OpenSSL Project voor gebruik in d
         <translation>&amp;Verifiëer bericht...</translation>
     </message>
     <message>
-        <location line="-186"/>
+        <location line="-189"/>
         <source>Bitcoin</source>
         <translation>Bitcoin</translation>
     </message>
@@ -474,7 +474,7 @@ Dit product bevat software ontwikkeld door het OpenSSL Project voor gebruik in d
         <translation>Portemonnee</translation>
     </message>
     <message>
-        <location line="+168"/>
+        <location line="+171"/>
         <source>&amp;About Bitcoin</source>
         <translation>&amp;Over Bitcoin</translation>
     </message>
@@ -484,12 +484,17 @@ Dit product bevat software ontwikkeld door het OpenSSL Project voor gebruik in d
         <translation>&amp;Toon / Verberg</translation>
     </message>
     <message>
-        <location line="+39"/>
+        <location line="+28"/>
+        <source>S&amp;ignatures</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>&amp;File</source>
         <translation>&amp;Bestand</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+10"/>
         <source>&amp;Settings</source>
         <translation>&amp;Instellingen</translation>
     </message>
@@ -504,7 +509,7 @@ Dit product bevat software ontwikkeld door het OpenSSL Project voor gebruik in d
         <translation>Tab-werkbalk</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Actions toolbar</source>
         <translation>Actie-werkbalk</translation>
     </message>
@@ -521,7 +526,7 @@ Dit product bevat software ontwikkeld door het OpenSSL Project voor gebruik in d
         <translation>Bitcoin client</translation>
     </message>
     <message numerus="yes">
-        <location line="+69"/>
+        <location line="+71"/>
         <source>%n active connection(s) to Bitcoin network</source>
         <translation>
             <numerusform>%n actieve connectie naar Bitcoinnetwerk</numerusform>
@@ -614,7 +619,7 @@ Adres: %4
 </translation>
     </message>
     <message>
-        <location line="+100"/>
+        <location line="+120"/>
         <location line="+15"/>
         <source>URI handling</source>
         <translation>URI-behandeling</translation>
@@ -717,17 +722,17 @@ Adres: %4
         <translation>Bewerk adres om naar te verzenden</translation>
     </message>
     <message>
-        <location line="+60"/>
+        <location line="+76"/>
         <source>The entered address &quot;%1&quot; is already in the address book.</source>
         <translation>Het opgegeven adres &quot;%1&quot; bestaat al in uw adresboek.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-5"/>
         <source>The entered address &quot;%1&quot; is not a valid Bitcoin address.</source>
         <translation>Het opgegeven adres &quot;%1&quot; is een ongeldig Bitcoinadres</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+10"/>
         <source>Could not unlock wallet.</source>
         <translation>Kon de portemonnee niet openen.</translation>
     </message>
@@ -1435,12 +1440,11 @@ Adres: %4
     </message>
     <message>
         <location line="+13"/>
-        <location line="+124"/>
         <source>&amp;Sign Message</source>
         <translation>O&amp;nderteken Bericht</translation>
     </message>
     <message>
-        <location line="-118"/>
+        <location line="+6"/>
         <source>You can sign messages with your addresses to prove you own them. Be careful not to sign anything vague, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
         <translation>U kunt berichten ondertekenen met een van uw adressen om te bewijzen dat u dit adres bezit. Pas op dat u geen onduidelijke dingen ondertekent, want phishingaanvallen zouden u kunnen misleiden om zo uw identiteit te stelen. Onderteken alleen berichten waarmee u het volledig eens bent.</translation>
     </message>
@@ -1487,7 +1491,12 @@ Adres: %4
         <translation>Onderteken een bericht om te bewijzen dat u een bepaald Bitcoinadres bezit</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Sign &amp;Message</source>
+        <translation>Onderteken &amp;Bericht</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all sign message fields</source>
         <translation>Verwijder alles in de invulvelden</translation>
     </message>
@@ -1499,12 +1508,11 @@ Adres: %4
     </message>
     <message>
         <location line="-87"/>
-        <location line="+70"/>
         <source>&amp;Verify Message</source>
         <translation>&amp;Verifiëer Bericht</translation>
     </message>
     <message>
-        <location line="-64"/>
+        <location line="+6"/>
         <source>Enter the signing address, message (ensure you copy line breaks, spaces, tabs, etc. exactly) and signature below to verify the message. Be careful not to read more into the signature than what is in the signed message itself, to avoid being tricked by a man-in-the-middle attack.</source>
         <translation>Voer het ondertekenende adres, bericht en handtekening hieronder in (let erop dat u nieuwe regels, spaties en tabs juist overneemt) om de handtekening te verifiëren. Let erop dat u niet meer uit het bericht interpreteert dan er daadwerkelijk staat,  om te voorkomen dat u wordt misleid in een man-in-the-middle-aanval.</translation>
     </message>
@@ -1519,7 +1527,12 @@ Adres: %4
         <translation>Controleer een bericht om te verifiëren dat het gespecificeerde Bitcoinadres het bericht heeft ondertekend.</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Verify &amp;Message</source>
+        <translation>Verifiëer &amp;Bericht</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all verify message fields</source>
         <translation>Verwijder alles in de invulvelden</translation>
     </message>
@@ -1613,16 +1626,8 @@ Adres: %4
         <source>Open until %1</source>
         <translation>Openen totdat %1</translation>
     </message>
-    <message numerus="yes">
-        <location line="-2"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>Open voor %n blok.</numerusform>
-            <numerusform>Open voor %n blokken</numerusform>
-        </translation>
-    </message>
     <message>
-        <location line="+8"/>
+        <location line="+6"/>
         <source>%1/offline</source>
         <translation>%1/offline</translation>
     </message>
@@ -1783,8 +1788,16 @@ Adres: %4
         <source>, has not been successfully broadcast yet</source>
         <translation>, is nog niet met succes uitgezonden</translation>
     </message>
+    <message numerus="yes">
+        <location line="-35"/>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
     <message>
-        <location line="+35"/>
+        <location line="+70"/>
         <source>unknown</source>
         <translation>onbekend</translation>
     </message>
@@ -1826,10 +1839,10 @@ Adres: %4
     </message>
     <message numerus="yes">
         <location line="+57"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>Open gedurende %n blok</numerusform>
-            <numerusform>Open gedurende %n blokken</numerusform>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -2227,7 +2240,7 @@ Adres: %4
     <message>
         <location line="+2"/>
         <source>Error initializing database environment %s! To recover, BACKUP THAT DIRECTORY, then remove everything from it except for wallet.dat.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fout bij het initialiseren van database-omgeving %s! Om te herstellen, MAAK EEN BACKUP VAN DIE MAP, verwijder vervolgens alle bestanden in de map behalve wallet.dat.</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -2237,12 +2250,12 @@ Adres: %4
     <message>
         <location line="+19"/>
         <source>Warning: error reading wallet.dat! All keys read correctly, but transaction data or address book entries might be missing or incorrect.</source>
-        <translation type="unfinished"></translation>
+        <translation>Waarschuwing: Fout bij het lezen van wallet.dat! Alle sleutels zijn in goede orde uitgelezen, maar transactiedata of adresboeklemma&apos;s zouden kunnen ontbreken of fouten bevatten.</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Warning: wallet.dat corrupt, data salvaged! Original wallet.dat saved as wallet.{timestamp}.bak in %s; if your balance or transactions are incorrect you should restore from a backup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Waarschuwing: wallet.dat is corrupt, data is veiliggesteld! Originele wallet.dat is opgeslagen als wallet.{tijdstip}.bak in %s; als uw balans of transacties incorrect zijn dient u een backup terug te zetten.</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -2253,7 +2266,7 @@ Adres: %4
     <message>
         <location line="+5"/>
         <source>Attempt to recover private keys from a corrupt wallet.dat</source>
-        <translation type="unfinished"></translation>
+        <translation>Poog de geheime sleutels uit een corrupt wallet.dat bestand terug te halen</translation>
     </message>
     <message>
         <location line="+32"/>
@@ -2461,7 +2474,7 @@ Adres: %4
     <message>
         <location line="+1"/>
         <source>wallet.dat corrupt, salvage failed</source>
-        <translation type="unfinished"></translation>
+        <translation>wallet.dat corrupt, veiligstellen mislukt</translation>
     </message>
     <message>
         <location line="-43"/>

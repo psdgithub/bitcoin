@@ -119,7 +119,7 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
         <translation>&amp;Editera</translation>
     </message>
     <message>
-        <location line="+250"/>
+        <location line="+252"/>
         <source>Export Address Book Data</source>
         <translation>Exportera Adressbok</translation>
     </message>
@@ -142,7 +142,7 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
 <context>
     <name>AddressTableModel</name>
     <message>
-        <location filename="../addresstablemodel.cpp" line="+142"/>
+        <location filename="../addresstablemodel.cpp" line="+144"/>
         <source>Label</source>
         <translation>Etikett</translation>
     </message>
@@ -301,17 +301,17 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
 <context>
     <name>BitcoinGUI</name>
     <message>
-        <location filename="../bitcoingui.cpp" line="+257"/>
+        <location filename="../bitcoingui.cpp" line="+260"/>
         <source>Sign &amp;message...</source>
         <translation>Signera &amp;meddelande...</translation>
     </message>
     <message>
-        <location line="+237"/>
+        <location line="+257"/>
         <source>Synchronizing with network...</source>
         <translation>Synkroniserar med nätverk...</translation>
     </message>
     <message>
-        <location line="-299"/>
+        <location line="-319"/>
         <source>&amp;Overview</source>
         <translation>&amp;Översikt</translation>
     </message>
@@ -401,7 +401,7 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
         <translation>&amp;Byt Lösenord...</translation>
     </message>
     <message numerus="yes">
-        <location line="+241"/>
+        <location line="+261"/>
         <source>~%n block(s) remaining</source>
         <translation>
             <numerusform>~%n block återstår</numerusform>
@@ -414,7 +414,7 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
         <translation>Laddat ner %1 av %2 block från transaktionshistoriken (%3% klart).</translation>
     </message>
     <message>
-        <location line="-242"/>
+        <location line="-262"/>
         <source>&amp;Export...</source>
         <translation>&amp;Exportera...</translation>
     </message>
@@ -464,7 +464,7 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
         <translation>&amp;Verifiera meddelande...</translation>
     </message>
     <message>
-        <location line="-186"/>
+        <location line="-189"/>
         <source>Bitcoin</source>
         <translation>Bitcoin</translation>
     </message>
@@ -474,7 +474,7 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
         <translation>Plånbok</translation>
     </message>
     <message>
-        <location line="+168"/>
+        <location line="+171"/>
         <source>&amp;About Bitcoin</source>
         <translation>&amp;Om Bitcoin</translation>
     </message>
@@ -484,12 +484,17 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
         <translation>&amp;Visa / Göm</translation>
     </message>
     <message>
-        <location line="+39"/>
+        <location line="+28"/>
+        <source>S&amp;ignatures</source>
+        <translation>Signatur</translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>&amp;File</source>
         <translation>&amp;Arkiv</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+10"/>
         <source>&amp;Settings</source>
         <translation>&amp;Inställningar</translation>
     </message>
@@ -504,7 +509,7 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
         <translation>Verktygsfält för Tabbar</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Actions toolbar</source>
         <translation>Verktygsfältet för Handlingar</translation>
     </message>
@@ -521,7 +526,7 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
         <translation>Bitcoin-klient</translation>
     </message>
     <message numerus="yes">
-        <location line="+69"/>
+        <location line="+71"/>
         <source>%n active connection(s) to Bitcoin network</source>
         <translation>
             <numerusform>%n aktiv anslutning till Bitcoin-nätverket</numerusform>
@@ -614,7 +619,7 @@ Adress: %4
 </translation>
     </message>
     <message>
-        <location line="+100"/>
+        <location line="+120"/>
         <location line="+15"/>
         <source>URI handling</source>
         <translation>URI hantering</translation>
@@ -717,17 +722,17 @@ Adress: %4
         <translation>Redigera avsändaradress</translation>
     </message>
     <message>
-        <location line="+60"/>
+        <location line="+76"/>
         <source>The entered address &quot;%1&quot; is already in the address book.</source>
         <translation>Den angivna adressen &quot;%1&quot; finns redan i adressboken.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-5"/>
         <source>The entered address &quot;%1&quot; is not a valid Bitcoin address.</source>
         <translation>Den angivna adressen &quot;%1&quot; är inte en giltig Bitcoin-adress.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+10"/>
         <source>Could not unlock wallet.</source>
         <translation>Plånboken kunde inte låsas upp.</translation>
     </message>
@@ -1434,12 +1439,11 @@ Adress: %4
     </message>
     <message>
         <location line="+13"/>
-        <location line="+124"/>
         <source>&amp;Sign Message</source>
         <translation>&amp;Signera meddelande</translation>
     </message>
     <message>
-        <location line="-118"/>
+        <location line="+6"/>
         <source>You can sign messages with your addresses to prove you own them. Be careful not to sign anything vague, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
         <translation>Du kan signera meddelanden med dina adresser för att bevisa att du äger dem. Var försiktig med vad du signerar eftersom phising-attacker kan försöka få dig att skriva över din identitet till någon annan. Signera bara väldetaljerade påståenden du kan gå i god för.</translation>
     </message>
@@ -1486,7 +1490,12 @@ Adress: %4
         <translation>Signera meddelandet för att bevisa att du äger denna adress</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Sign &amp;Message</source>
+        <translation>Signera &amp;Meddelande</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all sign message fields</source>
         <translation>Rensa alla fält</translation>
     </message>
@@ -1498,12 +1507,11 @@ Adress: %4
     </message>
     <message>
         <location line="-87"/>
-        <location line="+70"/>
         <source>&amp;Verify Message</source>
         <translation>&amp;Verifiera Meddelande</translation>
     </message>
     <message>
-        <location line="-64"/>
+        <location line="+6"/>
         <source>Enter the signing address, message (ensure you copy line breaks, spaces, tabs, etc. exactly) and signature below to verify the message. Be careful not to read more into the signature than what is in the signed message itself, to avoid being tricked by a man-in-the-middle attack.</source>
         <translation>Skriv in din adress, meddelande (se till att du kopierar radbrytningar, mellanslag, tabbar osv exakt) och signatur nedan för att verifiera meddelandet. Var noga med att inte läsa in mer i signaturen än vad som finns i det signerade meddelandet, för att undvika att luras av en man-in-the-middle attack.</translation>
     </message>
@@ -1518,7 +1526,12 @@ Adress: %4
         <translation>Verifiera meddelandet för att vara säker på att den var signerad med den angivna Bitcoin-adressen</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Verify &amp;Message</source>
+        <translation>Verifiera &amp;Meddelande</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all verify message fields</source>
         <translation>Rensa alla fält</translation>
     </message>
@@ -1612,16 +1625,8 @@ Adress: %4
         <source>Open until %1</source>
         <translation>Öppet till %1</translation>
     </message>
-    <message numerus="yes">
-        <location line="-2"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>Öppen för %n block</numerusform>
-            <numerusform>Öppen för %n block</numerusform>
-        </translation>
-    </message>
     <message>
-        <location line="+8"/>
+        <location line="+6"/>
         <source>%1/offline</source>
         <translation>%1/nerkopplad</translation>
     </message>
@@ -1782,8 +1787,16 @@ Adress: %4
         <source>, has not been successfully broadcast yet</source>
         <translation>, har inte lyckats skickas ännu</translation>
     </message>
+    <message numerus="yes">
+        <location line="-35"/>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
     <message>
-        <location line="+35"/>
+        <location line="+70"/>
         <source>unknown</source>
         <translation>okänd</translation>
     </message>
@@ -1825,10 +1838,10 @@ Adress: %4
     </message>
     <message numerus="yes">
         <location line="+57"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>Öppen i %n block</numerusform>
-            <numerusform>Öppen i %n block</numerusform>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -2217,7 +2230,7 @@ Adress: %4
     <message>
         <location line="+2"/>
         <source>Error initializing database environment %s! To recover, BACKUP THAT DIRECTORY, then remove everything from it except for wallet.dat.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fel vid initiering databasmiljön %s! För att återställa, SÄKERHETSKOPIERA KATALOGEN, därefter ta bort allt från det utom wallet.dat.</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -2227,12 +2240,12 @@ Adress: %4
     <message>
         <location line="+19"/>
         <source>Warning: error reading wallet.dat! All keys read correctly, but transaction data or address book entries might be missing or incorrect.</source>
-        <translation type="unfinished"></translation>
+        <translation>Varning: fel vid läsning av wallet.dat! Alla nycklar lästes korrekt, men transaktionsdatan eller adressbokens poster kanske saknas eller är felaktiga.</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Warning: wallet.dat corrupt, data salvaged! Original wallet.dat saved as wallet.{timestamp}.bak in %s; if your balance or transactions are incorrect you should restore from a backup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Varning: wallet.dat korrupt, datan har räddats! Den ursprungliga wallet.dat har sparas som wallet.{timestamp}.bak i %s; om ditt saldo eller transaktioner är felaktiga ska du återställa från en säkerhetskopia.</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -2242,7 +2255,7 @@ Adress: %4
     <message>
         <location line="+5"/>
         <source>Attempt to recover private keys from a corrupt wallet.dat</source>
-        <translation type="unfinished"></translation>
+        <translation>Försök att rädda de privata nycklarna från en korrupt wallet.dat</translation>
     </message>
     <message>
         <location line="+32"/>
@@ -2447,7 +2460,7 @@ Adress: %4
     <message>
         <location line="+1"/>
         <source>wallet.dat corrupt, salvage failed</source>
-        <translation type="unfinished"></translation>
+        <translation>wallet.dat korrupt, räddning misslyckades</translation>
     </message>
     <message>
         <location line="-43"/>

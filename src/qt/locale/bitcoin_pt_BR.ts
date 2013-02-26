@@ -113,7 +113,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>&amp;Editar</translation>
     </message>
     <message>
-        <location line="+250"/>
+        <location line="+252"/>
         <source>Export Address Book Data</source>
         <translation>Exportação de dados do Catálogo de Endereços</translation>
     </message>
@@ -136,7 +136,7 @@ This product includes software developed by the OpenSSL Project for use in the O
 <context>
     <name>AddressTableModel</name>
     <message>
-        <location filename="../addresstablemodel.cpp" line="+142"/>
+        <location filename="../addresstablemodel.cpp" line="+144"/>
         <source>Label</source>
         <translation>Rótulo</translation>
     </message>
@@ -295,17 +295,17 @@ This product includes software developed by the OpenSSL Project for use in the O
 <context>
     <name>BitcoinGUI</name>
     <message>
-        <location filename="../bitcoingui.cpp" line="+257"/>
+        <location filename="../bitcoingui.cpp" line="+260"/>
         <source>Sign &amp;message...</source>
         <translation>&amp;Assinar Mensagem...</translation>
     </message>
     <message>
-        <location line="+237"/>
+        <location line="+257"/>
         <source>Synchronizing with network...</source>
         <translation>Sincronizando com a rede...</translation>
     </message>
     <message>
-        <location line="-299"/>
+        <location line="-319"/>
         <source>&amp;Overview</source>
         <translation>&amp;Visão geral</translation>
     </message>
@@ -395,7 +395,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>&amp;Mudar frase de segurança...</translation>
     </message>
     <message numerus="yes">
-        <location line="+241"/>
+        <location line="+261"/>
         <source>~%n block(s) remaining</source>
         <translation>
             <numerusform>~%n bloco restante</numerusform>
@@ -408,7 +408,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>Carregados %1 de %2 blocos do histórico de transações (%3% done).</translation>
     </message>
     <message>
-        <location line="-242"/>
+        <location line="-262"/>
         <source>&amp;Export...</source>
         <translation>&amp;Exportar...</translation>
     </message>
@@ -458,7 +458,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-186"/>
+        <location line="-189"/>
         <source>Bitcoin</source>
         <translation>Bitcoin</translation>
     </message>
@@ -468,7 +468,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>Carteira</translation>
     </message>
     <message>
-        <location line="+168"/>
+        <location line="+171"/>
         <source>&amp;About Bitcoin</source>
         <translation>&amp;Sobre o Bitcoin</translation>
     </message>
@@ -478,12 +478,17 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>&amp;Exibir/Ocultar</translation>
     </message>
     <message>
-        <location line="+39"/>
+        <location line="+28"/>
+        <source>S&amp;ignatures</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>&amp;File</source>
         <translation>&amp;Arquivo</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+10"/>
         <source>&amp;Settings</source>
         <translation>E configurações</translation>
     </message>
@@ -498,7 +503,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>Barra de ferramentas</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Actions toolbar</source>
         <translation>Barra de ações</translation>
     </message>
@@ -515,7 +520,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>Cliente Bitcoin</translation>
     </message>
     <message numerus="yes">
-        <location line="+69"/>
+        <location line="+71"/>
         <source>%n active connection(s) to Bitcoin network</source>
         <translation>
             <numerusform>%n conexão ativa na rede Bitcoin</numerusform>
@@ -607,7 +612,7 @@ Tipo: %3
 Endereço: %4</translation>
     </message>
     <message>
-        <location line="+100"/>
+        <location line="+120"/>
         <location line="+15"/>
         <source>URI handling</source>
         <translation type="unfinished"></translation>
@@ -710,17 +715,17 @@ Endereço: %4</translation>
         <translation>Edit sending address</translation>
     </message>
     <message>
-        <location line="+60"/>
+        <location line="+76"/>
         <source>The entered address &quot;%1&quot; is already in the address book.</source>
         <translation>The entered address &quot;%1&quot; is already in the address book.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-5"/>
         <source>The entered address &quot;%1&quot; is not a valid Bitcoin address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+10"/>
         <source>Could not unlock wallet.</source>
         <translation>Could not unlock wallet.</translation>
     </message>
@@ -1428,12 +1433,11 @@ Endereço: %4</translation>
     </message>
     <message>
         <location line="+13"/>
-        <location line="+124"/>
         <source>&amp;Sign Message</source>
         <translation>&amp;Assinar Mensagem</translation>
     </message>
     <message>
-        <location line="-118"/>
+        <location line="+6"/>
         <source>You can sign messages with your addresses to prove you own them. Be careful not to sign anything vague, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
         <translation>Você pode assinar mensagens com seus endereços para provar que você é o dono deles. Seja cuidadoso para não assinar algo vago, pois ataques de pishing podem tentar te enganar para dar sua assinatura de identidade para eles. Apenas assine afirmações completamente detalhadas com as quais você concorda.</translation>
     </message>
@@ -1480,7 +1484,12 @@ Endereço: %4</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Sign &amp;Message</source>
+        <translation>&amp;Assinar Mensagem</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all sign message fields</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1492,12 +1501,11 @@ Endereço: %4</translation>
     </message>
     <message>
         <location line="-87"/>
-        <location line="+70"/>
         <source>&amp;Verify Message</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-64"/>
+        <location line="+6"/>
         <source>Enter the signing address, message (ensure you copy line breaks, spaces, tabs, etc. exactly) and signature below to verify the message. Be careful not to read more into the signature than what is in the signed message itself, to avoid being tricked by a man-in-the-middle attack.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1512,7 +1520,12 @@ Endereço: %4</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Verify &amp;Message</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all verify message fields</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1606,16 +1619,8 @@ Endereço: %4</translation>
         <source>Open until %1</source>
         <translation>Open until %1</translation>
     </message>
-    <message numerus="yes">
-        <location line="-2"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>Open for %n block</numerusform>
-            <numerusform>Open for %n blocks</numerusform>
-        </translation>
-    </message>
     <message>
-        <location line="+8"/>
+        <location line="+6"/>
         <source>%1/offline</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1776,8 +1781,16 @@ Endereço: %4</translation>
         <source>, has not been successfully broadcast yet</source>
         <translation>, has not been successfully broadcast yet</translation>
     </message>
+    <message numerus="yes">
+        <location line="-35"/>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
     <message>
-        <location line="+35"/>
+        <location line="+70"/>
         <source>unknown</source>
         <translation>unknown</translation>
     </message>
@@ -1819,10 +1832,10 @@ Endereço: %4</translation>
     </message>
     <message numerus="yes">
         <location line="+57"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>Open for %n block</numerusform>
-            <numerusform>Open for %n blocks</numerusform>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>

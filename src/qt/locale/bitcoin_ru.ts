@@ -118,7 +118,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>&amp;Правка</translation>
     </message>
     <message>
-        <location line="+250"/>
+        <location line="+252"/>
         <source>Export Address Book Data</source>
         <translation>Экспортировать адресную книгу</translation>
     </message>
@@ -141,7 +141,7 @@ This product includes software developed by the OpenSSL Project for use in the O
 <context>
     <name>AddressTableModel</name>
     <message>
-        <location filename="../addresstablemodel.cpp" line="+142"/>
+        <location filename="../addresstablemodel.cpp" line="+144"/>
         <source>Label</source>
         <translation>Метка</translation>
     </message>
@@ -300,17 +300,17 @@ This product includes software developed by the OpenSSL Project for use in the O
 <context>
     <name>BitcoinGUI</name>
     <message>
-        <location filename="../bitcoingui.cpp" line="+257"/>
+        <location filename="../bitcoingui.cpp" line="+260"/>
         <source>Sign &amp;message...</source>
         <translation>&amp;Подписать сообщение</translation>
     </message>
     <message>
-        <location line="+237"/>
+        <location line="+257"/>
         <source>Synchronizing with network...</source>
         <translation>Синхронизация с сетью...</translation>
     </message>
     <message>
-        <location line="-299"/>
+        <location line="-319"/>
         <source>&amp;Overview</source>
         <translation>О&amp;бзор</translation>
     </message>
@@ -400,7 +400,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>&amp;Изменить пароль</translation>
     </message>
     <message numerus="yes">
-        <location line="+241"/>
+        <location line="+261"/>
         <source>~%n block(s) remaining</source>
         <translation>
             <numerusform>остался ~%n блок</numerusform>
@@ -414,7 +414,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>Загружено %1 из %2 блоков истории операций (%3% завершено).</translation>
     </message>
     <message>
-        <location line="-242"/>
+        <location line="-262"/>
         <source>&amp;Export...</source>
         <translation>&amp;Экспорт...</translation>
     </message>
@@ -464,7 +464,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>&amp;Проверить сообщение...</translation>
     </message>
     <message>
-        <location line="-186"/>
+        <location line="-189"/>
         <source>Bitcoin</source>
         <translation>Биткоин</translation>
     </message>
@@ -474,7 +474,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>Бумажник</translation>
     </message>
     <message>
-        <location line="+168"/>
+        <location line="+171"/>
         <source>&amp;About Bitcoin</source>
         <translation>&amp;О Bitcoin</translation>
     </message>
@@ -484,12 +484,17 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>&amp;Показать / Скрыть</translation>
     </message>
     <message>
-        <location line="+39"/>
+        <location line="+28"/>
+        <source>S&amp;ignatures</source>
+        <translation>Подпись</translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>&amp;File</source>
         <translation>&amp;Файл</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+10"/>
         <source>&amp;Settings</source>
         <translation>&amp;Настройки</translation>
     </message>
@@ -504,7 +509,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>Панель вкладок</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Actions toolbar</source>
         <translation>Панель действий</translation>
     </message>
@@ -521,7 +526,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>Bitcoin клиент</translation>
     </message>
     <message numerus="yes">
-        <location line="+69"/>
+        <location line="+71"/>
         <source>%n active connection(s) to Bitcoin network</source>
         <translation>
             <numerusform>%n активное соединение с сетью</numerusform>
@@ -619,7 +624,7 @@ Address: %4
 </translation>
     </message>
     <message>
-        <location line="+100"/>
+        <location line="+120"/>
         <location line="+15"/>
         <source>URI handling</source>
         <translation>Обработка URI</translation>
@@ -722,17 +727,17 @@ Address: %4
         <translation>Изменение адреса для отправки</translation>
     </message>
     <message>
-        <location line="+60"/>
+        <location line="+76"/>
         <source>The entered address &quot;%1&quot; is already in the address book.</source>
         <translation>Введённый адрес «%1» уже находится в адресной книге.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-5"/>
         <source>The entered address &quot;%1&quot; is not a valid Bitcoin address.</source>
         <translation>Введённый адрес &quot;%1&quot; не является правильным Bitcoin-адресом.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+10"/>
         <source>Could not unlock wallet.</source>
         <translation>Не удается разблокировать бумажник.</translation>
     </message>
@@ -1439,12 +1444,11 @@ Address: %4
     </message>
     <message>
         <location line="+13"/>
-        <location line="+124"/>
         <source>&amp;Sign Message</source>
         <translation>&amp;Подписать сообщение</translation>
     </message>
     <message>
-        <location line="-118"/>
+        <location line="+6"/>
         <source>You can sign messages with your addresses to prove you own them. Be careful not to sign anything vague, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
         <translation>Вы можете подписывать сообщения своими адресами, чтобы доказать владение ими. Будьте осторожны, не подписывайте что-то неопределённое, так как фишинговые атаки могут обманным путём заставить вас подписать нежелательные сообщения. Подписывайте только те сообщения, с которыми вы согласны вплоть до мелочей.</translation>
     </message>
@@ -1491,7 +1495,12 @@ Address: %4
         <translation>Подписать сообщение, чтобы доказать владение адресом Bitcoin</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Sign &amp;Message</source>
+        <translation>Подписать &amp;Сообщение</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all sign message fields</source>
         <translation>Сбросить значения всех полей подписывания сообщений</translation>
     </message>
@@ -1503,12 +1512,11 @@ Address: %4
     </message>
     <message>
         <location line="-87"/>
-        <location line="+70"/>
         <source>&amp;Verify Message</source>
         <translation>&amp;Проверить сообщение</translation>
     </message>
     <message>
-        <location line="-64"/>
+        <location line="+6"/>
         <source>Enter the signing address, message (ensure you copy line breaks, spaces, tabs, etc. exactly) and signature below to verify the message. Be careful not to read more into the signature than what is in the signed message itself, to avoid being tricked by a man-in-the-middle attack.</source>
         <translation>Введите ниже адрес для подписи, сообщение (убедитесь, что переводы строк, пробелы, табы и т.п. в точности скопированы) и подпись, чтобы проверить сообщение. Убедитесь, что не скопировали лишнего в подпись, по сравнению с самим подписываемым сообщением, чтобы не стать жертвой атаки &quot;man-in-the-middle&quot;.</translation>
     </message>
@@ -1523,7 +1531,12 @@ Address: %4
         <translation>Проверить сообщение, чтобы убедиться, что оно было подписано указанным адресом Bitcoin</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Verify &amp;Message</source>
+        <translation>Проверить &amp;Сообщение</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all verify message fields</source>
         <translation>Сбросить все поля проверки сообщения</translation>
     </message>
@@ -1617,17 +1630,8 @@ Address: %4
         <source>Open until %1</source>
         <translation>Открыто до %1</translation>
     </message>
-    <message numerus="yes">
-        <location line="-2"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>Открыто для %n блока</numerusform>
-            <numerusform>Открыто для %n блоков</numerusform>
-            <numerusform>Открыто для %n блоков</numerusform>
-        </translation>
-    </message>
     <message>
-        <location line="+8"/>
+        <location line="+6"/>
         <source>%1/offline</source>
         <translation>%1/отключен</translation>
     </message>
@@ -1790,8 +1794,17 @@ Address: %4
         <source>, has not been successfully broadcast yet</source>
         <translation>, ещё не было успешно разослано</translation>
     </message>
+    <message numerus="yes">
+        <location line="-35"/>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
     <message>
-        <location line="+35"/>
+        <location line="+70"/>
         <source>unknown</source>
         <translation>неизвестно</translation>
     </message>
@@ -1833,11 +1846,11 @@ Address: %4
     </message>
     <message numerus="yes">
         <location line="+57"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>Открыто для %n блока</numerusform>
-            <numerusform>Открыто для %n блоков</numerusform>
-            <numerusform>Открыто для %n блоков</numerusform>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -2228,7 +2241,7 @@ Address: %4
     <message>
         <location line="+2"/>
         <source>Error initializing database environment %s! To recover, BACKUP THAT DIRECTORY, then remove everything from it except for wallet.dat.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка инициализации окружения базы данных %s! Чтобы восстановить работоспособность, СДЕЛАЙТЕ РЕЗЕРВНУЮ КОПИЮ ЭТОГО КАТАЛОГА, после чего удалите из него всё, кроме wallet.dat.</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -2238,12 +2251,12 @@ Address: %4
     <message>
         <location line="+19"/>
         <source>Warning: error reading wallet.dat! All keys read correctly, but transaction data or address book entries might be missing or incorrect.</source>
-        <translation type="unfinished"></translation>
+        <translation>Внимание: ошибка чтения wallet.dat! Все ключи прочитаны верно, но данные транзакций или записи адресной книги могут отсутствовать или быть неправильными.</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Warning: wallet.dat corrupt, data salvaged! Original wallet.dat saved as wallet.{timestamp}.bak in %s; if your balance or transactions are incorrect you should restore from a backup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Внимание: wallet.dat повреждён, данные спасены! Оригинальный wallet.dat сохранён как wallet.{timestamp}.bak в %s; если ваш баланс или транзакции некорректны, вы должны восстановить файл из резервной копии.</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -2253,7 +2266,7 @@ Address: %4
     <message>
         <location line="+5"/>
         <source>Attempt to recover private keys from a corrupt wallet.dat</source>
-        <translation type="unfinished"></translation>
+        <translation>Попытка восстановления приватных ключей из повреждённого wallet.dat</translation>
     </message>
     <message>
         <location line="+32"/>
@@ -2459,7 +2472,7 @@ Address: %4
     <message>
         <location line="+1"/>
         <source>wallet.dat corrupt, salvage failed</source>
-        <translation type="unfinished"></translation>
+        <translation>wallet.dat повреждён, спасение данных не удалось</translation>
     </message>
     <message>
         <location line="-43"/>

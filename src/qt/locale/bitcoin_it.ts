@@ -100,7 +100,7 @@ Questo prodotto include software sviluppato dal progetto OpenSSL per l&apos;uso 
     <message>
         <location line="+3"/>
         <source>&amp;Verify Message</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Verifica Messaggio</translation>
     </message>
     <message>
         <location line="+14"/>
@@ -118,7 +118,7 @@ Questo prodotto include software sviluppato dal progetto OpenSSL per l&apos;uso 
         <translation>&amp;Modifica</translation>
     </message>
     <message>
-        <location line="+250"/>
+        <location line="+252"/>
         <source>Export Address Book Data</source>
         <translation>Esporta gli indirizzi della rubrica</translation>
     </message>
@@ -141,7 +141,7 @@ Questo prodotto include software sviluppato dal progetto OpenSSL per l&apos;uso 
 <context>
     <name>AddressTableModel</name>
     <message>
-        <location filename="../addresstablemodel.cpp" line="+142"/>
+        <location filename="../addresstablemodel.cpp" line="+144"/>
         <source>Label</source>
         <translation>Etichetta</translation>
     </message>
@@ -300,17 +300,17 @@ Questo prodotto include software sviluppato dal progetto OpenSSL per l&apos;uso 
 <context>
     <name>BitcoinGUI</name>
     <message>
-        <location filename="../bitcoingui.cpp" line="+257"/>
+        <location filename="../bitcoingui.cpp" line="+260"/>
         <source>Sign &amp;message...</source>
         <translation>Firma il &amp;messaggio...</translation>
     </message>
     <message>
-        <location line="+237"/>
+        <location line="+257"/>
         <source>Synchronizing with network...</source>
         <translation>Sto sincronizzando con la rete...</translation>
     </message>
     <message>
-        <location line="-299"/>
+        <location line="-319"/>
         <source>&amp;Overview</source>
         <translation>&amp;Sintesi</translation>
     </message>
@@ -400,7 +400,7 @@ Questo prodotto include software sviluppato dal progetto OpenSSL per l&apos;uso 
         <translation>&amp;Cambia la passphrase...</translation>
     </message>
     <message numerus="yes">
-        <location line="+241"/>
+        <location line="+261"/>
         <source>~%n block(s) remaining</source>
         <translation>
             <numerusform>~%n blocco rimanente</numerusform>
@@ -413,7 +413,7 @@ Questo prodotto include software sviluppato dal progetto OpenSSL per l&apos;uso 
         <translation>Scaricati %1 di %2 blocchi dello storico delle transazioni ( il %3% )</translation>
     </message>
     <message>
-        <location line="-242"/>
+        <location line="-262"/>
         <source>&amp;Export...</source>
         <translation>&amp;Esporta...</translation>
     </message>
@@ -450,20 +450,20 @@ Questo prodotto include software sviluppato dal progetto OpenSSL per l&apos;uso 
     <message>
         <location line="+6"/>
         <source>&amp;Debug window</source>
-        <translation type="unfinished"></translation>
+        <translation>Finestra &amp;Debug</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Open debugging and diagnostic console</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri la console di degugging e diagnostica</translation>
     </message>
     <message>
         <location line="-5"/>
         <source>&amp;Verify message...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Verifica messaggio...</translation>
     </message>
     <message>
-        <location line="-186"/>
+        <location line="-189"/>
         <source>Bitcoin</source>
         <translation>Bitcoin</translation>
     </message>
@@ -473,7 +473,7 @@ Questo prodotto include software sviluppato dal progetto OpenSSL per l&apos;uso 
         <translation>Portamonete</translation>
     </message>
     <message>
-        <location line="+168"/>
+        <location line="+171"/>
         <source>&amp;About Bitcoin</source>
         <translation>&amp;Info su Bitcoin</translation>
     </message>
@@ -483,12 +483,17 @@ Questo prodotto include software sviluppato dal progetto OpenSSL per l&apos;uso 
         <translation>&amp;Mostra/Nascondi</translation>
     </message>
     <message>
-        <location line="+39"/>
+        <location line="+28"/>
+        <source>S&amp;ignatures</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>&amp;File</source>
         <translation>&amp;File</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+10"/>
         <source>&amp;Settings</source>
         <translation>&amp;Impostazioni</translation>
     </message>
@@ -503,7 +508,7 @@ Questo prodotto include software sviluppato dal progetto OpenSSL per l&apos;uso 
         <translation>Barra degli strumenti &quot;Tabs&quot;</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Actions toolbar</source>
         <translation>Barra degli strumenti &quot;Azioni&quot;</translation>
     </message>
@@ -520,7 +525,7 @@ Questo prodotto include software sviluppato dal progetto OpenSSL per l&apos;uso 
         <translation>Bitcoin client</translation>
     </message>
     <message numerus="yes">
-        <location line="+69"/>
+        <location line="+71"/>
         <source>%n active connection(s) to Bitcoin network</source>
         <translation>
             <numerusform>%n connessione attiva alla rete Bitcoin</numerusform>
@@ -614,7 +619,7 @@ Indirizzo: %4
 </translation>
     </message>
     <message>
-        <location line="+100"/>
+        <location line="+120"/>
         <location line="+15"/>
         <source>URI handling</source>
         <translation type="unfinished"></translation>
@@ -717,17 +722,17 @@ Indirizzo: %4
         <translation>Modifica indirizzo d&apos;invio</translation>
     </message>
     <message>
-        <location line="+60"/>
+        <location line="+76"/>
         <source>The entered address &quot;%1&quot; is already in the address book.</source>
         <translation>L&apos;indirizzo inserito &quot;%1&quot; è già in rubrica.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-5"/>
         <source>The entered address &quot;%1&quot; is not a valid Bitcoin address.</source>
         <translation>L&apos;indirizzo inserito &quot;%1&quot; non è un indirizzo bitcoin valido.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+10"/>
         <source>Could not unlock wallet.</source>
         <translation>Impossibile sbloccare il portamonete.</translation>
     </message>
@@ -912,7 +917,7 @@ Indirizzo: %4
     <message>
         <location line="+8"/>
         <source>User Interface &amp;language:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Lingua Interfaccia Utente:</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -947,12 +952,12 @@ Indirizzo: %4
     <message>
         <location line="+7"/>
         <source>&amp;Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Cancella</translation>
     </message>
     <message>
         <location line="+10"/>
         <source>&amp;Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Applica</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="+55"/>
@@ -988,7 +993,7 @@ Indirizzo: %4
         <location line="+33"/>
         <location line="+183"/>
         <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le informazioni visualizzate sono datate. Il tuo partafogli verrà sincronizzato automaticamente con il network Bitcoin dopo che la connessione è stabilita, ma questo processo non può essere completato ora.</translation>
     </message>
     <message>
         <location line="-141"/>
@@ -1052,7 +1057,7 @@ Indirizzo: %4
     <message>
         <location filename="../forms/qrcodedialog.ui" line="+14"/>
         <source>QR Code Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Codice QR di dialogo</translation>
     </message>
     <message>
         <location line="+59"/>
@@ -1082,7 +1087,7 @@ Indirizzo: %4
     <message>
         <location filename="../qrcodedialog.cpp" line="+62"/>
         <source>Error encoding URI into QR Code.</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore nella codifica URI nel codice QR</translation>
     </message>
     <message>
         <location line="+40"/>
@@ -1110,7 +1115,7 @@ Indirizzo: %4
     <message>
         <location filename="../forms/rpcconsole.ui" line="+46"/>
         <source>Client name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nome del client</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -1134,7 +1139,7 @@ Indirizzo: %4
     <message>
         <location line="-45"/>
         <source>&amp;Information</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Informazione</translation>
     </message>
     <message>
         <location line="+68"/>
@@ -1159,7 +1164,7 @@ Indirizzo: %4
     <message>
         <location line="+23"/>
         <source>On testnet</source>
-        <translation type="unfinished"></translation>
+        <translation>Nel testnet</translation>
     </message>
     <message>
         <location line="+23"/>
@@ -1184,7 +1189,7 @@ Indirizzo: %4
     <message>
         <location line="+52"/>
         <source>&amp;Open</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Apri</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -1199,7 +1204,7 @@ Indirizzo: %4
     <message>
         <location line="+3"/>
         <source>&amp;Show</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mostra</translation>
     </message>
     <message>
         <location line="+24"/>
@@ -1209,12 +1214,12 @@ Indirizzo: %4
     <message>
         <location line="-260"/>
         <source>Build date</source>
-        <translation type="unfinished"></translation>
+        <translation>Data di creazione</translation>
     </message>
     <message>
         <location line="-104"/>
         <source>Bitcoin - Debug window</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitcoin - Finestra debug</translation>
     </message>
     <message>
         <location line="+25"/>
@@ -1244,7 +1249,7 @@ Indirizzo: %4
     <message>
         <location line="+1"/>
         <source>Use up and down arrows to navigate history, and &lt;b&gt;Ctrl-L&lt;/b&gt; to clear screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Usa le frecce direzionali per navigare la cronologia, and &lt;b&gt;Ctrl-L&lt;/b&gt; per cancellarla.</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1431,16 +1436,15 @@ Indirizzo: %4
     <message>
         <location filename="../forms/signverifymessagedialog.ui" line="+14"/>
         <source>Signatures - Sign / Verify a Message</source>
-        <translation type="unfinished"></translation>
+        <translation>Firme - Firma / Verifica un messaggio</translation>
     </message>
     <message>
         <location line="+13"/>
-        <location line="+124"/>
         <source>&amp;Sign Message</source>
         <translation>&amp;Firma il messaggio</translation>
     </message>
     <message>
-        <location line="-118"/>
+        <location line="+6"/>
         <source>You can sign messages with your addresses to prove you own them. Be careful not to sign anything vague, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
         <translation>Puoi firmare messeggi con i tuoi indirizzi per dimostrare che sono tuoi. Fai attenzione a non firmare niente di vago, visto che gli attacchi di phishing potrebbero cercare di spingerti a mettere la tua firma su di loro. Firma solo dichiarazioni completamente dettagliate con cui sei d&apos;accordo.</translation>
     </message>
@@ -1487,7 +1491,12 @@ Indirizzo: %4
         <translation>Firma un messaggio per dimostrare di possedere questo indirizzo</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Sign &amp;Message</source>
+        <translation>Firma il &amp;messaggio</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all sign message fields</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1499,12 +1508,11 @@ Indirizzo: %4
     </message>
     <message>
         <location line="-87"/>
-        <location line="+70"/>
         <source>&amp;Verify Message</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Verifica Messaggio</translation>
     </message>
     <message>
-        <location line="-64"/>
+        <location line="+6"/>
         <source>Enter the signing address, message (ensure you copy line breaks, spaces, tabs, etc. exactly) and signature below to verify the message. Be careful not to read more into the signature than what is in the signed message itself, to avoid being tricked by a man-in-the-middle attack.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1519,7 +1527,12 @@ Indirizzo: %4
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Verify &amp;Message</source>
+        <translation>&amp;Verifica Messaggio</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all verify message fields</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1543,7 +1556,7 @@ Indirizzo: %4
         <location line="+82"/>
         <location line="+81"/>
         <source>The entered address is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;indirizzo inserito non è valido.</translation>
     </message>
     <message>
         <location line="-81"/>
@@ -1551,7 +1564,7 @@ Indirizzo: %4
         <location line="+73"/>
         <location line="+8"/>
         <source>Please check the address and try again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Per favore controlla l&apos;indirizzo e prova ancora</translation>
     </message>
     <message>
         <location line="-81"/>
@@ -1572,23 +1585,23 @@ Indirizzo: %4
     <message>
         <location line="+12"/>
         <source>Message signing failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Firma messaggio fallita.</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Message signed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Messaggio firmato.</translation>
     </message>
     <message>
         <location line="+59"/>
         <source>The signature could not be decoded.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non è stato possibile decodificare la firma.</translation>
     </message>
     <message>
         <location line="+0"/>
         <location line="+13"/>
         <source>Please check the signature and try again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Per favore controlla la firma e prova ancora.</translation>
     </message>
     <message>
         <location line="+0"/>
@@ -1598,12 +1611,12 @@ Indirizzo: %4
     <message>
         <location line="+7"/>
         <source>Message verification failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verifica messaggio fallita.</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Message verified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Messaggio verificato.</translation>
     </message>
 </context>
 <context>
@@ -1613,16 +1626,8 @@ Indirizzo: %4
         <source>Open until %1</source>
         <translation>Aperto fino a %1</translation>
     </message>
-    <message numerus="yes">
-        <location line="-2"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>Aperto per %n blocco</numerusform>
-            <numerusform>Aperto per %n blocchi</numerusform>
-        </translation>
-    </message>
     <message>
-        <location line="+8"/>
+        <location line="+6"/>
         <source>%1/offline</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1751,12 +1756,12 @@ Indirizzo: %4
     <message>
         <location line="+7"/>
         <source>Debug information</source>
-        <translation type="unfinished"></translation>
+        <translation>Informazione di debug</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Transaction</source>
-        <translation type="unfinished"></translation>
+        <translation>Transazione</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -1771,20 +1776,28 @@ Indirizzo: %4
     <message>
         <location line="+1"/>
         <source>true</source>
-        <translation type="unfinished"></translation>
+        <translation>vero</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>false</source>
-        <translation type="unfinished"></translation>
+        <translation>falso</translation>
     </message>
     <message>
         <location line="-211"/>
         <source>, has not been successfully broadcast yet</source>
         <translation>, non è stato ancora trasmesso con successo</translation>
     </message>
+    <message numerus="yes">
+        <location line="-35"/>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
     <message>
-        <location line="+35"/>
+        <location line="+70"/>
         <source>unknown</source>
         <translation>sconosciuto</translation>
     </message>
@@ -1826,10 +1839,10 @@ Indirizzo: %4
     </message>
     <message numerus="yes">
         <location line="+57"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>Aperto per %n blocco</numerusform>
-            <numerusform>Aperto per %n blocchi</numerusform>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -2187,7 +2200,7 @@ Indirizzo: %4
     <message>
         <location line="-33"/>
         <source>Connect to a node to retrieve peer addresses, and disconnect</source>
-        <translation type="unfinished"></translation>
+        <translation>Connessione ad un nodo per ricevere l&apos;indirizzo del peer, e disconnessione</translation>
     </message>
     <message>
         <location line="+64"/>
@@ -2315,7 +2328,7 @@ Indirizzo: %4
     <message>
         <location line="+24"/>
         <source>Block creation options:</source>
-        <translation type="unfinished"></translation>
+        <translation>Opzioni creazione blocco:</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -2484,7 +2497,7 @@ Indirizzo: %4
     <message>
         <location line="-99"/>
         <source>Execute command when the best block changes (%s in cmd is replaced by block hash)</source>
-        <translation type="unfinished"></translation>
+        <translation>Esegui il comando quando il miglior block cambia(%s nel cmd è sostituito dall&apos;hash del blocco)</translation>
     </message>
     <message>
         <location line="+122"/>
@@ -2612,22 +2625,22 @@ Indirizzo: %4
     <message>
         <location line="+46"/>
         <source>Unknown network specified in -onlynet: &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Rete sconosciuta specificata in -onlynet: &apos;%s&apos;</translation>
     </message>
     <message>
         <location line="-1"/>
         <source>Unknown -socks proxy version requested: %i</source>
-        <translation type="unfinished"></translation>
+        <translation>Versione -socks proxy sconosciuta richiesta: %i</translation>
     </message>
     <message>
         <location line="-74"/>
         <source>Cannot resolve -bind address: &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile risolvere -bind address: &apos;%s&apos;</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Cannot resolve -externalip address: &apos;%s&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile risolvere indirizzo -externalip: &apos;%s&apos;</translation>
     </message>
     <message>
         <location line="+30"/>
@@ -2672,7 +2685,7 @@ Indirizzo: %4
     <message>
         <location line="+55"/>
         <source>Find peers using internet relay chat (default: 0)</source>
-        <translation type="unfinished"></translation>
+        <translation>Cerca peers usando la internet relay chat (default: 0)</translation>
     </message>
     <message>
         <location line="-2"/>
@@ -2687,17 +2700,17 @@ Indirizzo: %4
     <message>
         <location line="-39"/>
         <source>Cannot downgrade wallet</source>
-        <translation type="unfinished"></translation>
+        <translation>Non è possibile retrocedere il wallet</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Cannot initialize keypool</source>
-        <translation type="unfinished"></translation>
+        <translation>Non è possibile iniziare la keypool</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Cannot write default address</source>
-        <translation type="unfinished"></translation>
+        <translation>Non è possibile scrivere l&apos;indirizzo di default</translation>
     </message>
     <message>
         <location line="+46"/>
@@ -2712,7 +2725,7 @@ Indirizzo: %4
     <message>
         <location line="+64"/>
         <source>To use the %s option</source>
-        <translation type="unfinished"></translation>
+        <translation>Per usare la opzione %s</translation>
     </message>
     <message>
         <location line="-150"/>
@@ -2736,7 +2749,7 @@ If the file does not exist, create it with owner-readable-only file permissions.
         <source>You must set rpcpassword=&lt;password&gt; in the configuration file:
 %s
 If the file does not exist, create it with owner-readable-only file permissions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Devi settare rpcpassword=&lt;password&gt; nel file di configurazione: %s Se il file non esiste, crealo con i permessi di amministratore</translation>
     </message>
 </context>
 </TS>

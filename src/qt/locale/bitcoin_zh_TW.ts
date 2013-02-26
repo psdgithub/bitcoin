@@ -118,7 +118,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>編輯</translation>
     </message>
     <message>
-        <location line="+250"/>
+        <location line="+252"/>
         <source>Export Address Book Data</source>
         <translation>匯出位址簿資料</translation>
     </message>
@@ -141,7 +141,7 @@ This product includes software developed by the OpenSSL Project for use in the O
 <context>
     <name>AddressTableModel</name>
     <message>
-        <location filename="../addresstablemodel.cpp" line="+142"/>
+        <location filename="../addresstablemodel.cpp" line="+144"/>
         <source>Label</source>
         <translation>標記</translation>
     </message>
@@ -300,17 +300,17 @@ This product includes software developed by the OpenSSL Project for use in the O
 <context>
     <name>BitcoinGUI</name>
     <message>
-        <location filename="../bitcoingui.cpp" line="+257"/>
+        <location filename="../bitcoingui.cpp" line="+260"/>
         <source>Sign &amp;message...</source>
         <translation>訊息簽署...</translation>
     </message>
     <message>
-        <location line="+237"/>
+        <location line="+257"/>
         <source>Synchronizing with network...</source>
         <translation>網路同步中...</translation>
     </message>
     <message>
-        <location line="-299"/>
+        <location line="-319"/>
         <source>&amp;Overview</source>
         <translation>總覽</translation>
     </message>
@@ -400,7 +400,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>密碼變更...</translation>
     </message>
     <message numerus="yes">
-        <location line="+241"/>
+        <location line="+261"/>
         <source>~%n block(s) remaining</source>
         <translation>
             <numerusform>剩下 ~%n 個區塊</numerusform>
@@ -412,7 +412,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>已下載了全部 %2 個中的 %1 個交易紀錄區塊 (已完成 %3%).</translation>
     </message>
     <message>
-        <location line="-242"/>
+        <location line="-262"/>
         <source>&amp;Export...</source>
         <translation>匯出...</translation>
     </message>
@@ -462,7 +462,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>訊息驗證...</translation>
     </message>
     <message>
-        <location line="-186"/>
+        <location line="-189"/>
         <source>Bitcoin</source>
         <translation>位元幣</translation>
     </message>
@@ -472,7 +472,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>錢包</translation>
     </message>
     <message>
-        <location line="+168"/>
+        <location line="+171"/>
         <source>&amp;About Bitcoin</source>
         <translation>關於位元幣</translation>
     </message>
@@ -482,12 +482,17 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>顯示或隱藏</translation>
     </message>
     <message>
-        <location line="+39"/>
+        <location line="+28"/>
+        <source>S&amp;ignatures</source>
+        <translation>簽章</translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>&amp;File</source>
         <translation>檔案</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+10"/>
         <source>&amp;Settings</source>
         <translation>設定</translation>
     </message>
@@ -502,7 +507,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>分頁工具列</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Actions toolbar</source>
         <translation>動作工具列</translation>
     </message>
@@ -519,7 +524,7 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>位元幣客戶端軟體</translation>
     </message>
     <message numerus="yes">
-        <location line="+69"/>
+        <location line="+71"/>
         <source>%n active connection(s) to Bitcoin network</source>
         <translation>
             <numerusform>與位元幣網路有 %n 個連線在使用中</numerusform>
@@ -606,7 +611,7 @@ Address: %4
 位址: %4</translation>
     </message>
     <message>
-        <location line="+100"/>
+        <location line="+120"/>
         <location line="+15"/>
         <source>URI handling</source>
         <translation>URI 處理</translation>
@@ -709,17 +714,17 @@ Address: %4
         <translation>編輯付款位址</translation>
     </message>
     <message>
-        <location line="+60"/>
+        <location line="+76"/>
         <source>The entered address &quot;%1&quot; is already in the address book.</source>
         <translation>輸入的位址&quot;%1&quot;已存在於位址簿中.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-5"/>
         <source>The entered address &quot;%1&quot; is not a valid Bitcoin address.</source>
         <translation>輸入的位址 &quot;%1&quot; 並不是有效的位元幣位址.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+10"/>
         <source>Could not unlock wallet.</source>
         <translation>無法將錢包解鎖.</translation>
     </message>
@@ -1427,12 +1432,11 @@ Address: %4
     </message>
     <message>
         <location line="+13"/>
-        <location line="+124"/>
         <source>&amp;Sign Message</source>
         <translation>簽署訊息</translation>
     </message>
     <message>
-        <location line="-118"/>
+        <location line="+6"/>
         <source>You can sign messages with your addresses to prove you own them. Be careful not to sign anything vague, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
         <translation>你可以用自己的位址來簽署訊息, 以證明你對它的所有權. 但是請小心, 不要簽署語意含糊不清的內容, 因為釣魚式詐騙可能會用騙你簽署的手法來冒充是你. 只有在語句中的細節你都同意時才簽署.</translation>
     </message>
@@ -1479,7 +1483,12 @@ Address: %4
         <translation>簽署一則訊息來證明一個位元幣位址是你的</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Sign &amp;Message</source>
+        <translation>訊息簽署</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all sign message fields</source>
         <translation>重置所有訊息簽署欄位</translation>
     </message>
@@ -1491,12 +1500,11 @@ Address: %4
     </message>
     <message>
         <location line="-87"/>
-        <location line="+70"/>
         <source>&amp;Verify Message</source>
         <translation>驗證訊息</translation>
     </message>
     <message>
-        <location line="-64"/>
+        <location line="+6"/>
         <source>Enter the signing address, message (ensure you copy line breaks, spaces, tabs, etc. exactly) and signature below to verify the message. Be careful not to read more into the signature than what is in the signed message itself, to avoid being tricked by a man-in-the-middle attack.</source>
         <translation>請在下面輸入簽署的位址, 訊息(請確認完整複製了所包含的換行, 空格, 跳位符號等等), 與簽章, 以驗證該訊息. 請小心, 除了訊息內容外, 不要對簽章本身過度解讀, 以避免被用&quot;中間人攻擊法&quot;詐騙.</translation>
     </message>
@@ -1511,7 +1519,12 @@ Address: %4
         <translation>驗證一則訊息來確認它是用指定的位元幣位址簽署的</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+3"/>
+        <source>Verify &amp;Message</source>
+        <translation>訊息驗證</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Reset all verify message fields</source>
         <translation>重置所有訊息驗證欄位</translation>
     </message>
@@ -1605,15 +1618,8 @@ Address: %4
         <source>Open until %1</source>
         <translation>在 %1 前未定</translation>
     </message>
-    <message numerus="yes">
-        <location line="-2"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>在 %n 個區塊產出時間內未定</numerusform>
-        </translation>
-    </message>
     <message>
-        <location line="+8"/>
+        <location line="+6"/>
         <source>%1/offline</source>
         <translation>%1/離線中</translation>
     </message>
@@ -1772,8 +1778,15 @@ Address: %4
         <source>, has not been successfully broadcast yet</source>
         <translation>, 尚未成功公告出去</translation>
     </message>
+    <message numerus="yes">
+        <location line="-35"/>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
     <message>
-        <location line="+35"/>
+        <location line="+70"/>
         <source>unknown</source>
         <translation>未知</translation>
     </message>
@@ -1815,9 +1828,9 @@ Address: %4
     </message>
     <message numerus="yes">
         <location line="+57"/>
-        <source>Open for %n block(s)</source>
-        <translation>
-            <numerusform>在 %n 個區塊內未定</numerusform>
+        <source>Open for %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -2214,7 +2227,7 @@ Address: %4
     <message>
         <location line="+2"/>
         <source>Error initializing database environment %s! To recover, BACKUP THAT DIRECTORY, then remove everything from it except for wallet.dat.</source>
-        <translation type="unfinished"></translation>
+        <translation>資料庫環境 %s 初始化失敗了! 要復原資料, 請*務必先備份該資料夾*, 然後將其中除了錢包檔 wallet.dat 外的東西都刪除掉.</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -2224,12 +2237,12 @@ Address: %4
     <message>
         <location line="+19"/>
         <source>Warning: error reading wallet.dat! All keys read correctly, but transaction data or address book entries might be missing or incorrect.</source>
-        <translation type="unfinished"></translation>
+        <translation>警告: 讀取錢包檔 wallet.dat 失敗了! 所有的密鑰都正確讀取了, 但是交易資料或位址簿資料可能會缺少或不正確.</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Warning: wallet.dat corrupt, data salvaged! Original wallet.dat saved as wallet.{timestamp}.bak in %s; if your balance or transactions are incorrect you should restore from a backup.</source>
-        <translation type="unfinished"></translation>
+        <translation>警告: 錢包檔 wallet.dat 壞掉, 但資料被拯救回來了! 原來的 wallet.dat 會改儲存在 %s, 檔名為 wallet.{timestamp}.bak. 如果餘額或交易資料有誤, 你應該要用備份資料復原回來.</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -2240,7 +2253,7 @@ Address: %4
     <message>
         <location line="+5"/>
         <source>Attempt to recover private keys from a corrupt wallet.dat</source>
-        <translation type="unfinished"></translation>
+        <translation>嘗試從壞掉的錢包檔 wallet.dat 復原密鑰</translation>
     </message>
     <message>
         <location line="+32"/>
@@ -2446,7 +2459,7 @@ Address: %4
     <message>
         <location line="+1"/>
         <source>wallet.dat corrupt, salvage failed</source>
-        <translation type="unfinished"></translation>
+        <translation>錢包檔 weallet.dat 壞掉了, 拯救失敗</translation>
     </message>
     <message>
         <location line="-43"/>
