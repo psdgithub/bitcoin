@@ -586,12 +586,12 @@ Denna produkten innehåller mjukvara utvecklad av OpenSSL Project för användni
         <translation>Senast mottagna block genererades %1.</translation>
     </message>
     <message>
-        <location line="+59"/>
-        <source>This transaction is over the size limit.  You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network.  Do you want to pay the fee?</source>
-        <translation>Transaktionen överskrider storleksgränsen.  Du kan dock fortfarande skicka den mot en kostnad av %1. Denna avgift går till noderna som behandlar din transaktion och bidrar till nätverket.  Vill du betala denna avgift?</translation>
+        <location line="+58"/>
+        <source>This transaction is over the size limit. You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network. Do you want to pay the fee?</source>
+        <translation>Transaktionen överskrider storleksgränsen. Du kan dock fortfarande skicka den mot en kostnad av %1, som går till noderna som behandlar din transaktion och bidrar till nätverket. Vill du betala denna avgift?</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>Confirm transaction fee</source>
         <translation>Bekräfta överföringsavgift</translation>
     </message>
@@ -1396,7 +1396,7 @@ Adress: %4
     </message>
     <message>
         <location line="+18"/>
-        <source>The address to send the payment to  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <source>The address to send the payment to (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
         <translation>Adressen som betalningen skall skickas till  (t.ex. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>

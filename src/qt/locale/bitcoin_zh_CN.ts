@@ -579,12 +579,12 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>最新收到的数据块产生于 %1。</translation>
     </message>
     <message>
-        <location line="+59"/>
-        <source>This transaction is over the size limit.  You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network.  Do you want to pay the fee?</source>
-        <translation>该笔交易的数据量超限.您可以选择支付 %1 交易费， 交易费将支付给处理该笔交易的网络节点，有助于维持比特币网络的运行.  您愿意支付交易费用吗？</translation>
+        <location line="+58"/>
+        <source>This transaction is over the size limit. You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network. Do you want to pay the fee?</source>
+        <translation>该交易的字节数超标。您可以选择支付%1的交易费给处理您的交易的网络节点，有助于比特币网络的运行。您愿意支付这笔交易费用吗？</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>Confirm transaction fee</source>
         <translation>确认交易费</translation>
     </message>
@@ -1390,8 +1390,8 @@ Address: %4
     </message>
     <message>
         <location line="+18"/>
-        <source>The address to send the payment to  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>付款地址  (例如: 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>The address to send the payment to (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <translation>付款给这个地址  (例如 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>
         <location line="+10"/>

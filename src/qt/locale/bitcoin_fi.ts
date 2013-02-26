@@ -586,12 +586,12 @@ Tämä ohjelma sisältää OpenSSL projektin OpenSSL työkalupakin (http://www.o
         <translation>Viimeisin vastaanotettu lohko tuotettu %1.</translation>
     </message>
     <message>
-        <location line="+59"/>
-        <source>This transaction is over the size limit.  You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network.  Do you want to pay the fee?</source>
-        <translation>Tämä rahansiirto ylittää kokorajoituksen. Voit siitä huolimatta lähettää sen maksamalla %1 siirtopalkkion, joka menee solmuille jotka  käsittelevät rahansiirtosi ja auttaa näin verkon ylläpitoa. Haluatko maksaa siirtopalkkion?</translation>
+        <location line="+58"/>
+        <source>This transaction is over the size limit. You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network. Do you want to pay the fee?</source>
+        <translation>Tämä rahansiirto ylittää kokorajoituksen. Voit siitä huolimatta lähettää sen %1 siirtopalkkion mikä menee solmuille jotka  käsittelevät rahansiirtosi tämä auttaa myös verkostoa. Haluatko maksaa siirtopalkkion? </translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>Confirm transaction fee</source>
         <translation>Vahvista maksukulu</translation>
     </message>
@@ -1395,7 +1395,7 @@ Osoite: %4</translation>
     </message>
     <message>
         <location line="+18"/>
-        <source>The address to send the payment to  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <source>The address to send the payment to (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
         <translation>Osoite, johon Bitcoinit lähetetään  (esim. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>

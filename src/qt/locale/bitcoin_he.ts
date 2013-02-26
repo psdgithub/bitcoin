@@ -585,12 +585,12 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>הבלוק האחרון שהתקבל נוצר ב-%1.</translation>
     </message>
     <message>
-        <location line="+59"/>
-        <source>This transaction is over the size limit.  You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network.  Do you want to pay the fee?</source>
-        <translation>הפעולה הזאת חורגת מהמגבלה.  ניתן לשלוח אותה תמורת עמלה בסך %1, שמגיעה לצמתים שמעבדים את הפעולה ועוזרת לתמוך ברשת.  האם אתה מעוניין לשלם את העמלה?</translation>
+        <location line="+58"/>
+        <source>This transaction is over the size limit. You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network. Do you want to pay the fee?</source>
+        <translation>פעולה זו חורגת מגבולות הגודל. עדיין באפשרותך לשלוח אותה תמורת עמלה של %1, המיועדת לצמתים שמעבדים את הפעולה שלך ועוזרת לתמוך ברשת. האם ברצונך לשלם את העמלה?</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>Confirm transaction fee</source>
         <translation>אשר עמלת פעולה</translation>
     </message>
@@ -1394,8 +1394,8 @@ Address: %4
     </message>
     <message>
         <location line="+18"/>
-        <source>The address to send the payment to  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>הכתובת אליה יישלח התשלום  (למשל 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>The address to send the payment to (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <translation>הכתובת שאליה ישלח התשלום (למשל 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>
         <location line="+10"/>

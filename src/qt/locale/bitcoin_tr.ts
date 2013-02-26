@@ -579,12 +579,12 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>Son alınan blok şu vakit oluşturulmuştu: %1.</translation>
     </message>
     <message>
-        <location line="+59"/>
-        <source>This transaction is over the size limit.  You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network.  Do you want to pay the fee?</source>
-        <translation>Bu muamele boyut sınırlarını aşmıştır.  Gene de %1 ücret ödeyerek gönderebilirsiniz, ki bu ücret muamelenizi işleyen ve şebekeye yardım eden düğümlere ödenecektir.  Ücreti ödemek istiyor musunuz?</translation>
+        <location line="+58"/>
+        <source>This transaction is over the size limit. You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network. Do you want to pay the fee?</source>
+        <translation>Bu muamele boyut sınırlarını aşmıştır. Gene de %1 ücret ödeyerek gönderebilirsiniz, ki bu ücret muamelenizi işleyen ve şebekeye yardım eden düğümlere ödenecektir. Ücreti ödemek istiyor musunuz?</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>Confirm transaction fee</source>
         <translation>Muamele ücretini teyit et</translation>
     </message>
@@ -1389,8 +1389,8 @@ Adres: %4
     </message>
     <message>
         <location line="+18"/>
-        <source>The address to send the payment to  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>Ödemenin gönderileceği adres  (mesela 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>The address to send the payment to (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <translation>Ödemenin gönderileceği adres (mesela 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>
         <location line="+10"/>

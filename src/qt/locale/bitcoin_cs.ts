@@ -591,12 +591,12 @@ Tento produkt zahrnuje programy vyvinuté OpenSSL Projektem pro použití v Open
         <translation>Poslední stažený blok byl vygenerován %1.</translation>
     </message>
     <message>
-        <location line="+59"/>
-        <source>This transaction is over the size limit.  You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network.  Do you want to pay the fee?</source>
-        <translation>Tahle transakce přesahuje velikostní limit.  I tak ji ale můžeš poslat, pokud za ni zaplatíš poplatek %1, který půjde uzlům, které tvou transakci zpracují, a navíc tak podpoříš síť.  Chceš zaplatit poplatek?</translation>
+        <location line="+58"/>
+        <source>This transaction is over the size limit. You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network. Do you want to pay the fee?</source>
+        <translation>Tahle transakce přesahuje velikostní limit. I tak ji ale můžeš poslat, pokud za ni zaplatíš poplatek %1, který půjde uzlům, které tvou transakci zpracují, a navíc tak podpoříš síť. Chceš zaplatit poplatek?</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>Confirm transaction fee</source>
         <translation>Potvrď transakční poplatek</translation>
     </message>
@@ -1401,8 +1401,8 @@ Adresa: %4
     </message>
     <message>
         <location line="+18"/>
-        <source>The address to send the payment to  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>Adresa příjemce  (např. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>The address to send the payment to (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <translation>Adresa příjemce (např. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>
         <location line="+10"/>

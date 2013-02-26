@@ -585,12 +585,12 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>Le dernier bloc reçu a été généré %1.</translation>
     </message>
     <message>
-        <location line="+59"/>
-        <source>This transaction is over the size limit.  You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network.  Do you want to pay the fee?</source>
-        <translation>Cette transaction dépasse la limite de taille.  Vous pouvez quand même l&apos;envoyer en vous acquittant de frais d&apos;un montant de %1, qui iront aux nœuds qui traiteront la transaction et aideront à soutenir le réseau.  Voulez-vous payer les frais ?</translation>
+        <location line="+58"/>
+        <source>This transaction is over the size limit. You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network. Do you want to pay the fee?</source>
+        <translation>Cette transaction dépasse la limite de taille. Vous pouvez quand même l&apos;envoyer en vous acquittant de frais d&apos;un montant de %1 qui iront aux nœuds qui traiteront la transaction et aideront à soutenir le réseau. Voulez-vous payer les frais ?</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>Confirm transaction fee</source>
         <translation>Confirmer les frais de transaction</translation>
     </message>
@@ -1395,8 +1395,8 @@ Adresse : %4
     </message>
     <message>
         <location line="+18"/>
-        <source>The address to send the payment to  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
-        <translation>L&apos;adresse à laquelle le paiement sera envoyé  (par ex. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
+        <source>The address to send the payment to (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <translation>L&apos;adresse à laquelle le paiement sera envoyé (par ex. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>
         <location line="+10"/>

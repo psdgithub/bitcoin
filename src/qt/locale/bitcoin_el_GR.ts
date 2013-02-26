@@ -580,14 +580,14 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>Το τελευταίο μπλοκ που ελήφθη %1.</translation>
     </message>
     <message>
-        <location line="+59"/>
-        <source>This transaction is over the size limit.  You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network.  Do you want to pay the fee?</source>
+        <location line="+58"/>
+        <source>This transaction is over the size limit. You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network. Do you want to pay the fee?</source>
         <translation>Η συναλλαγή ξεπερνάει το όριο.
 Μπορεί να ολοκληρωθεί με μια αμοιβή των %1, η οποία αποδίδεται στους κόμβους που επεξεργάζονται τις συναλλαγές και βοηθούν στην υποστήριξη του δικτύου.
 Θέλετε να συνεχίσετε;</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>Confirm transaction fee</source>
         <translation>Επιβεβαίωση αμοιβής συναλλαγής</translation>
     </message>
@@ -1392,7 +1392,7 @@ Address: %4
     </message>
     <message>
         <location line="+18"/>
-        <source>The address to send the payment to  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <source>The address to send the payment to (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
         <translation>Η διεύθυνση γι&apos; αποστολή πληρωμής
 (π.χ. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>

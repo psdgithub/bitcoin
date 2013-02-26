@@ -585,12 +585,12 @@ Este produto inclui software desenvolvido pelo Projecto OpenSSL para uso no Open
         <translation>Último bloco recebido foi gerado há %1.</translation>
     </message>
     <message>
-        <location line="+59"/>
-        <source>This transaction is over the size limit.  You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network.  Do you want to pay the fee?</source>
-        <translation>Esta transação tem um tamanho superior ao limite máximo.  Poderá enviá-la pagando uma taxa de %1 que será entregue ao nó que processar a sua transação e ajudará a suportar a rede.  Deseja pagar a taxa?</translation>
+        <location line="+58"/>
+        <source>This transaction is over the size limit. You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network. Do you want to pay the fee?</source>
+        <translation>Esta transação tem um tamanho superior ao limite máximo. Poderá enviá-la pagando uma taxa de %1, que será entregue ao nó que processar a sua transação e ajudará a suportar a rede. Deseja pagar a taxa?</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>Confirm transaction fee</source>
         <translation>Confirme a taxa de transação</translation>
     </message>
@@ -1394,7 +1394,7 @@ Endereço: %4</translation>
     </message>
     <message>
         <location line="+18"/>
-        <source>The address to send the payment to  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <source>The address to send the payment to (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
         <translation>O endereço para onde enviar o pagamento  (p.ex. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>

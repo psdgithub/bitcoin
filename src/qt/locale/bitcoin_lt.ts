@@ -590,12 +590,12 @@ Platinama pagal MIT/X11 licenciją, kurią rasite faile COPYING arba http://www.
         <translation>Paskutinis gautas blokas buvo sukurtas %1.</translation>
     </message>
     <message>
-        <location line="+59"/>
-        <source>This transaction is over the size limit.  You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network.  Do you want to pay the fee?</source>
-        <translation>Šis sandoris viršija leistiną dydį.  Jūs galite įvykdyti jį papildomai sumokėję %1 mokesčių, kurie bus išsiųsti tais pačiais mazgais kuriais vyko sandoris ir padės palaikyti tinklą. Ar jūs norite apmokėti papildomą mokestį?</translation>
+        <location line="+58"/>
+        <source>This transaction is over the size limit. You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network. Do you want to pay the fee?</source>
+        <translation>Šis sandoris viršija leistiną dydį. Jūs galite įvykdyti jį papildomai sumokėję %1 mokesčių, kurie bus išsiųsti tais pačiais mazgais kuriais vyko sandoris ir padės palaikyti tinklą. Ar jūs norite apmokėti papildomą mokestį?</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>Confirm transaction fee</source>
         <translation>Patvirtinti sandorio mokestį</translation>
     </message>
@@ -1399,7 +1399,7 @@ Adresas: %4</translation>
     </message>
     <message>
         <location line="+18"/>
-        <source>The address to send the payment to  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <source>The address to send the payment to (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
         <translation>Adresas mokėjimo siuntimui (pvz. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>

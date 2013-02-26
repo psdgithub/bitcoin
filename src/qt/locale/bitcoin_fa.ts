@@ -576,12 +576,12 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>خرین بلوک در یافت شده  تولید شده بود %1 </translation>
     </message>
     <message>
-        <location line="+59"/>
-        <source>This transaction is over the size limit.  You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network.  Do you want to pay the fee?</source>
+        <location line="+58"/>
+        <source>This transaction is over the size limit. You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network. Do you want to pay the fee?</source>
         <translation>این معامله از اندازه محدوده بیشتر است. شما می توانید آد را با دستمزد 1% بفرستید که شامل گره معامله شما می باشد و به شبکه های اینترنتی کمک خواهد کردو آیا شما می خواهید این پول پر داخت%1</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>Confirm transaction fee</source>
         <translation>هزینه تراکنش را تایید کنید</translation>
     </message>
@@ -1385,7 +1385,7 @@ Address: %4
     </message>
     <message>
         <location line="+18"/>
-        <source>The address to send the payment to  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <source>The address to send the payment to (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
         <translation>آدرس برای ارسال پر داخت  (bijvoorbeeld: 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>

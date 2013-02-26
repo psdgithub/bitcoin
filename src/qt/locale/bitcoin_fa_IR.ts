@@ -581,12 +581,12 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>بلاک دریافت شده قبلی به میزان %1 تولید شده است</translation>
     </message>
     <message>
-        <location line="+59"/>
-        <source>This transaction is over the size limit.  You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network.  Do you want to pay the fee?</source>
+        <location line="+58"/>
+        <source>This transaction is over the size limit. You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network. Do you want to pay the fee?</source>
         <translation>تراکنش بیشتر از محدودیتهای شماست. شما می توانید همچنان با هزینه %1 آن را ارسال کنید که این هزینه به گره هایی که تراکنش را برایتان انجام می دهد تعلق می گیرد و به حمایت از شبکه کمک می کند. آیا شما می خواهید این هزینه را پرداخت کنید؟</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>Confirm transaction fee</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1390,7 +1390,7 @@ Address: %4
     </message>
     <message>
         <location line="+18"/>
-        <source>The address to send the payment to  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <source>The address to send the payment to (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
         <translation>آدرس برای ارسال وجه به (برای مثال 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>

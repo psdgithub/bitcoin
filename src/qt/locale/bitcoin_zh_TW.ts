@@ -579,12 +579,12 @@ This product includes software developed by the OpenSSL Project for use in the O
         <translation>最近收到的區塊產生於 %1.</translation>
     </message>
     <message>
-        <location line="+59"/>
-        <source>This transaction is over the size limit.  You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network.  Do you want to pay the fee?</source>
-        <translation>這筆交易的資料大小超過限制了. 你還是可以付出 %1 的費用來傳送. 這筆費用會付給處理該筆交易的節點, 並幫助維持整個網路. 你願意支付這項費用嗎?</translation>
+        <location line="+58"/>
+        <source>This transaction is over the size limit. You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network. Do you want to pay the fee?</source>
+        <translation>這筆交易的資料大小超過限制了. 你還是可以付出 %1 的費用來傳送, 這筆費用會付給處理你的交易的節點, 並幫助維持整個網路. 你願意支付這項費用嗎?</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>Confirm transaction fee</source>
         <translation>確認交易手續費</translation>
     </message>
@@ -1389,7 +1389,7 @@ Address: %4
     </message>
     <message>
         <location line="+18"/>
-        <source>The address to send the payment to  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <source>The address to send the payment to (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
         <translation>付款的目標位址 (比如說 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>

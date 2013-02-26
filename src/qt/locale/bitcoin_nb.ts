@@ -585,12 +585,12 @@ Dette produktet inneholder programvare utviklet av OpenSSL prosjektet for bruk i
         <translation>Siste mottatte blokk ble generert %1.</translation>
     </message>
     <message>
-        <location line="+59"/>
-        <source>This transaction is over the size limit.  You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network.  Do you want to pay the fee?</source>
+        <location line="+58"/>
+        <source>This transaction is over the size limit. You can still send it for a fee of %1, which goes to the nodes that process your transaction and helps to support the network. Do you want to pay the fee?</source>
         <translation>Denne transaksjonen overstiger størrelsesbegrensningen.  Du kan likevel sende den med et gebyr på %1, som går til nodene som prosesserer transaksjonen din og støtter nettverket.  Vil du betale gebyret?</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+4"/>
         <source>Confirm transaction fee</source>
         <translation>Bekreft transaksjonsgebyr</translation>
     </message>
@@ -1396,7 +1396,7 @@ Adresse: %4
     </message>
     <message>
         <location line="+18"/>
-        <source>The address to send the payment to  (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
+        <source>The address to send the payment to (e.g. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</source>
         <translation>Adressen betalingen skal sendes til  (f.eks. 1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L)</translation>
     </message>
     <message>
