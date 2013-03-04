@@ -360,7 +360,30 @@ bool CTransaction::IsStandard() const
     if (nVersion > CTransaction::CURRENT_VERSION)
         return false;
 
-    if (!IsFinal())
+    // Treat non-final transactions as non-standard to prevent a specific type
+    // of double-spend attack, as well as DoS attacks. (if the transaction
+    // can't be mined, the attacker isn't expending resources broadcasting it)
+    // Basically we don't want to propagate transactions that can't included in
+    // the next block.
+    //
+    // However, IsFinal() is confusing... Without arguments, it uses
+    // nBestHeight to evaluate nLockTime; when a block is accepted, nBestHeight
+    // is set to the value on nHeight in the block. However, when IsFinal() is
+    // called within CBlock::AcceptBlock(), the height of the block *being*
+    // evaluated is what is used. Thus if we want to know if a transaction can
+    // be part of the *next* block, we need to call IsFinal() with one more
+    // than nBestHeight.
+    //
+    // Finally, because it is sometimes desirable to be able to propagate a
+    // transaction just before it can be mined, to ensure everyone has an equal
+    // chance of mining it, add one more block to our window. Only an attacker
+    // with close to 50% of hashing power could take advantage of such a short
+    // time window.
+    //
+    // Timestamps on the other hand don't get any special treatment, because we
+    // can't know what timestamp the next block will have, and there aren't
+    // timestamp applications where it matters.
+    if (!IsFinal(nBestHeight + 2))
         return false;
 
     // Extremely large transactions with lots of inputs can cost the network
@@ -4203,7 +4226,11 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
         for (map<uint256, CTransaction>::iterator mi = mempool.mapTx.begin(); mi != mempool.mapTx.end(); ++mi)
         {
             CTransaction& tx = (*mi).second;
-            if (tx.IsCoinBase() || !tx.IsFinal())
+            // Note how we want to know if the tx is considered final in the
+            // block we are mining, not the current best block.
+            //
+            // FIXME: should also use the same logic for time-based nLockTime's
+            if (tx.IsCoinBase() || !tx.IsFinal(pindexPrev->nHeight + 1))
                 continue;
 
             COrphan* porphan = NULL;
