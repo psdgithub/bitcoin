@@ -39,6 +39,7 @@ public:
         Language,               // QString
         CoinControlFeatures,    // bool
         ThreadsScriptVerif,     // int
+        DustLimit,              // qint64
         DatabaseCache,          // int
         SpendZeroConfChange,    // bool
         Listen,                 // bool
@@ -61,6 +62,7 @@ public:
     QString getThirdPartyTxUrls() { return strThirdPartyTxUrls; }
     bool getProxySettings(QNetworkProxy& proxy) const;
     bool getCoinControlFeatures() { return fCoinControlFeatures; }
+    qint64 getDustLimit();
     const QString& getOverriddenByCommandLine() { return strOverriddenByCommandLine; }
 
     /* Restart flag helper */

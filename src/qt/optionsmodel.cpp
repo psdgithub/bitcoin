@@ -123,6 +123,9 @@ void OptionsModel::Init()
     if (!SoftSetArg("-lang", settings.value("language").toString().toStdString()))
         addOverriddenOption("-lang");
 
+    // Advanced
+    nDustLimit = settings.value("nDustLimit").toLongLong();
+
     language = settings.value("language").toString();
 }
 
@@ -190,6 +193,8 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
             return settings.value("language");
         case CoinControlFeatures:
             return fCoinControlFeatures;
+        case DustLimit:
+            return QVariant(nDustLimit);
         case DatabaseCache:
             return settings.value("nDatabaseCache");
         case ThreadsScriptVerif:
@@ -306,6 +311,10 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
                 setRestartRequired(true);
             }
             break;
+        case DustLimit:
+            nDustLimit = value.toLongLong();
+            settings.setValue("nDustLimit", nDustLimit);
+            break;
         default:
             break;
         }
@@ -356,4 +365,9 @@ bool OptionsModel::isRestartRequired()
 {
     QSettings settings;
     return settings.value("fRestartRequired", false).toBool();
+}
+
+qint64 OptionsModel::getDustLimit()
+{
+    return nDustLimit;
 }
