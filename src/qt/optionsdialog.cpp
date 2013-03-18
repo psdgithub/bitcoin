@@ -179,6 +179,9 @@ void OptionsDialog::setMapper()
     mapper->addMapping(ui->unit, OptionsModel::DisplayUnit);
     mapper->addMapping(ui->displayAddresses, OptionsModel::DisplayAddresses);
     mapper->addMapping(ui->coinControlFeatures, OptionsModel::CoinControlFeatures);
+
+    /* Advanced */
+    mapper->addMapping(ui->dustLimit, OptionsModel::DustLimit);
 }
 
 void OptionsDialog::enableOkButton()
@@ -255,6 +258,7 @@ void OptionsDialog::updateDisplayUnit()
     {
         /* Update transactionFee with the current unit */
         ui->transactionFee->setDisplayUnit(model->getDisplayUnit());
+        ui->dustLimit->setDisplayUnit(model->getDisplayUnit());
     }
 }
 

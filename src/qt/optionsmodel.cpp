@@ -84,6 +84,8 @@ void OptionsModel::Init()
         strOverriddenByCommandLine += "-spendzeroconfchange ";
 #endif
 
+    CTransaction::nDustLimit = settings.value("nDustLimit").toLongLong();
+
     if (!settings.contains("nDatabaseCache"))
         settings.setValue("nDatabaseCache", (qint64)nDefaultDbCache);
     if (!SoftSetArg("-dbcache", settings.value("nDatabaseCache").toString().toStdString()))
@@ -201,6 +203,8 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
             return settings.value("language");
         case CoinControlFeatures:
             return fCoinControlFeatures;
+        case DustLimit:
+            return QVariant(CTransaction::nDustLimit);
         case DatabaseCache:
             return settings.value("nDatabaseCache");
         case ThreadsScriptVerif:
@@ -321,6 +325,10 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
                 setRestartRequired(true);
             }
             break;
+        case DustLimit:
+            CTransaction::nDustLimit = value.toLongLong();
+            settings.setValue("nDustLimit", CTransaction::nDustLimit);
+            break;
         default:
             break;
         }
@@ -362,4 +370,9 @@ bool OptionsModel::isRestartRequired()
 {
     QSettings settings;
     return settings.value("fRestartRequired", false).toBool();
+}
+
+qint64 OptionsModel::getDustLimit()
+{
+    return CTransaction::nDustLimit;
 }

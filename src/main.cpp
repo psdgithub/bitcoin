@@ -54,6 +54,7 @@ unsigned int nCoinCacheSize = 5000;
 int64_t CTransaction::nMinTxFee = 10000;  // Override with -mintxfee
 /** Fees smaller than this (in satoshi) are considered zero fee (for relaying) */
 int64_t CTransaction::nMinRelayTxFee = 10000;
+int64_t CTransaction::nDustLimit = 0;
 
 static CMedianFilter<int> cPeerBlockCounts(8, 0); // Amount of blocks that other nodes claim to have
 
@@ -748,6 +749,12 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         return state.DoS(0,
                          error("AcceptToMemoryPool : nonstandard transaction: %s", reason),
                          REJECT_NONSTANDARD, reason);
+
+    // Further user defined acceptance tests
+    BOOST_FOREACH(const CTxOut& txout, tx.vout) {
+        if (txout.nValue <= CTransaction::nDustLimit)
+            return error("CTxMemPool::accept() : transaction output smaller than user defined limit");
+    }
 
     // is it already in the memory pool?
     uint256 hash = tx.GetHash();

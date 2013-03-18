@@ -185,6 +185,7 @@ class CTransaction
 public:
     static int64_t nMinTxFee;
     static int64_t nMinRelayTxFee;
+    static int64_t nDustLimit;
     static const int CURRENT_VERSION=1;
     int nVersion;
     std::vector<CTxIn> vin;
