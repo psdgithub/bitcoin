@@ -193,6 +193,7 @@ void OptionsDialog::setMapper()
 
     /* Advanced */
     mapper->addMapping(ui->dustLimit, OptionsModel::DustLimit);
+    mapper->addMapping(ui->filteredAddresses, OptionsModel::FilteredAddresses);
 }
 
 void OptionsDialog::enableOkButton()

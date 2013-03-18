@@ -11,6 +11,7 @@
 #endif
 
 #include "amount.h"
+#include "base58.h"
 #include "chain.h"
 #include "chainparams.h"
 #include "coins.h"
@@ -131,6 +132,7 @@ extern bool fIsBareMultisigStd;
 extern unsigned int nCoinCacheSize;
 extern CFeeRate minRelayTxFee;
 extern CAmount nDustLimit;
+extern std::set<CBitcoinAddress> filteredAddresses;
 
 // Best header we've seen so far (used for getheaders queries' starting points).
 extern CBlockIndex *pindexBestHeader;
