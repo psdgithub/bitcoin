@@ -6,6 +6,7 @@
 #ifndef BITCOIN_CORE_H
 #define BITCOIN_CORE_H
 
+#include "base58.h"
 #include "script.h"
 #include "serialize.h"
 #include "uint256.h"
@@ -186,6 +187,7 @@ public:
     static int64_t nMinTxFee;
     static int64_t nMinRelayTxFee;
     static int64_t nDustLimit;
+    static set<CBitcoinAddress> filteredAddresses;
     static const int CURRENT_VERSION=1;
     int nVersion;
     std::vector<CTxIn> vin;

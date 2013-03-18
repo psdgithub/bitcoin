@@ -40,6 +40,7 @@ public:
         CoinControlFeatures,    // bool
         ThreadsScriptVerif,     // int
         DustLimit,              // qint64
+        FilteredAddresses,      // QString
         DatabaseCache,          // int
         SpendZeroConfChange,    // bool
         OptionIDRowCount,

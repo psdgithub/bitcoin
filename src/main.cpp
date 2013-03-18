@@ -55,6 +55,7 @@ int64_t CTransaction::nMinTxFee = 10000;  // Override with -mintxfee
 /** Fees smaller than this (in satoshi) are considered zero fee (for relaying) */
 int64_t CTransaction::nMinRelayTxFee = 10000;
 int64_t CTransaction::nDustLimit = 0;
+set<CBitcoinAddress> CTransaction::filteredAddresses;
 
 static CMedianFilter<int> cPeerBlockCounts(8, 0); // Amount of blocks that other nodes claim to have
 
@@ -754,6 +755,19 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     BOOST_FOREACH(const CTxOut& txout, tx.vout) {
         if (txout.nValue <= CTransaction::nDustLimit)
             return error("CTxMemPool::accept() : transaction output smaller than user defined limit");
+
+        txnouttype type;
+        vector<CTxDestination> addresses;
+        int nRequired;
+        if (!ExtractDestinations(txout.scriptPubKey, type, addresses, nRequired)) {
+            return error("CTxMemPool::accept() : unable to check transaction destinations");
+        }
+
+        BOOST_FOREACH(const CTxDestination& addr, addresses) {
+            if (CTransaction::filteredAddresses.find(CBitcoinAddress(addr)) != CTransaction::filteredAddresses.end()) {
+                return error("CTxMemPool::accept() : transaction destination filtered");
+            }
+        }
     }
 
     // is it already in the memory pool?
