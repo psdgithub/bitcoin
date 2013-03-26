@@ -202,3 +202,14 @@ Value getaddednodeinfo(const Array& params, bool fHelp)
     return ret;
 }
 
+Value togglenetwork(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+        throw runtime_error(
+            "togglenetwork\n"
+            "Toggle all network activity temporarily.");
+
+    SetNetworkActive(!fNetworkActive);
+
+    return fNetworkActive;
+}
