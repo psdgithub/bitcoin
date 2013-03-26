@@ -254,6 +254,7 @@ void RPCConsole::setClientModel(ClientModel *model)
     {
         // Subscribe to information, replies, messages, errors
         connect(model, SIGNAL(numConnectionsChanged(int)), this, SLOT(setNumConnections(int)));
+        connect(model, SIGNAL(networkActiveChanged(bool)), this, SLOT(setNetworkActive(bool)));
         connect(model, SIGNAL(numBlocksChanged(int,int)), this, SLOT(setNumBlocks(int,int)));
 
         // Provide initial values
@@ -262,7 +263,7 @@ void RPCConsole::setClientModel(ClientModel *model)
         ui->buildDate->setText(model->formatBuildDate());
         ui->startupTime->setText(model->formatClientStartupTime());
 
-        setNumConnections(model->getNumConnections());
+        updateNetworkState();
         ui->isTestNet->setChecked(model->isTestNet());
     }
 }
@@ -327,9 +328,23 @@ void RPCConsole::message(int category, const QString &message, bool html)
     ui->messagesWidget->append(out);
 }
 
+void RPCConsole::updateNetworkState()
+{
+    QString text = QString::number(clientModel->getNumConnections());
+    if(!clientModel->getNetworkActive())
+        text += " (" + tr("Network activity disabled") + ")";
+
+    ui->numberOfConnections->setText(text);
+}
+
 void RPCConsole::setNumConnections(int count)
 {
-    ui->numberOfConnections->setText(QString::number(count));
+    updateNetworkState();
+}
+
+void RPCConsole::setNetworkActive(bool networkActive)
+{
+    updateNetworkState();
 }
 
 void RPCConsole::setNumBlocks(int count, int countOfPeers)
@@ -424,4 +439,9 @@ void RPCConsole::on_showCLOptionsButton_clicked()
 {
     GUIUtil::HelpMessageBox help;
     help.exec();
+}
+
+void RPCConsole::on_toggleNetworkActiveButton_clicked()
+{
+    clientModel->setNetworkActive(!clientModel->getNetworkActive());
 }
