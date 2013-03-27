@@ -14,6 +14,7 @@
 #include <arpa/inet.h>
 #endif
 
+#include "limitedmap.h"
 #include "protocol.h"
 
 /** The maximum number of entries in an 'inv' protocol message */
@@ -89,7 +90,7 @@ extern CCriticalSection cs_mapAddresses;
 extern std::map<CInv, CDataStream> mapRelay;
 extern std::deque<std::pair<int64, CInv> > vRelayExpiration;
 extern CCriticalSection cs_mapRelay;
-extern std::map<CInv, int64> mapAlreadyAskedFor;
+extern limitedmap<CInv, int64> mapAlreadyAskedFor;
 
 // Settings
 extern int fUseProxy;
@@ -261,7 +262,12 @@ public:
     {
         // We're using mapAskFor as a priority queue,
         // the key is the earliest time the request can be sent
-        int64& nRequestTime = mapAlreadyAskedFor[inv];
+        int64 nRequestTime;
+        limitedmap<CInv, int64>::const_iterator it = mapAlreadyAskedFor.find(inv);
+        if (it != mapAlreadyAskedFor.end())
+            nRequestTime = it->second;
+        else
+            nRequestTime = 0;
         printf("askfor %s   %"PRI64d"\n", inv.ToString().c_str(), nRequestTime);
 
         // Make sure not to reuse time indexes to keep things in the same order
@@ -273,6 +279,10 @@ public:
 
         // Each retry is 2 minutes after the last
         nRequestTime = std::max(nRequestTime + 2 * 60 * 1000000, nNow);
+        if (it != mapAlreadyAskedFor.end())
+            mapAlreadyAskedFor.update(it, nRequestTime);
+        else
+            mapAlreadyAskedFor.insert(std::make_pair(inv, nRequestTime));
         mapAskFor.insert(std::make_pair(nRequestTime, inv));
     }
 

@@ -60,7 +60,7 @@ CCriticalSection cs_mapAddresses;
 map<CInv, CDataStream> mapRelay;
 deque<pair<int64, CInv> > vRelayExpiration;
 CCriticalSection cs_mapRelay;
-map<CInv, int64> mapAlreadyAskedFor;
+limitedmap<CInv, int64> mapAlreadyAskedFor(MAX_INV_SZ);
 
 // Settings
 int fUseProxy = false;
