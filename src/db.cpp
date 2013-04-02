@@ -6,6 +6,7 @@
 #include "db.h"
 #include "util.h"
 #include "main.h"
+#include "ui_interface.h"
 #include <boost/version.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -93,7 +94,7 @@ CDB::CDB(const char *pszFile, const char* pszMode) : pdb(NULL)
             dbenv.set_cachesize(nDbCache / 1024, (nDbCache % 1024)*1048576, 1);
             dbenv.set_lg_bsize(1048576);
             dbenv.set_lg_max(10485760);
-            dbenv.set_lk_max_locks(10000);
+            dbenv.set_lk_max_locks(537000);
             dbenv.set_lk_max_objects(10000);
             dbenv.set_errfile(fopen(pathErrorFile.string().c_str(), "a")); /// debug
             dbenv.set_flags(DB_TXN_WRITE_NOSYNC, 1);
@@ -111,6 +112,28 @@ CDB::CDB(const char *pszFile, const char* pszMode) : pdb(NULL)
             if (ret > 0)
                 throw runtime_error(strprintf("CDB() : error %d opening database environment", ret));
             fDbEnvInit = true;
+
+            // Check that the number of locks is sufficient
+            u_int32_t nMaxLocks;
+            if (!dbenv.get_lk_max_locks(&nMaxLocks))
+            {
+                int nBlocks, nDeepReorg;
+                std::string strMessage;
+
+                nBlocks = nMaxLocks / 48768;
+                nDeepReorg = (nBlocks - 1) / 2;
+                printf("Final lk_max_locks is %lu, sufficient for (worst case) %d block%s in a single transaction (up to a %d-deep reorganization)\n", (unsigned long)nMaxLocks, nBlocks, (nBlocks == 1) ? "" : "s", nDeepReorg);
+                if (nDeepReorg < 3)
+                {
+                    if (nBlocks < 1)
+                        strMessage = strprintf(_("Warning: DB_CONFIG has set_lk_max_locks %lu, which may be too low for a single block. If this limit is reached, Bitcoin may stop working."), (unsigned long)nMaxLocks);
+                    else
+                        strMessage = strprintf(_("Warning: DB_CONFIG has set_lk_max_locks %lu, which may be too low for a common blockchain reorganization. If this limit is reached, Bitcoin may stop working."), (unsigned long)nMaxLocks);
+
+                    strMiscWarning = strMessage;
+                    printf("*** %s\n", strMessage.c_str());
+                }
+            }
         }
 
         strFile = pszFile;
