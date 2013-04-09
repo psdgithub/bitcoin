@@ -47,6 +47,10 @@ LIBS+= \
    -l dl \
    -l pthread
 
+TESTLIBS += \
+ -Wl,-B$(LMODE) \
+   -l boost_unit_test_framework$(BOOST_LIB_SUFFIX)
+
 
 # Hardening
 # Make some classes of vulnerabilities unexploitable in case one is discovered.
@@ -140,7 +144,7 @@ obj-test/%.o: test/%.cpp
 	  rm -f $(@:%.o=%.d)
 
 test_bitcoin: $(TESTOBJS) $(filter-out obj/init.o,$(OBJS:obj/%=obj/%))
-	$(CXX) $(xCXXFLAGS) -o $@ $(LIBPATHS) $^ -Wl,-B$(LMODE) -lboost_unit_test_framework $(LDFLAGS) $(LIBS)
+	$(CXX) $(xCXXFLAGS) -o $@ $(LIBPATHS) $^ $(TESTLIBS) $(LDFLAGS) $(LIBS)
 
 clean:
 	-rm -f bitcoind test_bitcoin
