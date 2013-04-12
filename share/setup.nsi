@@ -48,7 +48,7 @@ Var StartMenuGroup
 !insertmacro MUI_LANGUAGE English
 
 # Installer attributes
-OutFile ${NAME}-${VERSION}-win32-setup.exe
+OutFile bitcoin-${VERSION}-win32-setup.exe
 InstallDir $PROGRAMFILES\${NAME}
 CRCCheck on
 XPStyle on
