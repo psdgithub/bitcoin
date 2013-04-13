@@ -5,10 +5,10 @@
 #ifndef BITCOIN_CORE_H
 #define BITCOIN_CORE_H
 
-#include "uint256.h"
-#include "serialize.h"
-#include "util.h"
 #include "script.h"
+#include "serialize.h"
+#include "uint256.h"
+#include "util.h"
 
 #include <stdio.h>
 

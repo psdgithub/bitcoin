@@ -1,8 +1,8 @@
-#include <boost/test/unit_test.hpp>
+#include "bignum.h"
+
 #include <limits>
 
-#include "bignum.h"
-#include "util.h"
+#include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_SUITE(bignum_tests)
 

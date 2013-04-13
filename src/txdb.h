@@ -5,8 +5,8 @@
 #ifndef BITCOIN_TXDB_LEVELDB_H
 #define BITCOIN_TXDB_LEVELDB_H
 
-#include "main.h"
 #include "leveldb.h"
+#include "main.h"
 
 /** CCoinsView backed by the LevelDB coin database (chainstate/) */
 class CCoinsViewDB : public CCoinsView

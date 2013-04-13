@@ -1,14 +1,16 @@
 //
 // Unit tests for alert system
 //
-
-#include <boost/foreach.hpp>
-#include <boost/test/unit_test.hpp>
-#include <fstream>
-
 #include "alert.h"
+
 #include "serialize.h"
 #include "util.h"
+
+#include <fstream>
+
+#include <boost/filesystem/operations.hpp>
+#include <boost/foreach.hpp>
+#include <boost/test/unit_test.hpp>
 
 #if 0
 //

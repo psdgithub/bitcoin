@@ -2,11 +2,12 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
 #include "netbase.h"
-#include "util.h"
-#include "sync.h"
+
 #include "hash.h"
+#include "sync.h"
+#include "uint256.h"
+#include "util.h"
 
 #ifndef WIN32
 #include <sys/fcntl.h>

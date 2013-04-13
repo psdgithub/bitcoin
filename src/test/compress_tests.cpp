@@ -1,9 +1,9 @@
-#include <boost/test/unit_test.hpp>
 
-#include <string>
-#include <vector>
 
 #include "main.h"
+#include "util.h"
+
+#include <boost/test/unit_test.hpp>
 
 // amounts 0.00000001 .. 0.00100000
 #define NUM_MULTIPLES_UNIT 100000
@@ -16,8 +16,6 @@
 
 // amounts 50 .. 21000000
 #define NUM_MULTIPLES_50BTC 420000
-
-using namespace std;
 
 BOOST_AUTO_TEST_SUITE(compress_tests)
 

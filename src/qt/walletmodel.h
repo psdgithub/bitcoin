@@ -1,14 +1,15 @@
 #ifndef WALLETMODEL_H
 #define WALLETMODEL_H
 
-#include <QObject>
-
 #include "allocators.h" /* for SecureString */
 
-class OptionsModel;
-class AddressTableModel;
-class TransactionTableModel;
+#include <QObject>
+
 class CWallet;
+
+class AddressTableModel;
+class OptionsModel;
+class TransactionTableModel;
 
 QT_BEGIN_NAMESPACE
 class QTimer;

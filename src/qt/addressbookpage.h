@@ -3,18 +3,19 @@
 
 #include <QDialog>
 
-namespace Ui {
-    class AddressBookPage;
-}
 class AddressTableModel;
 class OptionsModel;
 
+namespace Ui {
+    class AddressBookPage;
+}
+
 QT_BEGIN_NAMESPACE
-class QTableView;
 class QItemSelection;
-class QSortFilterProxyModel;
 class QMenu;
 class QModelIndex;
+class QSortFilterProxyModel;
+class QTableView;
 QT_END_NAMESPACE
 
 /** Widget that shows a list of sending or receiving addresses.

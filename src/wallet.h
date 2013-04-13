@@ -5,25 +5,25 @@
 #ifndef BITCOIN_WALLET_H
 #define BITCOIN_WALLET_H
 
+#include "crypter.h"
+#include "key.h"
+#include "keystore.h"
+#include "main.h"
+#include "ui_interface.h"
 #include "walletdb.h"
 
+#include <stdlib.h>
 #include <string>
 #include <vector>
 
-#include <stdlib.h>
-
-#include "main.h"
-#include "key.h"
-#include "keystore.h"
-#include "script.h"
-#include "ui_interface.h"
-#include "util.h"
-
 class CAccountingEntry;
-class CWalletTx;
-class CReserveKey;
 class COutput;
+class CReserveKey;
+class CScript;
 class CWalletDB;
+class CWalletTx;
+
+typedef long long  int64;
 
 /** (client) version numbers for particular wallet features */
 enum WalletFeature

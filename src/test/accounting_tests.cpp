@@ -1,10 +1,12 @@
-#include <boost/test/unit_test.hpp>
 
-#include <boost/foreach.hpp>
 
-#include "init.h"
 #include "wallet.h"
 #include "walletdb.h"
+
+#include <boost/foreach.hpp>
+#include <boost/test/unit_test.hpp>
+
+extern CWallet* pwalletMain;
 
 BOOST_AUTO_TEST_SUITE(accounting_tests)
 

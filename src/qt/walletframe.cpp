@@ -5,11 +5,15 @@
  * The Bitcoin Developers 2011-2013
  */
 #include "walletframe.h"
+
 #include "bitcoingui.h"
 #include "walletstack.h"
 
+#include <cstdio>
+
 #include <QHBoxLayout>
 #include <QMessageBox>
+#include <QVBoxLayout>
 
 WalletFrame::WalletFrame(BitcoinGUI *_gui) :
     QFrame(_gui),

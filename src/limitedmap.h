@@ -4,8 +4,8 @@
 #ifndef BITCOIN_LIMITEDMAP_H
 #define BITCOIN_LIMITEDMAP_H
 
-#include <map>
 #include <deque>
+#include <map>
 
 /** STL-like map container that only keeps the N elements with the highest value. */
 template <typename K, typename V> class limitedmap

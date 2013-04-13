@@ -2,28 +2,32 @@
  * W.J. van der Laan 2011-2012
  */
 
-#include <QApplication>
 
 #include "bitcoingui.h"
 #include "clientmodel.h"
-#include "walletmodel.h"
-#include "optionsmodel.h"
-#include "guiutil.h"
 #include "guiconstants.h"
-#include "init.h"
-#include "util.h"
-#include "ui_interface.h"
+#include "guiutil.h"
+#include "optionsmodel.h"
 #include "paymentserver.h"
 #include "splashscreen.h"
+#include "walletmodel.h"
 
+#include "init.h"
+#include "main.h"
+#include "ui_interface.h"
+#include "util.h"
+
+#include <boost/filesystem/operations.hpp>
+#include <QApplication>
+#include <QLibraryInfo>
+#include <QLocale>
 #include <QMessageBox>
+#include <QTimer>
+#include <QTranslator>
+
 #if QT_VERSION < 0x050000
 #include <QTextCodec>
 #endif
-#include <QLocale>
-#include <QTimer>
-#include <QTranslator>
-#include <QLibraryInfo>
 
 #if defined(BITCOIN_NEED_QT_PLUGINS) && !defined(_BITCOIN_QT_PLUGINS_INCLUDED)
 #define _BITCOIN_QT_PLUGINS_INCLUDED

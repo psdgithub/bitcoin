@@ -4,11 +4,11 @@
 #ifndef BITCOIN_NETBASE_H
 #define BITCOIN_NETBASE_H
 
+#include "compat.h"
+#include "serialize.h"
+
 #include <string>
 #include <vector>
-
-#include "serialize.h"
-#include "compat.h"
 
 extern int nConnectTimeout;
 

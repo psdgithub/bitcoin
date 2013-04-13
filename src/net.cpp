@@ -2,21 +2,20 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-#include "db.h"
 #include "net.h"
-#include "core.h"
+
 #include "addrman.h"
+#include "db.h"
+#include "main.h"
 #include "ui_interface.h"
-#include "script.h"
 
 #ifdef WIN32
 #include <string.h>
 #endif
 
 #ifdef USE_UPNP
-#include <miniupnpc/miniwget.h>
 #include <miniupnpc/miniupnpc.h>
+#include <miniupnpc/miniwget.h>
 #include <miniupnpc/upnpcommands.h>
 #include <miniupnpc/upnperrors.h>
 #endif

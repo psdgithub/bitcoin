@@ -1,32 +1,33 @@
-#include <QApplication>
-
 #include "guiutil.h"
 
 #include "bitcoinaddressvalidator.h"
-#include "walletmodel.h"
 #include "bitcoinunits.h"
+#include "walletmodel.h"
 
-#include "util.h"
 #include "init.h"
+#include "util.h"
 
+#include <boost/filesystem/fstream.hpp>
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
+#include <QAbstractItemView>
+#include <QApplication>
+#include <QClipboard>
 #include <QDateTime>
+#include <QDesktopServices>
 #include <QDoubleValidator>
+#include <QFileDialog>
 #include <QFont>
 #include <QLineEdit>
+#include <QTextDocument> // for Qt::mightBeRichText
+#include <QThread>
+#include <QUrl>
+
 #if QT_VERSION >= 0x050000
 #include <QUrlQuery>
 #else
 #include <QUrl>
 #endif
-#include <QTextDocument> // for Qt::mightBeRichText
-#include <QAbstractItemView>
-#include <QClipboard>
-#include <QFileDialog>
-#include <QDesktopServices>
-#include <QThread>
-
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
 
 #ifdef WIN32
 #ifdef _WIN32_WINNT
@@ -41,9 +42,9 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-#include "shlwapi.h"
-#include "shlobj.h"
 #include "shellapi.h"
+#include "shlobj.h"
+#include "shlwapi.h"
 #endif
 
 namespace GUIUtil {

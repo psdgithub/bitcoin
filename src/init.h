@@ -5,7 +5,11 @@
 #ifndef BITCOIN_INIT_H
 #define BITCOIN_INIT_H
 
-#include "wallet.h"
+#include <string>
+
+#include <boost/thread/thread.hpp>
+
+class CWallet;
 
 extern CWallet* pwalletMain;
 

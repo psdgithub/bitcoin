@@ -1,16 +1,21 @@
 #include "walletmodel.h"
-#include "guiconstants.h"
-#include "optionsmodel.h"
+
 #include "addresstablemodel.h"
+#include "guiconstants.h"
 #include "transactiontablemodel.h"
 
+#include "base58.h"
+#include "db.h"
+#include "keystore.h"
+#include "sync.h"
 #include "ui_interface.h"
 #include "wallet.h"
-#include "walletdb.h" // for BackupWallet
-#include "base58.h"
 
 #include <QSet>
 #include <QTimer>
+
+extern CCriticalSection cs_main;
+extern int64 nTransactionFee;
 
 WalletModel::WalletModel(CWallet *wallet, OptionsModel *optionsModel, QObject *parent) :
     QObject(parent), wallet(wallet), optionsModel(optionsModel), addressTableModel(0),

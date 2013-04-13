@@ -1,12 +1,11 @@
 #include "transactiondesc.h"
 
-#include "guiutil.h"
 #include "bitcoinunits.h"
+#include "guiutil.h"
+
+#include "base58.h"
 #include "main.h"
 #include "wallet.h"
-#include "db.h"
-#include "ui_interface.h"
-#include "base58.h"
 
 #include <string>
 

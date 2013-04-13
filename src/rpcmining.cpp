@@ -3,13 +3,19 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "main.h"
-#include "db.h"
-#include "init.h"
+
 #include "bitcoinrpc.h"
+#include "main.h"
+#include "wallet.h"
+
+#include "json/json_spirit_utils.h"
+#include "json/json_spirit_value.h"
 
 using namespace json_spirit;
 using namespace std;
+
+extern CWallet* pwalletMain;
+extern std::vector<CNode*> vNodes;
 
 // Key used by getwork/getblocktemplate miners.
 // Allocated in InitRPCMining, free'd in ShutdownRPCMining

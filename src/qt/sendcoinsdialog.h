@@ -3,12 +3,13 @@
 
 #include <QDialog>
 
+class SendCoinsEntry;
+class SendCoinsRecipient;
+class WalletModel;
+
 namespace Ui {
     class SendCoinsDialog;
 }
-class WalletModel;
-class SendCoinsEntry;
-class SendCoinsRecipient;
 
 QT_BEGIN_NAMESPACE
 class QUrl;

@@ -6,18 +6,18 @@
 #ifndef _BITCOINRPC_H_
 #define _BITCOINRPC_H_ 1
 
-#include <string>
 #include <list>
 #include <map>
+#include <string>
+
+#include "json/json_spirit_reader_template.h"
+#include "json/json_spirit_utils.h"
+#include "json/json_spirit_writer_template.h"
 
 class CBlockIndex;
 class CReserveKey;
 
-#include "json/json_spirit_reader_template.h"
-#include "json/json_spirit_writer_template.h"
-#include "json/json_spirit_utils.h"
-
-#include "util.h"
+typedef long long  int64;
 
 // HTTP status codes
 enum HTTPStatusCode

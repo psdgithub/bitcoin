@@ -2,10 +2,16 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
 #include "walletdb.h"
+
+#include "base58.h"
+#include "protocol.h"
+#include "serialize.h"
+#include "sync.h"
 #include "wallet.h"
+
 #include <boost/filesystem.hpp>
+#include <boost/foreach.hpp>
 
 using namespace std;
 using namespace boost;
@@ -29,6 +35,117 @@ bool CWalletDB::EraseName(const string& strAddress)
     // receiving addresses must always have an address book entry if they're not change return.
     nWalletDBUpdated++;
     return Erase(make_pair(string("name"), strAddress));
+}
+
+bool CWalletDB::WriteTx(uint256 hash, const CWalletTx& wtx)
+{
+    nWalletDBUpdated++;
+    return Write(std::make_pair(std::string("tx"), hash), wtx);
+}
+
+bool CWalletDB::EraseTx(uint256 hash)
+{
+    nWalletDBUpdated++;
+    return Erase(std::make_pair(std::string("tx"), hash));
+}
+
+bool CWalletDB::WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey, 
+                         int64 nCreateTime)
+{
+    nWalletDBUpdated++;
+
+    CKeyMetadata keyMeta(nCreateTime);
+    if (!Write(std::make_pair(std::string("keymeta"), vchPubKey),
+               keyMeta, false))
+        return false;
+
+
+    return Write(std::make_pair(std::string("key"), vchPubKey), vchPrivKey, false);
+}
+
+bool CWalletDB::WriteCryptedKey(const CPubKey& vchPubKey, 
+                                const std::vector<unsigned char>& vchCryptedSecret, 
+                                int64 nCreateTime)
+{
+    const bool fEraseUnencryptedKey = true;
+    nWalletDBUpdated++;
+
+    CKeyMetadata keyMeta(nCreateTime);
+    if (!Write(std::make_pair(std::string("keymeta"), vchPubKey),
+               keyMeta, false))
+        return false;
+
+    if (!Write(std::make_pair(std::string("ckey"), vchPubKey), vchCryptedSecret, false))
+        return false;
+    if (fEraseUnencryptedKey)
+    {
+        Erase(std::make_pair(std::string("key"), vchPubKey));
+        Erase(std::make_pair(std::string("wkey"), vchPubKey));
+    }
+    return true;
+}
+
+bool CWalletDB::WriteMasterKey(unsigned int nID, const CMasterKey& kMasterKey)
+{
+    nWalletDBUpdated++;
+    return Write(std::make_pair(std::string("mkey"), nID), kMasterKey, true);
+}
+
+bool CWalletDB::WriteCScript(const uint160& hash, const CScript& redeemScript)
+{
+    nWalletDBUpdated++;
+    return Write(std::make_pair(std::string("cscript"), hash), redeemScript, false);
+}
+
+bool CWalletDB::WriteBestBlock(const CBlockLocator& locator)
+{
+    nWalletDBUpdated++;
+    return Write(std::string("bestblock"), locator);
+}
+
+bool CWalletDB::ReadBestBlock(CBlockLocator& locator)
+{
+    return Read(std::string("bestblock"), locator);
+}
+
+bool CWalletDB::WriteOrderPosNext(int64 nOrderPosNext)
+{
+    nWalletDBUpdated++;
+    return Write(std::string("orderposnext"), nOrderPosNext);
+}
+
+bool CWalletDB::WriteDefaultKey(const CPubKey& vchPubKey)
+{
+    nWalletDBUpdated++;
+    return Write(std::string("defaultkey"), vchPubKey);
+}
+
+bool CWalletDB::ReadPool(int64 nPool, CKeyPool& keypool)
+{
+    return Read(std::make_pair(std::string("pool"), nPool), keypool);
+}
+
+bool CWalletDB::WritePool(int64 nPool, const CKeyPool& keypool)
+{
+    nWalletDBUpdated++;
+    return Write(std::make_pair(std::string("pool"), nPool), keypool);
+}
+
+bool CWalletDB::ErasePool(int64 nPool)
+{
+    nWalletDBUpdated++;
+    return Erase(std::make_pair(std::string("pool"), nPool));
+}
+
+bool CWalletDB::EraseSetting(const std::string& strKey)
+{
+    nWalletDBUpdated++;
+    return Erase(std::make_pair(std::string("setting"), strKey));
+}
+
+bool CWalletDB::WriteMinVersion(int nVersion)
+{
+    return Write(std::string("minversion"), nVersion);
 }
 
 bool CWalletDB::ReadAccount(const string& strAccount, CAccount& account)

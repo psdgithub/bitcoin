@@ -6,24 +6,31 @@
 #define BITCOIN_MAIN_H
 
 #include "core.h"
-#include "bignum.h"
-#include "sync.h"
-#include "net.h"
 #include "script.h"
+#include "sync.h"
+#include "uint256.h"
 
 #include <list>
-
-class CWallet;
-class CBlock;
-class CBlockIndex;
-class CKeyItem;
-class CReserveKey;
+#include <vector>
 
 class CAddress;
+class CBigNum;
+class CBlock;
+class CBlockHeader;
+class CBlockIndex;
+class CBloomFilter;
 class CInv;
+class CKeyItem;
 class CNode;
+class CNodeSignals;
+class CReserveKey;
+class CTransaction;
+class CWallet;
 
 struct CBlockIndexWorkComparator;
+
+typedef long long  int64;
+typedef unsigned long long  uint64;
 
 /** The maximum allowed size for a serialized block, in bytes (network rule) */
 static const unsigned int MAX_BLOCK_SIZE = 1000000;

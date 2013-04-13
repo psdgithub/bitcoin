@@ -1,15 +1,15 @@
 #include "notificator.h"
 
-#include <QMetaType>
-#include <QVariant>
-#include <QIcon>
 #include <QApplication>
-#include <QStyle>
 #include <QByteArray>
-#include <QSystemTrayIcon>
-#include <QMessageBox>
-#include <QTemporaryFile>
+#include <QIcon>
 #include <QImageWriter>
+#include <QMessageBox>
+#include <QMetaType>
+#include <QStyle>
+#include <QSystemTrayIcon>
+#include <QTemporaryFile>
+#include <QVariant>
 
 #ifdef USE_DBUS
 #include <QtDBus>
@@ -17,8 +17,8 @@
 #endif
 
 #ifdef Q_OS_MAC
-#include <ApplicationServices/ApplicationServices.h>
 #include "macnotificationhandler.h"
+#include <ApplicationServices/ApplicationServices.h>
 #endif
 
 // https://wiki.ubuntu.com/NotificationDevelopmentGuidelines recommends at least 128

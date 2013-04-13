@@ -3,18 +3,25 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <boost/assign/list_of.hpp>
 
-#include "wallet.h"
-#include "walletdb.h"
+#include "base58.h"
 #include "bitcoinrpc.h"
 #include "init.h"
-#include "base58.h"
+#include "netbase.h"
+#include "wallet.h"
+#include "walletdb.h"
+
+#include <boost/assign/list_of.hpp>
+#include "json/json_spirit_utils.h"
+#include "json/json_spirit_value.h"
 
 using namespace std;
 using namespace boost;
 using namespace boost::assign;
 using namespace json_spirit;
+
+extern CWallet* pwalletMain;
+extern std::vector<CNode*> vNodes;
 
 int64 nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;

@@ -5,11 +5,10 @@
 #ifndef BITCOIN_KEYSTORE_H
 #define BITCOIN_KEYSTORE_H
 
-#include "crypter.h"
+#include "key.h"
 #include "sync.h"
-#include <boost/signals2/signal.hpp>
 
-class CScript;
+#include <boost/signals2/signal.hpp>
 
 /** A virtual base class for key stores */
 class CKeyStore
@@ -88,7 +87,9 @@ public:
     virtual bool GetCScript(const CScriptID &hash, CScript& redeemScriptOut) const;
 };
 
+typedef std::vector<unsigned char, secure_allocator<unsigned char> > CKeyingMaterial;
 typedef std::map<CKeyID, std::pair<CPubKey, std::vector<unsigned char> > > CryptedKeyMap;
+
 
 /** Keystore which keeps the private keys encrypted.
  * It derives from the basic key store, which is used if no encryption is active.

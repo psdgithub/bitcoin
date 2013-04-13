@@ -7,24 +7,24 @@
 #ifndef WALLETSTACK_H
 #define WALLETSTACK_H
 
-#include <QStackedWidget>
-#include <QMap>
 #include <boost/shared_ptr.hpp>
-
-class BitcoinGUI;
-class TransactionTableModel;
-class ClientModel;
-class WalletModel;
-class WalletView;
-class TransactionView;
-class OverviewPage;
-class AddressBookPage;
-class SendCoinsDialog;
-class SignVerifyMessageDialog;
-class Notificator;
-class RPCConsole;
+#include <QMap>
+#include <QStackedWidget>
 
 class CWalletManager;
+
+class AddressBookPage;
+class BitcoinGUI;
+class ClientModel;
+class Notificator;
+class OverviewPage;
+class RPCConsole;
+class SendCoinsDialog;
+class SignVerifyMessageDialog;
+class TransactionTableModel;
+class TransactionView;
+class WalletModel;
+class WalletView;
 
 QT_BEGIN_NAMESPACE
 class QLabel;

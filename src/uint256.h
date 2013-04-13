@@ -5,11 +5,11 @@
 #ifndef BITCOIN_UINT256_H
 #define BITCOIN_UINT256_H
 
+#include <cstdio>
+#include <inttypes.h> 
 #include <limits.h>
-#include <stdio.h>
-#include <string.h>
-#include <inttypes.h>
 #include <string>
+#include <string.h>
 #include <vector>
 
 typedef long long  int64;

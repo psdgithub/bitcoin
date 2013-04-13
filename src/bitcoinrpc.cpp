@@ -2,28 +2,23 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-#include "init.h"
-#include "util.h"
-#include "sync.h"
-#include "ui_interface.h"
-#include "base58.h"
 #include "bitcoinrpc.h"
-#include "db.h"
+
+#include "base58.h"
+#include "init.h"
+#include "main.h"
+#include "wallet.h"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
-#include <boost/asio/ip/v6_only.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
 #include <boost/foreach.hpp>
 #include <boost/iostreams/concepts.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/shared_ptr.hpp>
-#include <list>
 
 using namespace std;
 using namespace boost;

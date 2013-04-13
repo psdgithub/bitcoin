@@ -6,15 +6,15 @@
 
 #include "netbase.h"
 #include "protocol.h"
-#include "util.h"
 #include "sync.h"
+#include "util.h"
 
-
+#include <cstdio>
 #include <map>
+#include <set>
 #include <vector>
 
 #include <openssl/rand.h>
-
 
 /** Extended statistics about a CAddress */
 class CAddrInfo : public CAddress

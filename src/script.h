@@ -5,16 +5,18 @@
 #ifndef H_BITCOIN_SCRIPT
 #define H_BITCOIN_SCRIPT
 
+#include "bignum.h"
+#include "key.h"
+#include "util.h"
+
 #include <string>
 #include <vector>
 
 #include <boost/foreach.hpp>
 #include <boost/variant.hpp>
 
-#include "keystore.h"
-#include "bignum.h"
-
 class CCoins;
+class CKeyStore;
 class CTransaction;
 
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520; // bytes

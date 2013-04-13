@@ -2,28 +2,26 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
 #include "init.h"
-#include "main.h"
-#include "core.h"
-#include "txdb.h"
-#include "walletdb.h"
-#include "bitcoinrpc.h"
-#include "net.h"
-#include "util.h"
-#include "ui_interface.h"
-#include "checkpoints.h"
 
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
-#include <boost/filesystem/convenience.hpp>
-#include <boost/interprocess/sync/file_lock.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <openssl/crypto.h>
+#include "addrman.h"
+#include "bitcoinrpc.h"
+#include "checkpoints.h"
+#include "net.h"
+#include "txdb.h"
+#include "ui_interface.h"
+#include "util.h"
+#include "wallet.h"
+#include "walletdb.h"
 
 #ifndef WIN32
 #include <signal.h>
 #endif
+
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/interprocess/sync/file_lock.hpp>
+#include <openssl/crypto.h>
 
 using namespace std;
 using namespace boost;

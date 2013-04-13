@@ -3,11 +3,12 @@
 
 #include <QFrame>
 
+class SendCoinsRecipient;
+class WalletModel;
+
 namespace Ui {
     class SendCoinsEntry;
 }
-class WalletModel;
-class SendCoinsRecipient;
 
 /** A single entry in the dialog for sending bitcoins. */
 class SendCoinsEntry : public QFrame

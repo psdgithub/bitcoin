@@ -2,19 +2,22 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
 #include "db.h"
-#include "util.h"
-#include "hash.h"
+
 #include "addrman.h"
-#include <boost/version.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
-#include <openssl/rand.h>
+#include "hash.h"
+#include "protocol.h"
+#include "util.h"
+
+#include <cstdio>
 
 #ifndef WIN32
-#include "sys/stat.h"
+#include <sys/stat.h>
 #endif
+
+#include <boost/filesystem.hpp>
+#include <boost/version.hpp>
+#include <openssl/rand.h>
 
 using namespace std;
 using namespace boost;

@@ -5,8 +5,9 @@
 #include <QStringList>
 
 class CWallet;
-class TransactionTablePriv;
+
 class TransactionRecord;
+class TransactionTablePriv;
 class WalletModel;
 
 /** UI model for the transaction table of a wallet.

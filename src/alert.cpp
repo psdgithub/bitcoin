@@ -1,18 +1,20 @@
 //
 // Alert system
 //
-
-#include <algorithm>
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/replace.hpp>
-#include <boost/foreach.hpp>
-#include <map>
-
 #include "alert.h"
+
 #include "key.h"
 #include "net.h"
 #include "sync.h"
 #include "ui_interface.h"
+#include "util.h"
+
+#include <algorithm>
+#include <map>
+
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/foreach.hpp>
 
 using namespace std;
 

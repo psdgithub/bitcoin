@@ -3,20 +3,23 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <boost/assign/list_of.hpp>
 
 #include "base58.h"
 #include "bitcoinrpc.h"
-#include "db.h"
-#include "init.h"
-#include "main.h"
 #include "net.h"
+#include "uint256.h"
 #include "wallet.h"
+
+#include <boost/assign/list_of.hpp>
+#include "json/json_spirit_utils.h"
+#include "json/json_spirit_value.h"
 
 using namespace std;
 using namespace boost;
 using namespace boost::assign;
 using namespace json_spirit;
+
+extern CWallet* pwalletMain;
 
 //
 // Utilities: convert hex-encoded Values

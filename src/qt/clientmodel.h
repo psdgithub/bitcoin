@@ -3,10 +3,11 @@
 
 #include <QObject>
 
-class OptionsModel;
-class AddressTableModel;
-class TransactionTableModel;
 class CWallet;
+
+class AddressTableModel;
+class OptionsModel;
+class TransactionTableModel;
 
 QT_BEGIN_NAMESPACE
 class QDateTime;

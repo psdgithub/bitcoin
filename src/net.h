@@ -5,32 +5,36 @@
 #ifndef BITCOIN_NET_H
 #define BITCOIN_NET_H
 
+#include "bloom.h"
+#include "compat.h"
+#include "hash.h"
+#include "limitedmap.h"
+#include "mruset.h"
+#include "netbase.h"
+#include "protocol.h"
+#include "sync.h"
+#include "uint256.h"
+#include "util.h"
+
 #include <deque>
-#include <boost/array.hpp>
-#include <boost/foreach.hpp>
-#include <boost/signals2/signal.hpp>
-#include <openssl/rand.h>
 
 #ifndef WIN32
 #include <arpa/inet.h>
 #endif
 
-#include "mruset.h"
-#include "limitedmap.h"
-#include "netbase.h"
-#include "protocol.h"
-#include "addrman.h"
-#include "hash.h"
-#include "bloom.h"
+#include <boost/array.hpp>
+#include <boost/foreach.hpp>
+#include <boost/signals2/signal.hpp>
+#include <openssl/rand.h>
+
+class CAddrMan;
+class CBlockIndex;
+class CNode;
 
 /** The maximum number of entries in an 'inv' protocol message */
 static const unsigned int MAX_INV_SZ = 50000;
 
-class CNode;
-class CBlockIndex;
 extern int nBestHeight;
-
-
 
 inline unsigned int ReceiveFloodSize() { return 1000*GetArg("-maxreceivebuffer", 5*1000); }
 inline unsigned int SendBufferSize() { return 1000*GetArg("-maxsendbuffer", 1*1000); }
