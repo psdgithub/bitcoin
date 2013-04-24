@@ -234,7 +234,9 @@ bool AppInit2(int argc, char* argv[])
             "  -rpcpassword=<pw>\t  "   + _("Password for JSON-RPC connections") + "\n" +
             "  -rpcport=<port>  \t\t  " + _("Listen for JSON-RPC connections on <port> (default: 8332)") + "\n" +
             "  -rpcallowip=<ip> \t\t  " + _("Allow JSON-RPC connections from specified IP address") + "\n" +
+#ifndef QT_GUI
             "  -rpcconnect=<ip> \t  "   + _("Send commands to node running on <ip> (default: 127.0.0.1)") + "\n" +
+#endif
             "  -blocknotify=<cmd> "     + _("Execute command when the best block changes (%s in cmd is replaced by block hash)") + "\n" +
             "  -upgradewallet   \t  "   + _("Upgrade wallet to latest format") + "\n" +
             "  -keypool=<n>     \t  "   + _("Set key pool size to <n> (default: 100)") + "\n" +
