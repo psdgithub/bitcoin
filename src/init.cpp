@@ -419,6 +419,8 @@ bool AppInit2(int argc, char* argv[])
         CBlockLocator locator;
         if (walletdb.ReadBestBlock(locator))
             pindexRescan = locator.GetBlockIndex();
+        else
+            pindexRescan = pindexGenesisBlock;
     }
     if (pindexBest != pindexRescan)
     {
@@ -426,6 +428,8 @@ bool AppInit2(int argc, char* argv[])
         nStart = GetTimeMillis();
         pwalletMain->ScanForWalletTransactions(pindexRescan, true);
         printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+        pwalletMain->SetBestChain(CBlockLocator(pindexBest));
+        nWalletDBUpdated++;
     }
 
     printf("Done loading\n");
