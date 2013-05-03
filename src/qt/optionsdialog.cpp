@@ -8,16 +8,14 @@
 
 #include <QDir>
 #include <QIntValidator>
-#include <QLocale>
 #include <QMessageBox>
+#include <QTimer>
 
 OptionsDialog::OptionsDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::OptionsDialog),
     model(0),
     mapper(0),
-    fRestartWarningDisplayed_Proxy(false),
-    fRestartWarningDisplayed_Lang(false),
     fProxyIpValid(true)
 {
     ui->setupUi(this);
@@ -39,7 +37,6 @@ OptionsDialog::OptionsDialog(QWidget *parent) :
     connect(ui->connectSocks, SIGNAL(toggled(bool)), ui->proxyIp, SLOT(setEnabled(bool)));
     connect(ui->connectSocks, SIGNAL(toggled(bool)), ui->proxyPort, SLOT(setEnabled(bool)));
     connect(ui->connectSocks, SIGNAL(toggled(bool)), ui->socksVersion, SLOT(setEnabled(bool)));
-    connect(ui->connectSocks, SIGNAL(clicked(bool)), this, SLOT(showRestartWarning_Proxy()));
 
     ui->proxyIp->installEventFilter(this);
 
@@ -100,10 +97,16 @@ OptionsDialog::~OptionsDialog()
 
 void OptionsDialog::setModel(OptionsModel *model)
 {
+    disableApplyButton();
+
     this->model = model;
 
     if(model)
     {
+        /* check if client restart is needed and show persistent message */
+        if (model->isRestartRequired())
+            showRestartWarning(true);
+
         connect(model, SIGNAL(displayUnitChanged(int)), this, SLOT(updateDisplayUnit()));
 
         mapper->setModel(model);
@@ -114,11 +117,12 @@ void OptionsDialog::setModel(OptionsModel *model)
     /* update the display unit, to not use the default ("BTC") */
     updateDisplayUnit();
 
-    /* warn only when language selection changes by user action (placed here so init via mapper doesn't trigger this) */
-    connect(ui->lang, SIGNAL(valueChanged()), this, SLOT(showRestartWarning_Lang()));
+    /* warn when one of the following settings changes by user action (placed here so init via mapper doesn't trigger them) */
 
-    /* disable apply button after settings are loaded as there is nothing to save */
-    disableApplyButton();
+    /* Network */
+    connect(ui->connectSocks, SIGNAL(clicked(bool)), this, SLOT(showRestartWarning()));
+    /* Display */
+    connect(ui->lang, SIGNAL(valueChanged()), this, SLOT(showRestartWarning()));
 }
 
 void OptionsDialog::setMapper()
@@ -181,24 +185,15 @@ void OptionsDialog::on_resetButton_clicked()
     {
         // confirmation dialog
         QMessageBox::StandardButton btnRetVal = QMessageBox::question(this, tr("Confirm options reset"),
-            tr("Some settings may require a client restart to take effect.") + "<br><br>" + tr("Do you want to proceed?"),
+            tr("Client restart required to activate changes.") + "<br><br>" + tr("Do you want to proceed?"),
             QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Cancel);
 
         if(btnRetVal == QMessageBox::Cancel)
             return;
 
-        disableApplyButton();
-
-        /* disable restart warning messages display */
-        fRestartWarningDisplayed_Lang = fRestartWarningDisplayed_Proxy = true;
-
-        /* reset all options and save the default values (QSettings) */
+        /* reset all options and close Bitcoin-Qt */
         model->Reset();
-        mapper->toFirst();
-        mapper->submit();
-
-        /* re-enable restart warning messages display */
-        fRestartWarningDisplayed_Lang = fRestartWarningDisplayed_Proxy = false;
+        QApplication::quit();
     }
 }
 
@@ -215,26 +210,34 @@ void OptionsDialog::on_cancelButton_clicked()
 
 void OptionsDialog::on_applyButton_clicked()
 {
-    mapper->submit();
     disableApplyButton();
+    mapper->submit();
+
+    /* check if client restart is needed and show persistent message */
+    if (model->isRestartRequired())
+        showRestartWarning(true);
 }
 
-void OptionsDialog::showRestartWarning_Proxy()
+void OptionsDialog::showRestartWarning(bool fPersistent)
 {
-    if(!fRestartWarningDisplayed_Proxy)
+    ui->statusLabel->setStyleSheet("QLabel { color: red; }");
+
+    if(fPersistent)
     {
-        QMessageBox::warning(this, tr("Warning"), tr("This setting will take effect after restarting Bitcoin."), QMessageBox::Ok);
-        fRestartWarningDisplayed_Proxy = true;
+        ui->statusLabel->setText(tr("Client restart required to activate changes."));
+    }
+    else
+    {
+        ui->statusLabel->setText(tr("This change would require a client restart."));
+        // clear non-persistent status label after 10 seconds
+        // Todo: should perhaps be a class attribute, if we extend the use of statusLabel
+        QTimer::singleShot(10000, this, SLOT(clearStatusLabel()));
     }
 }
 
-void OptionsDialog::showRestartWarning_Lang()
+void OptionsDialog::clearStatusLabel()
 {
-    if(!fRestartWarningDisplayed_Lang)
-    {
-        QMessageBox::warning(this, tr("Warning"), tr("This setting will take effect after restarting Bitcoin."), QMessageBox::Ok);
-        fRestartWarningDisplayed_Lang = true;
-    }
+    ui->statusLabel->clear();
 }
 
 void OptionsDialog::updateDisplayUnit()

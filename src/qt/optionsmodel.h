@@ -2,6 +2,7 @@
 #define OPTIONSMODEL_H
 
 #include <QAbstractListModel>
+#include <QLocale>
 
 /** Interface from Qt to configuration data structure for Bitcoin client.
    To Qt, the options are presented as a list with the different options
@@ -48,7 +49,11 @@ public:
     bool getMinimizeOnClose() { return fMinimizeOnClose; }
     int getDisplayUnit() { return nDisplayUnit; }
     bool getDisplayAddresses() { return bDisplayAddresses; }
-    QString getLanguage() { return language; }
+    QString getLanguage() { return language.isEmpty() ? QLocale::system().name() : language; }
+
+    /* Restart flag helper */
+    void setRestartRequired(bool fRequired);
+    bool isRestartRequired();
 
 private:
     int nDisplayUnit;

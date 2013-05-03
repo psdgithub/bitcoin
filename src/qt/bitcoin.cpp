@@ -18,7 +18,6 @@
 
 #include <QMessageBox>
 #include <QTextCodec>
-#include <QLocale>
 #include <QTimer>
 #include <QTranslator>
 #include <QLibraryInfo>
@@ -160,8 +159,8 @@ int main(int argc, char *argv[])
     // ... then GUI settings:
     OptionsModel optionsModel;
 
-    // Get desired locale (e.g. "de_DE") from command line or use system locale
-    QString lang_territory = QString::fromStdString(GetArg("-lang", QLocale::system().name().toStdString()));
+    // Get locale (e.g. "de_DE") from options model
+    QString lang_territory = optionsModel.getLanguage();
     QString lang = lang_territory;
     // Convert to "de" only by truncating "_DE"
     lang.truncate(lang_territory.lastIndexOf('_'));

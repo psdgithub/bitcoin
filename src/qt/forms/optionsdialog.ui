@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>540</width>
+    <width>560</width>
     <height>380</height>
    </rect>
   </property>
@@ -100,9 +100,9 @@
         </spacer>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_2_Main">
+        <layout class="QHBoxLayout" name="horizontalLayout_Bottom_Main">
          <item>
-          <spacer name="horizontalSpacer_2_Main">
+          <spacer name="horizontalSpacer_Bottom_Main">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
@@ -173,6 +173,12 @@
          </item>
          <item>
           <widget class="QValidatedLineEdit" name="proxyIp">
+           <property name="minimumSize">
+            <size>
+             <width>140</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="maximumSize">
             <size>
              <width>140</width>
@@ -199,6 +205,12 @@
          </item>
          <item>
           <widget class="QLineEdit" name="proxyPort">
+           <property name="minimumSize">
+            <size>
+             <width>55</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="maximumSize">
             <size>
              <width>55</width>
@@ -397,6 +409,12 @@
      </item>
      <item>
       <widget class="QLabel" name="statusLabel">
+       <property name="minimumSize">
+        <size>
+         <width>200</width>
+         <height>0</height>
+        </size>
+       </property>
        <property name="font">
         <font>
          <weight>75</weight>
