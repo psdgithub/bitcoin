@@ -375,6 +375,7 @@ public:
             ECDSA_SIG_free(sig);
             return true;
         }
+        ECDSA_SIG_free(sig);
         return false;
     }
 
