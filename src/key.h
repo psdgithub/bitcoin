@@ -336,7 +336,10 @@ public:
             }
 
             if (nRecId == -1)
+            {
+                ECDSA_SIG_free(sig);
                 throw key_error("CKey::SignCompact() : unable to construct recoverable key");
+            }
 
             vchSig[0] = nRecId+27;
             BN_bn2bin(sig->r,&vchSig[33-(nBitsR+7)/8]);
