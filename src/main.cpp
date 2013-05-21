@@ -1364,7 +1364,7 @@ unsigned int CTransaction::GetP2SHSigOpCount(CCoinsViewCache& inputs) const
     return nSigOps;
 }
 
-bool CTransaction::UpdateCoins(CValidationState &state, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight, const uint256 &txhash) const
+void CTransaction::UpdateCoins(CValidationState &state, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight, const uint256 &txhash) const
 {
     // mark inputs spent
     if (!IsCoinBase()) {
@@ -1378,8 +1378,6 @@ bool CTransaction::UpdateCoins(CValidationState &state, CCoinsViewCache &inputs,
 
     // add outputs
     assert(inputs.SetCoins(txhash, CCoins(*this, nHeight)));
-
-    return true;
 }
 
 bool CTransaction::HaveInputs(CCoinsViewCache &inputs) const
@@ -1697,8 +1695,7 @@ bool CBlock::ConnectBlock(CValidationState &state, CBlockIndex* pindex, CCoinsVi
         }
 
         CTxUndo txundo;
-        if (!tx.UpdateCoins(state, view, txundo, pindex->nHeight, GetTxHash(i)))
-            return error("ConnectBlock() : UpdateInputs failed");
+        tx.UpdateCoins(state, view, txundo, pindex->nHeight, GetTxHash(i));
         if (!tx.IsCoinBase())
             blockundo.vtxundo.push_back(txundo);
 
@@ -4291,8 +4288,7 @@ public:
             return false;
 
         CTxUndo txundo;
-        if (!tx.UpdateCoins(state, view, txundo, pindexPrev->nHeight+1, hash))
-            return false;
+        tx.UpdateCoins(state, view, txundo, pindexPrev->nHeight+1, hash);
 
         vAdded.push_back(this);
 
@@ -4433,12 +4429,12 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
             {
                 // Read prev transaction
-                CCoins coins;
                 int64 nValueIn;
                 int nConf;
-                if (view.GetCoins(txin.prevout.hash, coins))
+                if (view.HaveCoins(txin.prevout.hash))
                 {
                     // Input is confirmed
+                    const CCoins &coins = view.GetCoins(txin.prevout.hash);
                     nConf = pindexPrev->nHeight - coins.nHeight + 1;
                     nValueIn = coins.vout[txin.prevout.n].nValue;
                     dPriority += (double)nValueIn * nConf;
