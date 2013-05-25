@@ -657,11 +657,7 @@ bool CTxMemPool::accept(CValidationState &state, CTransaction &tx, bool fCheckIn
     BOOST_FOREACH(const CTxOut& txout, tx.vout)
     {
         if (txout.scriptPubKey.IsBlacklisted())
-        {
-            tx.fBlacklisted = true;
-            printf("AcceptToMemoryPool() : flagging transaction with blacklisted output: %s\n", tx.GetHash().ToString().c_str());
-            break;
-        }
+            return error("CTxMemPool::accept() : rejecting transaction with blacklisted output: %s", tx.GetHash().ToString().c_str());
     }
 
     // Rather not work on nonstandard transactions (unless -testnet)
