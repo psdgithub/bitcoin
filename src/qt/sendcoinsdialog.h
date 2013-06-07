@@ -9,6 +9,7 @@ namespace Ui {
 class WalletModel;
 class SendCoinsEntry;
 class SendCoinsRecipient;
+class OptionsModel;
 
 QT_BEGIN_NAMESPACE
 class QUrl;
@@ -24,6 +25,7 @@ public:
     ~SendCoinsDialog();
 
     void setModel(WalletModel *model);
+    void setOptionsModel(OptionsModel *optionsModel);
 
     /** Set up the tab chain manually, as Qt messes up the tab chain by default in some cases (issue https://bugreports.qt-project.org/browse/QTBUG-10907).
      */
@@ -45,6 +47,7 @@ private:
     Ui::SendCoinsDialog *ui;
     WalletModel *model;
     bool fNewRecipientAllowed;
+    OptionsModel *optionsModel;
 
 private slots:
     void on_sendButton_clicked();
