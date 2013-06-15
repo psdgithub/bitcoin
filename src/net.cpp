@@ -5,8 +5,8 @@
 #include "net.h"
 
 #include "addrman.h"
+#include "core.h"
 #include "db.h"
-#include "main.h"
 #include "ui_interface.h"
 
 #ifdef WIN32

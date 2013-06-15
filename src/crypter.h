@@ -59,7 +59,6 @@ public:
 };
 
 typedef std::vector<unsigned char, secure_allocator<unsigned char> > CKeyingMaterial;
-typedef std::vector<unsigned char, secure_allocator<unsigned char> > CSecret;
 
 /** Encryption/decryption context with key information */
 class CCrypter
