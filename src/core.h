@@ -10,8 +10,6 @@
 #include "uint256.h"
 #include "util.h"
 
-#include <stdio.h>
-
 class CTransaction;
 
 /** An outpoint - a combination of a transaction hash and an index n into its vout */

@@ -9,7 +9,6 @@
 #include "version.h"
 
 #include <cassert>
-#include <cstdio>
 #include <cstring>
 #include <limits>
 #include <map>

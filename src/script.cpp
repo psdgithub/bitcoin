@@ -8,8 +8,7 @@
 #include "keystore.h"
 #include "main.h"
 #include "uint256.h"
-
-#include <cstdio>
+#include "util.h"
 
 #include <boost/foreach.hpp>
 #include <boost/tuple/tuple.hpp>

@@ -9,8 +9,6 @@
 #include "protocol.h"
 #include "util.h"
 
-#include <cstdio>
-
 #ifndef WIN32
 #include <sys/stat.h>
 #endif

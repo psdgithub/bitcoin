@@ -9,7 +9,6 @@
 #include "sync.h"
 #include "util.h"
 
-#include <cstdio>
 #include <map>
 #include <set>
 #include <vector>

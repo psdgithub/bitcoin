@@ -5,8 +5,6 @@
 
 #include "util.h"
 
-#include <cstdio>
-
 #include <boost/filesystem.hpp>
 #include <leveldb/cache.h>
 #include <leveldb/env.h>

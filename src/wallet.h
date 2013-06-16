@@ -10,9 +10,9 @@
 #include "keystore.h"
 #include "main.h"
 #include "ui_interface.h"
+#include "util.h"
 #include "walletdb.h"
 
-#include <stdlib.h>
 #include <string>
 #include <vector>
 
