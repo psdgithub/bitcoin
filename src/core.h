@@ -10,6 +10,9 @@
 #include "uint256.h"
 #include "util.h"
 
+#include <inttypes.h>
+#include <stdint.h>
+
 class CTransaction;
 
 /** An outpoint - a combination of a transaction hash and an index n into its vout */
@@ -148,7 +151,7 @@ public:
 class CTxOut
 {
 public:
-    int64 nValue;
+    int64_t nValue;
     CScript scriptPubKey;
 
     CTxOut()
@@ -156,7 +159,7 @@ public:
         SetNull();
     }
 
-    CTxOut(int64 nValueIn, CScript scriptPubKeyIn)
+    CTxOut(int64_t nValueIn, CScript scriptPubKeyIn)
     {
         nValue = nValueIn;
         scriptPubKey = scriptPubKeyIn;
@@ -184,7 +187,7 @@ public:
         return SerializeHash(*this);
     }
 
-    bool IsDust(int64 nMinRelayTxFee) const
+    bool IsDust(int64_t nMinRelayTxFee) const
     {
         // "Dust" is defined in terms of CTransaction::nMinRelayTxFee,
         // which has units satoshis-per-kilobyte.
@@ -212,7 +215,7 @@ public:
     {
         if (scriptPubKey.size() < 6)
             return "CTxOut(error)";
-        return strprintf("CTxOut(nValue=%"PRI64d".%08"PRI64d", scriptPubKey=%s)", nValue / COIN, nValue % COIN, scriptPubKey.ToString().substr(0,30).c_str());
+        return strprintf("CTxOut(nValue=%"PRId64".%08"PRId64", scriptPubKey=%s)", nValue / COIN, nValue % COIN, scriptPubKey.ToString().substr(0,30).c_str());
     }
 
     void print() const
@@ -228,8 +231,8 @@ public:
 class CTransaction
 {
 public:
-    static int64 nMinTxFee;
-    static int64 nMinRelayTxFee;
+    static int64_t nMinTxFee;
+    static int64_t nMinRelayTxFee;
     static const int CURRENT_VERSION=1;
     int nVersion;
     std::vector<CTxIn> vin;
@@ -345,17 +348,17 @@ private:
     CTxOut &txout;
 
 public:
-    static uint64 CompressAmount(uint64 nAmount);
-    static uint64 DecompressAmount(uint64 nAmount);
+    static uint64_t CompressAmount(uint64_t nAmount);
+    static uint64_t DecompressAmount(uint64_t nAmount);
 
     CTxOutCompressor(CTxOut &txoutIn) : txout(txoutIn) { }
 
     IMPLEMENT_SERIALIZE(({
         if (!fRead) {
-            uint64 nVal = CompressAmount(txout.nValue);
+            uint64_t nVal = CompressAmount(txout.nValue);
             READWRITE(VARINT(nVal));
         } else {
-            uint64 nVal = 0;
+            uint64_t nVal = 0;
             READWRITE(VARINT(nVal));
             txout.nValue = DecompressAmount(nVal);
         }
@@ -725,9 +728,9 @@ public:
         return Hash(BEGIN(nVersion), END(nNonce));
     }
 
-    int64 GetBlockTime() const
+    int64_t GetBlockTime() const
     {
-        return (int64)nTime;
+        return (int64_t)nTime;
     }
 };
 

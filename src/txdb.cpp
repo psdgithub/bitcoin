@@ -6,6 +6,8 @@
 
 #include "uint256.h"
 
+#include <stdint.h>
+
 using namespace std;
 
 void static BatchWriteCoins(CLevelDBBatch &batch, const uint256 &hash, const CCoins &coins) {
@@ -117,7 +119,7 @@ bool CCoinsViewDB::GetStats(CCoinsStats &stats) {
     CHashWriter ss(SER_GETHASH, PROTOCOL_VERSION);
     stats.hashBlock = GetBestBlock()->GetBlockHash();
     ss << stats.hashBlock;
-    int64 nTotalAmount = 0;
+    int64_t nTotalAmount = 0;
     while (pcursor->Valid()) {
         boost::this_thread::interruption_point();
         try {

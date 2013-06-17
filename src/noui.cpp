@@ -7,6 +7,7 @@
 #include "ui_interface.h"
 #include "util.h"
 
+#include <stdint.h>
 #include <string>
 
 static bool noui_ThreadSafeMessageBox(const std::string& message, const std::string& caption, unsigned int style)
@@ -32,7 +33,7 @@ static bool noui_ThreadSafeMessageBox(const std::string& message, const std::str
     return false;
 }
 
-static bool noui_ThreadSafeAskFee(int64 /*nFeeRequired*/)
+static bool noui_ThreadSafeAskFee(int64_t /*nFeeRequired*/)
 {
     return true;
 }

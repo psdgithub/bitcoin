@@ -11,11 +11,13 @@
 #include "ui_interface.h"
 #include "wallet.h"
 
+#include <stdint.h>
+
 #include <QSet>
 #include <QTimer>
 
 extern CCriticalSection cs_main;
-extern int64 nTransactionFee;
+extern int64_t nTransactionFee;
 
 WalletModel::WalletModel(CWallet *wallet, OptionsModel *optionsModel, QObject *parent) :
     QObject(parent), wallet(wallet), optionsModel(optionsModel), addressTableModel(0),
@@ -175,7 +177,7 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
         LOCK2(cs_main, wallet->cs_wallet);
 
         // Sendmany
-        std::vector<std::pair<CScript, int64> > vecSend;
+        std::vector<std::pair<CScript, int64_t> > vecSend;
         foreach(const SendCoinsRecipient &rcp, recipients)
         {
             CScript scriptPubKey;
@@ -185,7 +187,7 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
 
         CWalletTx wtx;
         CReserveKey keyChange(wallet);
-        int64 nFeeRequired = 0;
+        int64_t nFeeRequired = 0;
         std::string strFailReason;
         bool fCreated = wallet->CreateTransaction(vecSend, wtx, keyChange, nFeeRequired, strFailReason);
 

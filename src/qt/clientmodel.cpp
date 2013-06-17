@@ -7,12 +7,14 @@
 #include "main.h"
 #include "ui_interface.h"
 
+#include <stdint.h>
+
 #include <QDateTime>
 #include <QTimer>
 
 extern std::vector<CNode*> vNodes;
 
-static const int64 nClientStartupTime = GetTime();
+static const int64_t nClientStartupTime = GetTime();
 
 ClientModel::ClientModel(OptionsModel *optionsModel, QObject *parent) :
     QObject(parent), optionsModel(optionsModel),

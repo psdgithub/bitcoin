@@ -10,6 +10,8 @@
 #include "uint256.h"
 #include "util.h"
 
+#include <stdint.h>
+
 class CAccount;
 class CAccountingEntry;
 class CBlockLocator;
@@ -35,13 +37,13 @@ class CKeyMetadata
 public:
     static const int CURRENT_VERSION=1;
     int nVersion;
-    int64 nCreateTime;
+    int64_t nCreateTime;
 
     CKeyMetadata()
     {
         SetNull();
     }
-    CKeyMetadata(int64 nCreateTime_)
+    CKeyMetadata(int64_t nCreateTime_)
     {
         nVersion = CKeyMetadata::CURRENT_VERSION;
         nCreateTime = nCreateTime_;
@@ -79,8 +81,8 @@ public:
     bool WriteTx(uint256 hash, const CWalletTx& wtx);
     bool EraseTx(uint256 hash);
 
-    bool WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey, int64 nCreateTime);
-    bool WriteCryptedKey(const CPubKey& vchPubKey, const std::vector<unsigned char>& vchCryptedSecret, int64 nCreateTime);
+    bool WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey, int64_t nCreateTime);
+    bool WriteCryptedKey(const CPubKey& vchPubKey, const std::vector<unsigned char>& vchCryptedSecret, int64_t nCreateTime);
     bool WriteMasterKey(unsigned int nID, const CMasterKey& kMasterKey);
 
     bool WriteCScript(const uint160& hash, const CScript& redeemScript);
@@ -88,13 +90,13 @@ public:
     bool WriteBestBlock(const CBlockLocator& locator);
     bool ReadBestBlock(CBlockLocator& locator);
 
-    bool WriteOrderPosNext(int64 nOrderPosNext);
+    bool WriteOrderPosNext(int64_t nOrderPosNext);
 
     bool WriteDefaultKey(const CPubKey& vchPubKey);
 
-    bool ReadPool(int64 nPool, CKeyPool& keypool);
-    bool WritePool(int64 nPool, const CKeyPool& keypool);
-    bool ErasePool(int64 nPool);
+    bool ReadPool(int64_t nPool, CKeyPool& keypool);
+    bool WritePool(int64_t nPool, const CKeyPool& keypool);
+    bool ErasePool(int64_t nPool);
 
     // Settings are no longer stored in wallet.dat; these are
     // used only for backwards compatibility:
@@ -117,10 +119,10 @@ public:
     bool ReadAccount(const std::string& strAccount, CAccount& account);
     bool WriteAccount(const std::string& strAccount, const CAccount& account);
 private:
-    bool WriteAccountingEntry(const uint64 nAccEntryNum, const CAccountingEntry& acentry);
+    bool WriteAccountingEntry(const uint64_t nAccEntryNum, const CAccountingEntry& acentry);
 public:
     bool WriteAccountingEntry(const CAccountingEntry& acentry);
-    int64 GetAccountCreditDebit(const std::string& strAccount);
+    int64_t GetAccountCreditDebit(const std::string& strAccount);
     void ListAccountCreditDebit(const std::string& strAccount, std::list<CAccountingEntry>& acentries);
 
     DBErrors ReorderTransactions(CWallet*);

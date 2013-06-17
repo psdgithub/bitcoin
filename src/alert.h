@@ -9,12 +9,11 @@
 #include "serialize.h"
 
 #include <set>
+#include <stdint.h>
 #include <string>
 
 class CNode;
 class uint256;
-
-typedef long long  int64;
 
 /** Alerts are for notifying old versions if they become too obsolete and
  * need to upgrade.  The message is displayed in the status bar.
@@ -26,8 +25,8 @@ class CUnsignedAlert
 {
 public:
     int nVersion;
-    int64 nRelayUntil;      // when newer nodes stop relaying to newer nodes
-    int64 nExpiration;
+    int64_t nRelayUntil;      // when newer nodes stop relaying to newer nodes
+    int64_t nExpiration;
     int nID;
     int nCancel;
     std::set<int> setCancel;

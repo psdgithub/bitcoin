@@ -6,6 +6,8 @@
 
 #include "util.h"
 
+#include <stdint.h>
+
 #ifndef WIN32
 # include <arpa/inet.h>
 #endif
@@ -80,7 +82,7 @@ CAddress::CAddress() : CService()
     Init();
 }
 
-CAddress::CAddress(CService ipIn, uint64 nServicesIn) : CService(ipIn)
+CAddress::CAddress(CService ipIn, uint64_t nServicesIn) : CService(ipIn)
 {
     Init();
     nServices = nServicesIn;

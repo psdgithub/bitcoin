@@ -7,7 +7,10 @@
 #include "base58.h"
 #include "init.h"
 #include "main.h"
+#include "util.h"
 #include "wallet.h"
+
+#include <stdint.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
@@ -86,18 +89,18 @@ void RPCTypeCheck(const Object& o,
     }
 }
 
-int64 AmountFromValue(const Value& value)
+int64_t AmountFromValue(const Value& value)
 {
     double dAmount = value.get_real();
     if (dAmount <= 0.0 || dAmount > 21000000.0)
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount");
-    int64 nAmount = roundint64(dAmount * COIN);
+    int64_t nAmount = roundint64(dAmount * COIN);
     if (!MoneyRange(nAmount))
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount");
     return nAmount;
 }
 
-Value ValueFromAmount(int64 amount)
+Value ValueFromAmount(int64_t amount)
 {
     return (double)amount / (double)COIN;
 }
@@ -853,7 +856,7 @@ void RPCRunHandler(const boost::system::error_code& err, boost::function<void(vo
         func();
 }
 
-void RPCRunLater(const std::string& name, boost::function<void(void)> func, int64 nSeconds)
+void RPCRunLater(const std::string& name, boost::function<void(void)> func, int64_t nSeconds)
 {
     assert(rpc_io_service != NULL);
 

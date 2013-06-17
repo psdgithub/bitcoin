@@ -8,6 +8,8 @@
 #include "main.h"
 #include "wallet.h"
 
+#include <stdint.h>
+
 #include "json/json_spirit_utils.h"
 #include "json/json_spirit_value.h"
 
@@ -131,7 +133,7 @@ Value getwork(const Array& params, bool fHelp)
         // Update block
         static unsigned int nTransactionsUpdatedLast;
         static CBlockIndex* pindexPrev;
-        static int64 nStart;
+        static int64_t nStart;
         static CBlockTemplate* pblocktemplate;
         if (pindexPrev != pindexBest ||
             (nTransactionsUpdated != nTransactionsUpdatedLast && GetTime() - nStart > 60))
@@ -266,7 +268,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
     // Update block
     static unsigned int nTransactionsUpdatedLast;
     static CBlockIndex* pindexPrev;
-    static int64 nStart;
+    static int64_t nStart;
     static CBlockTemplate* pblocktemplate;
     if (pindexPrev != pindexBest ||
         (nTransactionsUpdated != nTransactionsUpdatedLast && GetTime() - nStart > 5))

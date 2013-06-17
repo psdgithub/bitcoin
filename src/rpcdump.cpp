@@ -8,6 +8,8 @@
 #include "sync.h"
 #include "wallet.h"
 
+#include <stdint.h>
+
 #include <boost/lexical_cast.hpp>
 #include "json/json_spirit_value.h"
 
@@ -24,7 +26,7 @@ class CTxDump
 {
 public:
     CBlockIndex *pindex;
-    int64 nValue;
+    int64_t nValue;
     bool fSpent;
     CWalletTx* ptx;
     int nOut;

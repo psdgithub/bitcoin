@@ -17,6 +17,8 @@
 #include "ui_interface.h"
 #include "util.h"
 
+#include <stdint.h>
+
 #include <boost/filesystem/operations.hpp>
 #include <QApplication>
 #include <QLibraryInfo>
@@ -71,7 +73,7 @@ static bool ThreadSafeMessageBox(const std::string& message, const std::string& 
     }
 }
 
-static bool ThreadSafeAskFee(int64 nFeeRequired)
+static bool ThreadSafeAskFee(int64_t nFeeRequired)
 {
     if(!guiref)
         return false;

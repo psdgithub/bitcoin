@@ -8,7 +8,7 @@
 
 #include <QSettings>
 
-extern int64 nTransactionFee; 
+extern qint64 nTransactionFee; 
 
 OptionsModel::OptionsModel(QObject *parent) :
     QAbstractListModel(parent)

@@ -10,6 +10,7 @@
 #include "util.h"
 
 #include <algorithm>
+#include <inttypes.h>
 #include <map>
 
 #include <boost/algorithm/string/classification.hpp>
@@ -53,8 +54,8 @@ std::string CUnsignedAlert::ToString() const
     return strprintf(
         "CAlert(\n"
         "    nVersion     = %d\n"
-        "    nRelayUntil  = %"PRI64d"\n"
-        "    nExpiration  = %"PRI64d"\n"
+        "    nRelayUntil  = %"PRId64"\n"
+        "    nExpiration  = %"PRId64"\n"
         "    nID          = %d\n"
         "    nCancel      = %d\n"
         "    setCancel    = %s\n"

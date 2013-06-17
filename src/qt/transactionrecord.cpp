@@ -3,6 +3,8 @@
 #include "base58.h"
 #include "wallet.h"
 
+#include <stdint.h>
+
 /* Return positive answer if transaction should be shown in list.
  */
 bool TransactionRecord::showTransaction(const CWalletTx &wtx)
@@ -24,10 +26,10 @@ bool TransactionRecord::showTransaction(const CWalletTx &wtx)
 QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *wallet, const CWalletTx &wtx)
 {
     QList<TransactionRecord> parts;
-    int64 nTime = wtx.GetTxTime();
-    int64 nCredit = wtx.GetCredit(true);
-    int64 nDebit = wtx.GetDebit();
-    int64 nNet = nCredit - nDebit;
+    int64_t nTime = wtx.GetTxTime();
+    int64_t nCredit = wtx.GetCredit(true);
+    int64_t nDebit = wtx.GetDebit();
+    int64_t nNet = nCredit - nDebit;
     uint256 hash = wtx.GetHash();
     std::map<std::string, std::string> mapValue = wtx.mapValue;
 
@@ -79,7 +81,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
         if (fAllFromMe && fAllToMe)
         {
             // Payment to self
-            int64 nChange = wtx.GetChange();
+            int64_t nChange = wtx.GetChange();
 
             parts.append(TransactionRecord(hash, nTime, TransactionRecord::SendToSelf, "",
                             -(nDebit - nChange), nCredit - nChange));
@@ -89,7 +91,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
             //
             // Debit
             //
-            int64 nTxFee = nDebit - GetValueOut(wtx);
+            int64_t nTxFee = nDebit - GetValueOut(wtx);
 
             for (unsigned int nOut = 0; nOut < wtx.vout.size(); nOut++)
             {
@@ -118,7 +120,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
                     sub.address = mapValue["to"];
                 }
 
-                int64 nValue = txout.nValue;
+                int64_t nValue = txout.nValue;
                 /* Add fee to first output */
                 if (nTxFee > 0)
                 {
@@ -194,7 +196,7 @@ void TransactionRecord::updateStatus(const CWalletTx &wtx)
     // For generated transactions, determine maturity
     if(type == TransactionRecord::Generated)
     {
-        int64 nCredit = wtx.GetCredit(true);
+        int64_t nCredit = wtx.GetCredit(true);
         if (nCredit == 0)
         {
             status.maturity = TransactionStatus::Immature;

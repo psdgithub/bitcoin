@@ -8,6 +8,7 @@
 
 #include <list>
 #include <map>
+#include <stdint.h>
 #include <string>
 
 #include "json/json_spirit_reader_template.h"
@@ -16,8 +17,6 @@
 
 class CBlockIndex;
 class CReserveKey;
-
-typedef long long  int64;
 
 // HTTP status codes
 enum HTTPStatusCode
@@ -93,7 +92,7 @@ void RPCTypeCheck(const json_spirit::Object& o,
   Run func nSeconds from now. Uses boost deadline timers.
   Overrides previous timer <name> (if any).
  */
-void RPCRunLater(const std::string& name, boost::function<void(void)> func, int64 nSeconds);
+void RPCRunLater(const std::string& name, boost::function<void(void)> func, int64_t nSeconds);
 
 typedef json_spirit::Value(*rpcfn_type)(const json_spirit::Array& params, bool fHelp);
 
@@ -133,9 +132,9 @@ extern const CRPCTable tableRPC;
 extern void InitRPCMining();
 extern void ShutdownRPCMining();
 
-extern int64 nWalletUnlockTime;
-extern int64 AmountFromValue(const json_spirit::Value& value);
-extern json_spirit::Value ValueFromAmount(int64 amount);
+extern int64_t nWalletUnlockTime;
+extern int64_t AmountFromValue(const json_spirit::Value& value);
+extern json_spirit::Value ValueFromAmount(int64_t amount);
 extern double GetDifficulty(const CBlockIndex* blockindex = NULL);
 extern std::string HexBits(unsigned int nBits);
 extern std::string HelpRequiringPassphrase();
