@@ -1,8 +1,8 @@
-diff --git a/contrib/test-patches/bitcoind-comparison.patch b/contrib/test-patches/bitcoind-comparison.patch
-index 04a8618..519429a 100644
+diff --git a/src/main.cpp b/src/main.cpp
+index d594341..21c0b83 100644
 --- a/src/main.cpp
 +++ b/src/main.cpp
-@@ -31,8 +31,8 @@ CTxMemPool mempool;
+@@ -38,8 +38,8 @@ unsigned int nTransactionsUpdated = 0;
  
  map<uint256, CBlockIndex*> mapBlockIndex;
  std::vector<CBlockIndex*> vBlockIndexByHeight;
@@ -13,8 +13,8 @@ index 04a8618..519429a 100644
  CBlockIndex* pindexGenesisBlock = NULL;
  int nBestHeight = -1;
  uint256 nBestChainWork = 0;
-@@ -1055,7 +1055,7 @@ int64 static GetBlockValue(int nHeight, int64 nFees)
-     int64 nSubsidy = 50 * COIN;
+@@ -1104,7 +1104,7 @@ int64_t static GetBlockValue(int nHeight, int64_t nFees)
+     int64_t nSubsidy = 50 * COIN;
  
      // Subsidy is cut in half every 210000 blocks, which will occur approximately every 4 years
 -    nSubsidy >>= (nHeight / 210000);
@@ -22,7 +22,7 @@ index 04a8618..519429a 100644
  
      return nSubsidy + nFees;
  }
-@@ -2736,9 +2736,9 @@ bool InitBlockIndex() {
+@@ -2761,9 +2761,9 @@ bool InitBlockIndex() {
          block.hashPrevBlock = 0;
          block.hashMerkleRoot = block.BuildMerkleTree();
          block.nVersion = 1;
@@ -35,7 +35,7 @@ index 04a8618..519429a 100644
  
          if (fTestNet)
          {
-@@ -3024,7 +3024,7 @@ bool static AlreadyHave(const CInv& inv)
+@@ -3049,7 +3049,7 @@ bool static AlreadyHave(const CInv& inv)
  // The message start string is designed to be unlikely to occur in normal data.
  // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
  // a large 4-byte int at any alignment.
@@ -45,10 +45,10 @@ index 04a8618..519429a 100644
  
  void static ProcessGetData(CNode* pfrom)
 diff --git a/src/test/miner_tests.cpp b/src/test/miner_tests.cpp
-index af28465..ee9a4db 100644
+index 1e824c4..6addc0f 100644
 --- a/src/test/miner_tests.cpp
 +++ b/src/test/miner_tests.cpp
-@@ -15,34 +15,117 @@ struct {
+@@ -16,34 +16,117 @@ struct {
      unsigned char extranonce;
      unsigned int nonce;
  } blockinfo[] = {
