@@ -1032,7 +1032,7 @@ void ThreadSocketHandler()
                     printf("socket not sending\n");
                     pnode->fDisconnect = true;
                 }
-                else if (GetTime() - pnode->nLastRecv > 90*60)
+                else if (GetTime() - pnode->nLastRecv > 60)
                 {
                     printf("socket inactivity timeout\n");
                     pnode->fDisconnect = true;
