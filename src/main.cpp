@@ -483,12 +483,22 @@ bool IsStandardTx(const CTransaction& tx)
         if (!txin.scriptSig.IsPushOnly())
             return false;
     }
+
+    unsigned int nDataOut = 0;
+    txnouttype whichType;
     BOOST_FOREACH(const CTxOut& txout, tx.vout) {
-        if (!::IsStandard(txout.scriptPubKey))
+        if (!::IsStandard(txout.scriptPubKey, whichType))
             return false;
-        if (txout.IsDust(CTransaction::nMinRelayTxFee))
+        if (whichType == TX_NULL_DATA)
+            nDataOut++;
+        else if (txout.IsDust(CTransaction::nMinRelayTxFee))
             return false;
     }
+
+    // only one OP_RETURN txout is permitted
+    if (nDataOut > 1)
+        return false;
+
     return true;
 }
 
