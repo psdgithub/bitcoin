@@ -2,7 +2,7 @@
 Encoding=UTF-8
 Name=Bitcoin
 Comment=Bitcoin P2P Cryptocurrency
-Exec=/usr/bin/bitcoin-qt
+Exec=/usr/bin/bitcoin-qt %u
 Terminal=false
 Type=Application
 Icon=/usr/share/pixmaps/bitcoin80.xpm
