@@ -847,7 +847,7 @@ void GetDataDir(char* pszDir)
     if (!pfMkdir[nVariation])
     {
         pfMkdir[nVariation] = true;
-        boost::filesystem::create_directory(pszDir);
+        boost::filesystem::create_directories(pszDir);
     }
 }
 
@@ -939,6 +939,8 @@ void ShrinkDebugFile()
             fclose(file);
         }
     }
+    else if(file != NULL)
+	     fclose(file);
 }
 
 
