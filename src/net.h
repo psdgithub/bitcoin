@@ -225,7 +225,7 @@ public:
         pfilter = NULL;
 
         // Be shy and don't send version until we hear
-        if (!fInbound)
+        if (hSocket != INVALID_SOCKET && !fInbound)
             PushVersion();
     }
 
