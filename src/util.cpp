@@ -896,7 +896,7 @@ const boost::filesystem::path &GetDataDir(bool fNetSpecific)
     if (fNetSpecific && GetBoolArg("-testnet", false))
         path /= "testnet";
 
-    fs::create_directory(path);
+    fs::create_directories(path);
 
     fCachedPath[fNetSpecific] = true;
     return path;
@@ -990,6 +990,8 @@ void ShrinkDebugFile()
             fclose(file);
         }
     }
+    else if(file != NULL)
+	     fclose(file);
 }
 
 
