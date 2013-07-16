@@ -47,13 +47,13 @@ be done in `Xcode > Preferences > Downloads > Components` and generally must
 be re-done or updated every time Xcode is updated.
 
 There's an assumption that you already have `git` installed, as well. If
-not, it's the path of least resistance to install Github for Mac
+not, it's the path of least resistance to install [Github for Mac](https://mac.github.com/)
 (OS X 10.7+) or
 [Git for OS X](https://code.google.com/p/git-osx-installer/). It is also
 available via Homebrew or MacPorts.
 
-You will also need to install [Homebrew](http://mxcl.github.com/homebrew/)
-or [MacPorts](http://www.macports.org/) in order to install library
+You will also need to install [Homebrew](http://mxcl.github.io/homebrew/)
+or [MacPorts](https://www.macports.org/) in order to install library
 dependencies. It's largely a religious decision which to choose, but, as of
 December 2012, MacPorts is a little easier because you can just install the
 dependencies immediately - no other work required. If you're unsure, read
@@ -94,6 +94,18 @@ Instructions: HomeBrew
 #### Install dependencies using Homebrew
 
         brew install boost miniupnpc openssl berkeley-db4
+
+Note: After you have installed the dependencies, you should check that the Brew installed version of OpenSSL is the one available for compilation. You can check this by typing
+
+        openssl version
+
+into Terminal. You should see OpenSSL 1.0.1e 11 Feb 2013.
+
+If not, you can ensure that the Brew OpenSSL is correctly linked by running
+
+        brew link openssl --force
+
+Rerunning "openssl version" should now return the correct version.
 
 ### Building `bitcoind`
 

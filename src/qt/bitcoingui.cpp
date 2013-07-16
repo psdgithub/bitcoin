@@ -42,8 +42,6 @@
 #include <QStackedWidget>
 #include <QDateTime>
 #include <QMovie>
-#include <QFileDialog>
-#include <QDesktopServices>
 #include <QTimer>
 #include <QDragEnterEvent>
 #include <QUrl>
@@ -155,6 +153,7 @@ BitcoinGUI::~BitcoinGUI()
         trayIcon->hide();
 #ifdef Q_OS_MAC
     delete appMenuBar;
+    MacDockIconHandler::instance()->setMainWindow(NULL);
 #endif
 }
 
@@ -236,9 +235,6 @@ void BitcoinGUI::createActions()
     verifyMessageAction = new QAction(QIcon(":/icons/transaction_0"), tr("&Verify message..."), this);
     verifyMessageAction->setStatusTip(tr("Verify messages to ensure they were signed with specified Bitcoin addresses"));
 
-    exportAction = new QAction(QIcon(":/icons/export"), tr("&Export..."), this);
-    exportAction->setStatusTip(tr("Export the data in the current tab to a file"));
-    exportAction->setToolTip(exportAction->statusTip());
     openRPCConsoleAction = new QAction(QIcon(":/icons/debugwindow"), tr("&Debug window"), this);
     openRPCConsoleAction->setStatusTip(tr("Open debugging and diagnostic console"));
 
@@ -267,7 +263,6 @@ void BitcoinGUI::createMenuBar()
     // Configure the menus
     QMenu *file = appMenuBar->addMenu(tr("&File"));
     file->addAction(backupWalletAction);
-    file->addAction(exportAction);
     file->addAction(signMessageAction);
     file->addAction(verifyMessageAction);
     file->addSeparator();
@@ -295,10 +290,6 @@ void BitcoinGUI::createToolBars()
     toolbar->addAction(receiveCoinsAction);
     toolbar->addAction(historyAction);
     toolbar->addAction(addressBookAction);
-
-    QToolBar *toolbar2 = addToolBar(tr("Actions toolbar"));
-    toolbar2->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    toolbar2->addAction(exportAction);
 }
 
 void BitcoinGUI::setClientModel(ClientModel *clientModel)
@@ -390,6 +381,7 @@ void BitcoinGUI::createTrayIconMenu()
 #else
     // Note: On Mac, the dock icon is used to provide the tray's functionality.
     MacDockIconHandler *dockIconHandler = MacDockIconHandler::instance();
+    dockIconHandler->setMainWindow((QMainWindow *)this);
     trayIconMenu = dockIconHandler->dockMenu();
 #endif
 
@@ -514,30 +506,25 @@ void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
     // Prevent orphan statusbar messages (e.g. hover Quit in main menu, wait until chain-sync starts -> garbelled text)
     statusBar()->clearMessage();
 
-    // don't show / hide progress bar and its label if we have no connection to the network
-    enum BlockSource blockSource = clientModel ? clientModel->getBlockSource() : BLOCK_SOURCE_NONE;
-    if (blockSource == BLOCK_SOURCE_NONE || (blockSource == BLOCK_SOURCE_NETWORK && clientModel->getNumConnections() == 0))
-    {
-        progressBarLabel->setVisible(false);
-        progressBar->setVisible(false);
-
-        return;
+    // Acquire current block source
+    enum BlockSource blockSource = clientModel->getBlockSource();
+    switch (blockSource) {
+        case BLOCK_SOURCE_NETWORK:
+            progressBarLabel->setText(tr("Synchronizing with network..."));
+            break;
+        case BLOCK_SOURCE_DISK:
+            progressBarLabel->setText(tr("Importing blocks from disk..."));
+            break;
+        case BLOCK_SOURCE_REINDEX:
+            progressBarLabel->setText(tr("Reindexing blocks on disk..."));
+            break;
+        case BLOCK_SOURCE_NONE:
+            // Case: not Importing, not Reindexing and no network connection
+            progressBarLabel->setText(tr("No block source available..."));
+            break;
     }
 
     QString tooltip;
-
-    QString importText;
-    switch (blockSource) {
-    case BLOCK_SOURCE_NONE:
-    case BLOCK_SOURCE_NETWORK:
-        importText = tr("Synchronizing with network...");
-        break;
-    case BLOCK_SOURCE_DISK:
-        importText = tr("Importing blocks from disk...");
-        break;
-    case BLOCK_SOURCE_REINDEX:
-        importText = tr("Reindexing blocks on disk...");
-    }
 
     QDateTime lastBlockDate = clientModel->getLastBlockDate();
     QDateTime currentDate = QDateTime::currentDateTime();
@@ -580,7 +567,6 @@ void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
             timeBehindText = tr("%n week(s)","",secs/(7*24*60*60));
         }
 
-        progressBarLabel->setText(importText);
         progressBarLabel->setVisible(true);
         progressBar->setFormat(tr("%1 behind").arg(timeBehindText));
         progressBar->setMaximum(1000000000);
@@ -611,25 +597,28 @@ void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
 
 void BitcoinGUI::message(const QString &title, const QString &message, unsigned int style, bool *ret)
 {
-    QString strTitle = tr("Bitcoin") + " - ";
+    QString strTitle = tr("Bitcoin"); // default title
     // Default to information icon
     int nMBoxIcon = QMessageBox::Information;
     int nNotifyIcon = Notificator::Information;
 
-    // Check for usage of predefined title
+    // Override title based on style
+    QString msgType;
     switch (style) {
     case CClientUIInterface::MSG_ERROR:
-        strTitle += tr("Error");
+        msgType = tr("Error");
         break;
     case CClientUIInterface::MSG_WARNING:
-        strTitle += tr("Warning");
+        msgType = tr("Warning");
         break;
     case CClientUIInterface::MSG_INFORMATION:
-        strTitle += tr("Information");
+        msgType = tr("Information");
         break;
     default:
-        strTitle += title; // Use supplied title
+        msgType = title; // Use supplied title
     }
+    if (!msgType.isEmpty())
+        strTitle += " - " + msgType;
 
     // Check for error/warning icon
     if (style & CClientUIInterface::ICON_ERROR) {
