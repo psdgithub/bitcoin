@@ -43,15 +43,8 @@ public:
         return !(a == b);
     }
 
-    std::string ToString() const
-    {
-        return strprintf("COutPoint(%s, %u)", hash.ToString().substr(0,10).c_str(), n);
-    }
-
-    void print() const
-    {
-        printf("%s\n", ToString().c_str());
-    }
+    std::string ToString() const;
+    void print() const;
 };
 
 /** An inpoint - a combination of a transaction and an index n into its vin */
@@ -83,19 +76,8 @@ public:
         nSequence = std::numeric_limits<unsigned int>::max();
     }
 
-    explicit CTxIn(COutPoint prevoutIn, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=std::numeric_limits<unsigned int>::max())
-    {
-        prevout = prevoutIn;
-        scriptSig = scriptSigIn;
-        nSequence = nSequenceIn;
-    }
-
-    CTxIn(uint256 hashPrevTx, unsigned int nOut, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=std::numeric_limits<unsigned int>::max())
-    {
-        prevout = COutPoint(hashPrevTx, nOut);
-        scriptSig = scriptSigIn;
-        nSequence = nSequenceIn;
-    }
+    explicit CTxIn(COutPoint prevoutIn, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=std::numeric_limits<unsigned int>::max());
+    CTxIn(uint256 hashPrevTx, unsigned int nOut, CScript scriptSigIn=CScript(), unsigned int nSequenceIn=std::numeric_limits<unsigned int>::max());
 
     IMPLEMENT_SERIALIZE
     (
@@ -121,25 +103,8 @@ public:
         return !(a == b);
     }
 
-    std::string ToString() const
-    {
-        std::string str;
-        str += "CTxIn(";
-        str += prevout.ToString();
-        if (prevout.IsNull())
-            str += strprintf(", coinbase %s", HexStr(scriptSig).c_str());
-        else
-            str += strprintf(", scriptSig=%s", scriptSig.ToString().substr(0,24).c_str());
-        if (nSequence != std::numeric_limits<unsigned int>::max())
-            str += strprintf(", nSequence=%u", nSequence);
-        str += ")";
-        return str;
-    }
-
-    void print() const
-    {
-        printf("%s\n", ToString().c_str());
-    }
+    std::string ToString() const;
+    void print() const;
 };
 
 
@@ -159,11 +124,7 @@ public:
         SetNull();
     }
 
-    CTxOut(int64_t nValueIn, CScript scriptPubKeyIn)
-    {
-        nValue = nValueIn;
-        scriptPubKey = scriptPubKeyIn;
-    }
+    CTxOut(int64_t nValueIn, CScript scriptPubKeyIn);
 
     IMPLEMENT_SERIALIZE
     (
@@ -182,10 +143,7 @@ public:
         return (nValue == -1);
     }
 
-    uint256 GetHash() const
-    {
-        return SerializeHash(*this);
-    }
+    uint256 GetHash() const;
 
     bool IsDust(int64_t nMinRelayTxFee) const
     {
@@ -211,17 +169,8 @@ public:
         return !(a == b);
     }
 
-    std::string ToString() const
-    {
-        if (scriptPubKey.size() < 6)
-            return "CTxOut(error)";
-        return strprintf("CTxOut(nValue=%"PRId64".%08"PRId64", scriptPubKey=%s)", nValue / COIN, nValue % COIN, scriptPubKey.ToString().substr(0,30).c_str());
-    }
-
-    void print() const
-    {
-        printf("%s\n", ToString().c_str());
-    }
+    std::string ToString() const;
+    void print() const;
 };
 
 
@@ -266,39 +215,8 @@ public:
         return (vin.empty() && vout.empty());
     }
 
-    uint256 GetHash() const
-    {
-        return SerializeHash(*this);
-    }
-
-    bool IsNewerThan(const CTransaction& old) const
-    {
-        if (vin.size() != old.vin.size())
-            return false;
-        for (unsigned int i = 0; i < vin.size(); i++)
-            if (vin[i].prevout != old.vin[i].prevout)
-                return false;
-
-        bool fNewer = false;
-        unsigned int nLowest = std::numeric_limits<unsigned int>::max();
-        for (unsigned int i = 0; i < vin.size(); i++)
-        {
-            if (vin[i].nSequence != old.vin[i].nSequence)
-            {
-                if (vin[i].nSequence <= nLowest)
-                {
-                    fNewer = false;
-                    nLowest = vin[i].nSequence;
-                }
-                if (old.vin[i].nSequence < nLowest)
-                {
-                    fNewer = true;
-                    nLowest = old.vin[i].nSequence;
-                }
-            }
-        }
-        return fNewer;
-    }
+    uint256 GetHash() const;
+    bool IsNewerThan(const CTransaction& old) const;
 
     bool IsCoinBase() const
     {
@@ -319,26 +237,8 @@ public:
     }
 
 
-    std::string ToString() const
-    {
-        std::string str;
-        str += strprintf("CTransaction(hash=%s, ver=%d, vin.size=%"PRIszu", vout.size=%"PRIszu", nLockTime=%u)\n",
-            GetHash().ToString().substr(0,10).c_str(),
-            nVersion,
-            vin.size(),
-            vout.size(),
-            nLockTime);
-        for (unsigned int i = 0; i < vin.size(); i++)
-            str += "    " + vin[i].ToString() + "\n";
-        for (unsigned int i = 0; i < vout.size(); i++)
-            str += "    " + vout[i].ToString() + "\n";
-        return str;
-    }
-
-    void print() const
-    {
-        printf("%s", ToString().c_str());
-    }
+    std::string ToString() const;
+    void print() const;
 };
 
 /** wrapper for CTxOut that provides a more compact serialization */
@@ -522,26 +422,7 @@ public:
         return !(a == b);
     }
 
-    // calculate number of bytes for the bitmask, and its number of non-zero bytes
-    // each bit in the bitmask represents the availability of one output, but the
-    // availabilities of the first two outputs are encoded separately
-    void CalcMaskSize(unsigned int &nBytes, unsigned int &nNonzeroBytes) const {
-        unsigned int nLastUsedByte = 0;
-        for (unsigned int b = 0; 2+b*8 < vout.size(); b++) {
-            bool fZero = true;
-            for (unsigned int i = 0; i < 8 && 2+b*8+i < vout.size(); i++) {
-                if (!vout[2+b*8+i].IsNull()) {
-                    fZero = false;
-                    continue;
-                }
-            }
-            if (!fZero) {
-                nLastUsedByte = b + 1;
-                nNonzeroBytes++;
-            }
-        }
-        nBytes += nLastUsedByte;
-    }
+    void CalcMaskSize(unsigned int &nBytes, unsigned int &nNonzeroBytes) const;
 
     bool IsCoinBase() const {
         return fCoinBase;
@@ -634,28 +515,10 @@ public:
     }
 
     // mark an outpoint spent, and construct undo information
-    bool Spend(const COutPoint &out, CTxInUndo &undo) {
-        if (out.n >= vout.size())
-            return false;
-        if (vout[out.n].IsNull())
-            return false;
-        undo = CTxInUndo(vout[out.n]);
-        vout[out.n].SetNull();
-        Cleanup();
-        if (vout.size() == 0) {
-            undo.nHeight = nHeight;
-            undo.fCoinBase = fCoinBase;
-            undo.nVersion = this->nVersion;
-        }
-        return true;
-    }
+    bool Spend(const COutPoint &out, CTxInUndo &undo);
 
     // mark a vout spent
-    bool Spend(int nPos) {
-        CTxInUndo undo;
-        COutPoint out(0, nPos);
-        return Spend(out, undo);
-    }
+    bool Spend(int nPos);
 
     // check whether a particular output is still available
     bool IsAvailable(unsigned int nPos) const {
@@ -723,15 +586,71 @@ public:
         return (nBits == 0);
     }
 
-    uint256 GetHash() const
-    {
-        return Hash(BEGIN(nVersion), END(nNonce));
-    }
+    uint256 GetHash() const;
 
     int64_t GetBlockTime() const
     {
         return (int64_t)nTime;
     }
+};
+
+
+class CBlock : public CBlockHeader
+{
+public:
+    // network and disk
+    std::vector<CTransaction> vtx;
+
+    // memory only
+    mutable std::vector<uint256> vMerkleTree;
+
+    CBlock()
+    {
+        SetNull();
+    }
+
+    CBlock(const CBlockHeader &header)
+    {
+        SetNull();
+        *((CBlockHeader*)this) = header;
+    }
+
+    IMPLEMENT_SERIALIZE
+    (
+        READWRITE(*(CBlockHeader*)this);
+        READWRITE(vtx);
+    )
+
+    void SetNull()
+    {
+        CBlockHeader::SetNull();
+        vtx.clear();
+        vMerkleTree.clear();
+    }
+
+    CBlockHeader GetBlockHeader() const
+    {
+        CBlockHeader block;
+        block.nVersion       = nVersion;
+        block.hashPrevBlock  = hashPrevBlock;
+        block.hashMerkleRoot = hashMerkleRoot;
+        block.nTime          = nTime;
+        block.nBits          = nBits;
+        block.nNonce         = nNonce;
+        return block;
+    }
+
+    uint256 BuildMerkleTree() const;
+
+    const uint256 &GetTxHash(unsigned int nIndex) const {
+        assert(vMerkleTree.size() > 0); // BuildMerkleTree must have been called first
+        assert(nIndex < vtx.size());
+        return vMerkleTree[nIndex];
+    }
+
+    std::vector<uint256> GetMerkleBranch(int nIndex) const;
+    static uint256 CheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMerkleBranch, int nIndex);
+    void print() const;
 };
 
 #endif

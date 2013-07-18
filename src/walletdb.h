@@ -37,7 +37,7 @@ class CKeyMetadata
 public:
     static const int CURRENT_VERSION=1;
     int nVersion;
-    int64_t nCreateTime;
+    int64_t nCreateTime; // 0 means unknown
 
     CKeyMetadata()
     {
@@ -59,7 +59,7 @@ public:
     void SetNull()
     {
         nVersion = CKeyMetadata::CURRENT_VERSION;
-        nCreateTime = GetTime();
+        nCreateTime = 0;
     }
 };
 
@@ -81,8 +81,10 @@ public:
     bool WriteTx(uint256 hash, const CWalletTx& wtx);
     bool EraseTx(uint256 hash);
 
-    bool WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey, int64_t nCreateTime);
-    bool WriteCryptedKey(const CPubKey& vchPubKey, const std::vector<unsigned char>& vchCryptedSecret, int64_t nCreateTime);
+    bool WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey, const CKeyMetadata &keyMeta);
+
+    bool WriteCryptedKey(const CPubKey& vchPubKey, const std::vector<unsigned char>& vchCryptedSecret, const CKeyMetadata &keyMeta);
+
     bool WriteMasterKey(unsigned int nID, const CMasterKey& kMasterKey);
 
     bool WriteCScript(const uint160& hash, const CScript& redeemScript);

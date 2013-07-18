@@ -4,6 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #include "util.h"
 
+#include "chainparams.h"
 #include "netbase.h"
 #include "sync.h"
 #include "ui_interface.h"
@@ -52,6 +53,7 @@
 #include <shlobj.h>
 #endif
 
+
 #include <boost/algorithm/string/case_conv.hpp> // for to_lower()
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/predicate.hpp> // for startswith() and endswith()
@@ -60,6 +62,7 @@
 #include <boost/foreach.hpp>
 #include <boost/program_options/detail/config_file.hpp>
 #include <boost/program_options/parsers.hpp>
+#include <boost/thread.hpp>
 #include <openssl/crypto.h>
 #include <openssl/rand.h>
 
@@ -86,7 +89,6 @@ bool fDaemon = false;
 bool fServer = false;
 bool fCommandLine = false;
 string strMiscWarning;
-bool fTestNet = false;
 bool fNoListen = false;
 bool fLogTimestamps = false;
 CMedianFilter<int64_t> vTimeOffsets(200,0);
@@ -1076,8 +1078,8 @@ const boost::filesystem::path &GetDataDir(bool fNetSpecific)
     } else {
         path = GetDefaultDataDir();
     }
-    if (fNetSpecific && GetBoolArg("-testnet", false))
-        path /= "testnet3";
+    if (fNetSpecific)
+        path /= Params().DataDir();
 
     fs::create_directories(path);
 

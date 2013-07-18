@@ -5,6 +5,9 @@
 
 
 #include "bitcoinrpc.h"
+#include "chainparams.h"
+#include "db.h"
+#include "init.h"
 #include "main.h"
 #include "wallet.h"
 
@@ -101,7 +104,7 @@ Value getmininginfo(const Array& params, bool fHelp)
     obj.push_back(Pair("genproclimit",     (int)GetArg("-genproclimit", -1)));
     obj.push_back(Pair("hashespersec",     gethashespersec(params, false)));
     obj.push_back(Pair("pooledtx",         (uint64_t)mempool.size()));
-    obj.push_back(Pair("testnet",          fTestNet));
+    obj.push_back(Pair("testnet",          TestNet()));
     return obj;
 }
 

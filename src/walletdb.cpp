@@ -53,13 +53,12 @@ bool CWalletDB::EraseTx(uint256 hash)
 }
 
 bool CWalletDB::WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey, 
-                         int64_t nCreateTime)
+                         const CKeyMetadata &keyMeta)
 {
     nWalletDBUpdated++;
 
-    CKeyMetadata keyMeta(nCreateTime);
     if (!Write(std::make_pair(std::string("keymeta"), vchPubKey),
-               keyMeta, false))
+               keyMeta))
         return false;
 
 
@@ -68,14 +67,13 @@ bool CWalletDB::WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey,
 
 bool CWalletDB::WriteCryptedKey(const CPubKey& vchPubKey, 
                                 const std::vector<unsigned char>& vchCryptedSecret, 
-                                int64_t nCreateTime)
+                                const CKeyMetadata &keyMeta)
 {
     const bool fEraseUnencryptedKey = true;
     nWalletDBUpdated++;
 
-    CKeyMetadata keyMeta(nCreateTime);
     if (!Write(std::make_pair(std::string("keymeta"), vchPubKey),
-               keyMeta, false))
+               keyMeta))
         return false;
 
     if (!Write(std::make_pair(std::string("ckey"), vchPubKey), vchCryptedSecret, false))
@@ -464,11 +462,13 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         }
         else if (strType == "keymeta")
         {
-            vector<unsigned char> vchPubKey;
+            CPubKey vchPubKey;
             ssKey >> vchPubKey;
             CKeyMetadata keyMeta;
             ssValue >> keyMeta;
             wss.nKeyMeta++;
+
+            pwallet->LoadKeyMetadata(vchPubKey, keyMeta);
 
             // find earliest key creation time, as wallet birthday
             if (!pwallet->nTimeFirstKey ||
@@ -483,7 +483,16 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         {
             int64_t nIndex;
             ssKey >> nIndex;
+            CKeyPool keypool;
+            ssValue >> keypool;
             pwallet->setKeyPool.insert(nIndex);
+
+            // If no metadata exists yet, create a default with the pool key's
+            // creation time. Note that this may be overwritten by actually
+            // stored metadata for that key later, which is fine.
+            CKeyID keyid = keypool.vchPubKey.GetID();
+            if (pwallet->mapKeyMetadata.count(keyid) == 0)
+                pwallet->mapKeyMetadata[keyid] = CKeyMetadata(keypool.nTime);
         }
         else if (strType == "version")
         {
@@ -603,7 +612,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
 
     // nTimeFirstKey is only reliable if all keys have metadata
     if ((wss.nKeys + wss.nCKeys) != wss.nKeyMeta)
-        pwallet->nTimeFirstKey = 0;
+        pwallet->nTimeFirstKey = 1; // 0 would be considered 'no value'
 
     BOOST_FOREACH(uint256 hash, wss.vWalletUpgrade)
         WriteTx(hash, pwallet->mapWallet[hash]);

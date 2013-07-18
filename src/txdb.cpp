@@ -4,6 +4,9 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #include "txdb.h"
 
+#include "chainparams.h"
+#include "hash.h"
+#include "main.h"
 #include "uint256.h"
 
 #include <stdint.h>
@@ -224,7 +227,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nTx            = diskindex.nTx;
 
                 // Watch for genesis block
-                if (pindexGenesisBlock == NULL && diskindex.GetBlockHash() == hashGenesisBlock)
+                if (pindexGenesisBlock == NULL && diskindex.GetBlockHash() == Params().HashGenesisBlock())
                     pindexGenesisBlock = pindexNew;
 
                 if (!pindexNew->CheckIndex())

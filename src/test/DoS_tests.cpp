@@ -4,6 +4,7 @@
 
 
 #include "bignum.h"
+#include "chainparams.h"
 #include "keystore.h"
 #include "main.h"
 #include "net.h"
@@ -27,7 +28,7 @@ CService ip(uint32_t i)
 {
     struct in_addr s;
     s.s_addr = i;
-    return CService(CNetAddr(s), GetDefaultPort());
+    return CService(CNetAddr(s), Params().GetDefaultPort());
 }
 
 BOOST_AUTO_TEST_SUITE(DoS_tests)

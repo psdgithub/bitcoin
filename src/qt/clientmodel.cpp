@@ -2,6 +2,7 @@
 
 #include "guiconstants.h"
 
+#include "chainparams.h"
 #include "alert.h"
 #include "checkpoints.h"
 #include "main.h"
@@ -111,7 +112,7 @@ void ClientModel::updateAlert(const QString &hash, int status)
 
 bool ClientModel::isTestNet() const
 {
-    return fTestNet;
+    return TestNet();
 }
 
 bool ClientModel::inInitialBlockDownload() const

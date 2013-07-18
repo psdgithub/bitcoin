@@ -88,6 +88,15 @@ Value getblockcount(const Array& params, bool fHelp)
     return nBestHeight;
 }
 
+Value getbestblockhash(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+        throw runtime_error(
+            "getbestblockhash\n"
+            "Returns the hash of the best (tip) block in the longest block chain.");
+
+    return hashBestChain.GetHex();
+}
 
 Value getdifficulty(const Array& params, bool fHelp)
 {
@@ -169,7 +178,7 @@ Value getblock(const Array& params, bool fHelp)
 
     CBlock block;
     CBlockIndex* pblockindex = mapBlockIndex[hash];
-    block.ReadFromDisk(pblockindex);
+    ReadBlockFromDisk(block, pblockindex);
 
     if (!fVerbose)
     {
@@ -249,4 +258,20 @@ Value gettxout(const Array& params, bool fHelp)
     return ret;
 }
 
+Value verifychain(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() > 2)
+        throw runtime_error(
+            "verifychain [check level] [num blocks]\n"
+            "Verifies blockchain database.");
+
+    int nCheckLevel = GetArg("-checklevel", 3);
+    int nCheckDepth = GetArg("-checkblocks", 288);
+    if (params.size() > 0)
+        nCheckLevel = params[0].get_int();
+    if (params.size() > 1)
+        nCheckDepth = params[1].get_int();
+
+    return VerifyDB(nCheckLevel, nCheckDepth);
+}
 

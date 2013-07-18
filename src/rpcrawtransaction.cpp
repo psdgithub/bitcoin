@@ -6,6 +6,8 @@
 
 #include "base58.h"
 #include "bitcoinrpc.h"
+#include "db.h"
+#include "init.h"
 #include "net.h"
 #include "uint256.h"
 #include "wallet.h"
