@@ -181,18 +181,18 @@ int main(int argc, char *argv[])
     else
         QApplication::setApplicationName("Bitcoin-Qt");
 
+    // Do this early as we don't want to bother initializing if we are just calling IPC
+    // ... but do it after creating app, so QCoreApplication::arguments is initialized:
+    if (PaymentServer::ipcSendCommandLine())
+        exit(0);
+    PaymentServer* paymentServer = new PaymentServer(&app);
+
     // Now that QSettings are accessible, initialize translations
     QTranslator qtTranslatorBase, qtTranslator, translatorBase, translator;
     initTranslations(qtTranslatorBase, qtTranslator, translatorBase, translator);
 
     // User language is set up: pick a data directory
     Intro::pickDataDirectory();
-
-    // Do this early as we don't want to bother initializing if we are just calling IPC
-    // ... but do it after creating app, so QCoreApplication::arguments is initialized:
-    if (PaymentServer::ipcSendCommandLine())
-        exit(0);
-    PaymentServer* paymentServer = new PaymentServer(&app);
 
     // Install global event filter that makes sure that long tooltips can be word-wrapped
     app.installEventFilter(new GUIUtil::ToolTipToRichTextFilter(TOOLTIP_WRAP_THRESHOLD, &app));
@@ -205,6 +205,11 @@ int main(int argc, char *argv[])
         return 1;
     }
     ReadConfigFile(mapArgs, mapMultiArgs);
+
+    if (!SelectParamsFromCommandLine()) {
+        QMessageBox::critical(0, "Bitcoin", QString("Invalid combination of -testnet and -regtest."));
+        return false;
+    }
 
     // ... then GUI settings:
     OptionsModel optionsModel;
@@ -246,7 +251,7 @@ int main(int argc, char *argv[])
 
         boost::thread_group threadGroup;
 
-        BitcoinGUI window(GetBoolArg("-testnet", false), 0);
+        BitcoinGUI window(TestNet(), 0);
         guiref = &window;
 
         QTimer* pollShutdownTimer = new QTimer(guiref);
