@@ -91,7 +91,7 @@ extern int64 nHPSTimerStart;
 extern int64 nTimeBestReceived;
 extern boost::mutex csBestBlock;
 extern boost::condition_variable cvBlockChange;
-extern CCriticalSection cs_setpwalletRegistered;
+extern boost::shared_mutex cs_setpwalletRegistered;
 extern std::set<CWallet*> setpwalletRegistered;
 extern bool fImporting;
 extern bool fReindex;
