@@ -155,10 +155,23 @@ static void initTranslations(QTranslator &qtTranslatorBase, QTranslator &qtTrans
 #ifndef BITCOIN_QT_TEST
 int main(int argc, char *argv[])
 {
+    bool fMissingDatadir = false;
+    bool fSelParFromCLFailed = false;
+
     fHaveGUI = true;
 
     // Command-line options take precedence:
     ParseParameters(argc, argv);
+    // ... then bitcoin.conf:
+    if (!boost::filesystem::is_directory(GetDataDir(false))) {
+        fMissingDatadir = true;
+    } else {
+        ReadConfigFile(mapArgs, mapMultiArgs);
+    }
+    // Check for -testnet or -regtest parameter (TestNet() calls are only valid after this clause)
+    if (!SelectParamsFromCommandLine()) {
+        fSelParFromCLFailed = true;
+    }
 
 #if QT_VERSION < 0x050000
     // Internal string conversion is all UTF-8
@@ -176,7 +189,7 @@ int main(int argc, char *argv[])
     // as it is used to locate QSettings)
     QApplication::setOrganizationName("Bitcoin");
     QApplication::setOrganizationDomain("bitcoin.org");
-    if (GetBoolArg("-testnet", false)) // Separate UI settings for testnet
+    if (TestNet()) // Separate UI settings for testnet
         QApplication::setApplicationName("Bitcoin-Qt-testnet");
     else
         QApplication::setApplicationName("Bitcoin-Qt");
@@ -191,27 +204,29 @@ int main(int argc, char *argv[])
     QTranslator qtTranslatorBase, qtTranslator, translatorBase, translator;
     initTranslations(qtTranslatorBase, qtTranslator, translatorBase, translator);
 
+    // Now that translations are initialized check for errors and allow a translatable error message
+    if (fMissingDatadir) {
+        QMessageBox::critical(0, QObject::tr("Bitcoin"),
+                              QObject::tr("Error: Specified data directory \"%1\" does not exist.").arg(QString::fromStdString(mapArgs["-datadir"])));
+        return 1;
+    }
+    else if (fSelParFromCLFailed) {
+        QMessageBox::critical(0, QObject::tr("Bitcoin"), QObject::tr("Error: Invalid combination of -regtest and -testnet."));
+        return 1;
+    }
+
     // User language is set up: pick a data directory
     Intro::pickDataDirectory();
 
     // Install global event filter that makes sure that long tooltips can be word-wrapped
     app.installEventFilter(new GUIUtil::ToolTipToRichTextFilter(TOOLTIP_WRAP_THRESHOLD, &app));
 
-    // ... then bitcoin.conf:
-    if (!boost::filesystem::is_directory(GetDataDir(false)))
-    {
-        QMessageBox::critical(0, QObject::tr("Bitcoin"),
-                              QObject::tr("Error: Specified data directory \"%1\" does not exist.").arg(QString::fromStdString(mapArgs["-datadir"])));
-        return 1;
-    }
-    ReadConfigFile(mapArgs, mapMultiArgs);
-
     if (!SelectParamsFromCommandLine()) {
         QMessageBox::critical(0, "Bitcoin", QString("Invalid combination of -testnet and -regtest."));
         return false;
     }
 
-    // ... then GUI settings:
+    // ... now GUI settings:
     OptionsModel optionsModel;
 
     // PaymentServer uses network proxy settings from optionsModel:
