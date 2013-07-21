@@ -8,6 +8,7 @@
 #include "wallet.h"
 #include "util.h"
 
+std::string strWalletFile("wallet.dat");
 CWallet* pwalletMain;
 CClientUIInterface uiInterface;
 
