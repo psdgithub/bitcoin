@@ -1074,6 +1074,9 @@ const boost::filesystem::path &GetDataDir(bool fNetSpecific)
     if (fNetSpecific)
         path /= Params().DataDir();
 
+#if BOOST_FILESYSTEM_VERSION == 3
+    path = fs::canonical(path);
+#endif
     fs::create_directories(path);
 
     return path;
