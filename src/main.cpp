@@ -489,7 +489,30 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
         return false;
     }
 
-    if (!IsFinalTx(tx)) {
+    // Treat non-final transactions as non-standard to prevent a specific type
+    // of double-spend attack, as well as DoS attacks. (if the transaction
+    // can't be mined, the attacker isn't expending resources broadcasting it)
+    // Basically we don't want to propagate transactions that can't included in
+    // the next block.
+    //
+    // However, IsFinal() is confusing... Without arguments, it uses
+    // nBestHeight to evaluate nLockTime; when a block is accepted, nBestHeight
+    // is set to the value on nHeight in the block. However, when IsFinal() is
+    // called within CBlock::AcceptBlock(), the height of the block *being*
+    // evaluated is what is used. Thus if we want to know if a transaction can
+    // be part of the *next* block, we need to call IsFinal() with one more
+    // than nBestHeight.
+    //
+    // Finally, because it is sometimes desirable to be able to propagate a
+    // transaction just before it can be mined, to ensure everyone has an equal
+    // chance of mining it, add one more block to our window. Only an attacker
+    // with close to 50% of hashing power could take advantage of such a short
+    // time window.
+    //
+    // Timestamps on the other hand don't get any special treatment, because we
+    // can't know what timestamp the next block will have, and there aren't
+    // timestamp applications where it matters.
+    if (!IsFinalTx(tx, nBestHeight + 2)) {
         reason = "non-final";
         return false;
     }
@@ -4509,7 +4532,9 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
             txinfo.pmapInfoById = &mapInfoById;
             txinfo.ptx = &tx;
 
-            if (tx.IsCoinBase() || !IsFinalTx(tx))
+            // Note how we want to know if the tx is considered final in the
+            // block we are mining, not the current best block.
+            if (tx.IsCoinBase() || !IsFinalTx(tx, pindexPrev->nHeight + 1))
             {
                 txinfo.fInvalid = true;
                 continue;
