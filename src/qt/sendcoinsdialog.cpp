@@ -21,7 +21,8 @@
 SendCoinsDialog::SendCoinsDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SendCoinsDialog),
-    model(0)
+    model(0),
+    optionsModel(0)
 {
     ui->setupUi(this);
 
@@ -107,6 +108,11 @@ SendCoinsDialog::~SendCoinsDialog()
     delete ui;
 }
 
+void SendCoinsDialog::setOptionsModel(OptionsModel *optionsModel)
+{
+    this->optionsModel = optionsModel;
+}
+
 void SendCoinsDialog::on_sendButton_clicked()
 {
     QList<SendCoinsRecipient> recipients;
@@ -141,35 +147,36 @@ void SendCoinsDialog::on_sendButton_clicked()
     foreach(const SendCoinsRecipient &rcp, recipients)
     {
         QString amount = BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, rcp.amount);
+        QString recipientElement = QString("<b>%1</b> ").arg(amount);
+        recipientElement.append(tr("to"));
+
         if (rcp.authenticatedMerchant.isEmpty())
         {
             QString address = rcp.address;
+            if(rcp.label.length() > 0)
+            {
 #if QT_VERSION < 0x050000
-            QString to = Qt::escape(rcp.label);
+                QString to = Qt::escape(rcp.label);
 #else
-            QString to = rcp.label.toHtmlEscaped();
+                QString to = rcp.label.toHtmlEscaped();
 #endif
-            formatted.append(tr("<b>%1</b> to %2 (%3)").arg(amount, to, address));
+                recipientElement.append(QString(" %1 <span style='font-size:8px;'>%2</span><br />").arg(to, address)); // add address with label
+            }
+            else
+            {
+                recipientElement.append(QString(" %1<br />").arg(address)); // add address WITHOUT label
+            }
         }
         else
         {
             QString merchant = Qt::escape(rcp.authenticatedMerchant);
-            formatted.append(tr("<b>%1</b> to %2").arg(amount, merchant));
+            recipientElement.append(tr(" %1").arg(amount, merchant));
         }
+        formatted.append(recipientElement);
     }
 
     fNewRecipientAllowed = false;
 
-    QMessageBox::StandardButton retval = QMessageBox::question(this, tr("Confirm send coins"),
-                          tr("Are you sure you want to send %1?").arg(formatted.join(tr(" and "))),
-          QMessageBox::Yes|QMessageBox::Cancel,
-          QMessageBox::Cancel);
-
-    if(retval != QMessageBox::Yes)
-    {
-        fNewRecipientAllowed = true;
-        return;
-    }
 
     WalletModel::UnlockContext ctx(model->requestUnlock());
     if(!ctx.isValid())
@@ -179,12 +186,15 @@ void SendCoinsDialog::on_sendButton_clicked()
         return;
     }
 
-    WalletModel::SendCoinsReturn sendstatus;
+    // prepare transaction for getting txFee earlier
+    WalletModelTransaction currentTransaction(recipients);
+    WalletModel::SendCoinsReturn prepareStatus;
     if (!model->getOptionsModel() || !model->getOptionsModel()->getCoinControlFeatures())
-        sendstatus = model->sendCoins(recipients);
+        prepareStatus = model->prepareTransaction(currentTransaction);
     else
-        sendstatus = model->sendCoins(recipients, CoinControlDialog::coinControl);
-    switch(sendstatus.status)
+        prepareStatus = model->prepareTransaction(currentTransaction, CoinControlDialog::coinControl);
+
+    switch(prepareStatus.status)
     {
     case WalletModel::InvalidAddress:
         QMessageBox::warning(this, tr("Send Coins"),
@@ -204,7 +214,7 @@ void SendCoinsDialog::on_sendButton_clicked()
     case WalletModel::AmountWithFeeExceedsBalance:
         QMessageBox::warning(this, tr("Send Coins"),
             tr("The total exceeds your balance when the %1 transaction fee is included.").
-            arg(BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, sendstatus.fee)),
+            arg(BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, currentTransaction.getTransactionFee())),
             QMessageBox::Ok, QMessageBox::Ok);
         break;
     case WalletModel::DuplicateAddress:
@@ -217,6 +227,51 @@ void SendCoinsDialog::on_sendButton_clicked()
             tr("Error: Transaction creation failed!"),
             QMessageBox::Ok, QMessageBox::Ok);
         break;
+    case WalletModel::Aborted: // User aborted, nothing to do
+        break;
+    default:
+        break;
+    }
+
+    if(prepareStatus.status != WalletModel::OK) {
+        fNewRecipientAllowed = true;
+        return;
+    }
+
+    qint64 txFee = currentTransaction.getTransactionFee();
+    QString questionString = tr("Are you sure you want to send?");
+    questionString.append("<br /><br />%1");
+
+    if(txFee > 0)
+    {
+        // append fee string if a fee is required
+        questionString.append("<hr /><span style='color:#aa0000;'>");
+        questionString.append(BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, txFee));
+        questionString.append("</span> ");
+        questionString.append(tr("added as transaction fee"));
+    }
+    if(txFee > 0 || recipients.count() > 1)
+    {
+        // add total amount string if there are more then one recipients or a fee is required
+        questionString.append("<hr />");
+        questionString.append(tr("Total Amount %1").arg(BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, currentTransaction.getTotalTransactionAmount()+txFee)));
+    }
+
+    QMessageBox::StandardButton retval = QMessageBox::question(this, tr("Confirm send coins"),
+                                                               questionString.arg(formatted.join("<br />")),
+          QMessageBox::Yes|QMessageBox::Cancel,
+          QMessageBox::Cancel);
+
+    if(retval != QMessageBox::Yes)
+    {
+        fNewRecipientAllowed = true;
+        return;
+    }
+
+    // now send the prepared transaction
+    WalletModel::SendCoinsReturn sendstatus = model->sendCoins(currentTransaction);
+    switch(sendstatus.status)
+    {
     case WalletModel::TransactionCommitFailed:
         QMessageBox::warning(this, tr("Send Coins"),
             tr("Error: The transaction was rejected. This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here."),
@@ -228,6 +283,8 @@ void SendCoinsDialog::on_sendButton_clicked()
         accept();
         CoinControlDialog::coinControl->UnSelectAll();
         coinControlUpdateLabels();
+        break;
+    default:
         break;
     }
     fNewRecipientAllowed = true;

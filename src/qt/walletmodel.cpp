@@ -5,7 +5,6 @@
 #include "transactiontablemodel.h"
 
 #include "ui_interface.h"
-#include "wallet.h"
 #include "walletdb.h" // for BackupWallet
 #include "base58.h"
 
@@ -124,12 +123,14 @@ bool WalletModel::validateAddress(const QString &address)
     return addressParsed.IsValid();
 }
 
-WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipient> &recipients, const CCoinControl *coinControl)
+WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransaction &transaction, const CCoinControl *coinControl)
 {
     qint64 total = 0;
     QSet<QString> setAddress; // Used to detect duplicates
     std::vector<std::pair<CScript, int64> > vecSend;
-    QByteArray transaction;
+    int64 nFeeRequired = 0;
+
+    QList<SendCoinsRecipient> recipients = transaction.getRecipients();
 
     if(recipients.empty())
     {
@@ -197,38 +198,55 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
 
     if((total + nTransactionFee) > nBalance)
     {
-        return SendCoinsReturn(AmountWithFeeExceedsBalance, nTransactionFee);
+        transaction.setTransactionFee(nFeeRequired);
+        return SendCoinsReturn(AmountWithFeeExceedsBalance);
     }
 
     {
         LOCK2(cs_main, wallet->cs_wallet);
 
-        CReserveKey keyChange(wallet);
-        int64 nFeeRequired = 0;
+        transaction.newPossibleKeyChange(wallet);
+
+
         std::string strFailReason;
-        CWalletTx wtx;
-        bool fCreated = wallet->CreateTransaction(vecSend, wtx, keyChange, nFeeRequired, strFailReason, coinControl);
+
+        CReserveKey *keyChange = transaction.getPossibleKeyChange();
+        CWalletTx *newTx = transaction.getTransaction();
+        bool fCreated = wallet->CreateTransaction(vecSend, *newTx, *keyChange, nFeeRequired, strFailReason, coinControl);
+        transaction.setTransactionFee(nFeeRequired);
 
         if(!fCreated)
         {
             if((total + nFeeRequired) > nBalance)
             {
-                return SendCoinsReturn(AmountWithFeeExceedsBalance, nFeeRequired);
+                return SendCoinsReturn(AmountWithFeeExceedsBalance);
             }
             emit message(tr("Send Coins"), QString::fromStdString(strFailReason),
                          CClientUIInterface::MSG_ERROR);
             return TransactionCreationFailed;
         }
-        if(!uiInterface.ThreadSafeAskFee(nFeeRequired))
+    }
+
+    return SendCoinsReturn(OK);
+}
+
+WalletModel::SendCoinsReturn WalletModel::sendCoins(WalletModelTransaction &wmtransaction)
+{
+    QByteArray transaction;
+    {
         {
-            return Aborted;
-        }
-        if(!wallet->CommitTransaction(wtx, keyChange))
-        {
-            return TransactionCommitFailed;
+            LOCK2(cs_main, wallet->cs_wallet);
+
+            CWalletTx *newTx = wmtransaction.getTransaction();
+            CReserveKey *keyChange = wmtransaction.getPossibleKeyChange();
+
+            if(!wallet->CommitTransaction(*newTx, *keyChange))
+            {
+                return TransactionCommitFailed;
+            }
         }
 
-        CTransaction* t = (CTransaction*)&wtx;
+        CTransaction* t = wmtransaction.getTransaction();
         CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
         ssTx << *t;
         transaction.append(&(ssTx[0]), ssTx.size());
@@ -236,7 +254,7 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
 
     // Add addresses / update labels that we've sent to to the address book,
     // and emit coinsSent signal
-    foreach(const SendCoinsRecipient &rcp, recipients)
+    foreach(const SendCoinsRecipient &rcp, wmtransaction.getRecipients())
     {
         std::string strAddress = rcp.address.toStdString();
         CTxDestination dest = CBitcoinAddress(strAddress).Get();
@@ -259,7 +277,7 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
         emit coinsSent(wallet, rcp, transaction);
     }
 
-    return SendCoinsReturn(OK, 0);
+    return SendCoinsReturn(OK);
 }
 
 OptionsModel *WalletModel::getOptionsModel()

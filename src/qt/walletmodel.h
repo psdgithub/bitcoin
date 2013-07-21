@@ -7,6 +7,8 @@
 
 #include "allocators.h" /* for SecureString */
 #include "paymentrequestplus.h"
+#include "wallet.h"
+#include "walletmodeltransaction.h"
 
 class OptionsModel;
 class AddressTableModel;
@@ -18,6 +20,7 @@ class COutput;
 class COutPoint;
 class uint256;
 class CCoinControl;
+class WalletModelTransaction;
 
 QT_BEGIN_NAMESPACE
 class QTimer;
@@ -84,15 +87,16 @@ public:
     // Return status record for SendCoins, contains error id + information
     struct SendCoinsReturn
     {
-        SendCoinsReturn(StatusCode status=Aborted,
-                         qint64 fee=0):
-            status(status), fee(fee) {}
+        SendCoinsReturn(StatusCode status=Aborted):
+            status(status) {}
         StatusCode status;
-        qint64 fee; // is used in case status is "AmountWithFeeExceedsBalance"
     };
 
+    // prepare transaction for getting txfee before sending coins
+    SendCoinsReturn prepareTransaction(WalletModelTransaction &transaction, const CCoinControl *coinControl=NULL);
+
     // Send coins to a list of recipients
-    SendCoinsReturn sendCoins(const QList<SendCoinsRecipient> &recipients, const CCoinControl *coinControl=NULL);
+    SendCoinsReturn sendCoins(WalletModelTransaction &transaction);
 
     // Wallet encryption
     bool setWalletEncrypted(bool encrypted, const SecureString &passphrase);
