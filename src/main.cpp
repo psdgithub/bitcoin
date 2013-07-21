@@ -1553,8 +1553,7 @@ void static InvalidChainFound(CBlockIndex* pindexNew)
     printf("InvalidChainFound:  current best=%s  height=%d  log2_work=%.8g  date=%s\n",
       hashBestChain.ToString().c_str(), nBestHeight, log(nBestChainWork.getdouble())/log(2.0),
       DateTimeStrFormat("%Y-%m-%d %H:%M:%S", pindexBest->GetBlockTime()).c_str());
-    if (pindexBest && nBestInvalidWork > nBestChainWork + (pindexBest->GetBlockWork() * 6).getuint256())
-        printf("InvalidChainFound: Warning: Displayed transactions may not be correct! You may need to upgrade, or other nodes may need to upgrade.\n");
+    CheckForkWarningConditions();
 }
 
 void static InvalidBlockFound(CBlockIndex *pindex) {
@@ -2282,11 +2281,14 @@ bool AddToBlockIndex(CBlock& block, CValidationState& state, const CDiskBlockPos
 
     if (pindexNew == pindexBest)
     {
+        // Clear fork warning if its no longer applicable
+        CheckForkWarningConditions();
         // Notify UI to display prev block's coinbase if it was ours
         static uint256 hashPrevBestCoinBase;
         UpdatedTransaction(hashPrevBestCoinBase);
         hashPrevBestCoinBase = block.GetTxHash(0);
-    }
+    } else
+        CheckForkWarningConditionsOnNewFork(pindexNew);
 
     if (!pblocktree->Flush())
         return state.Abort(_("Failed to sync block index"));
@@ -3269,11 +3271,15 @@ string GetWarnings(string strFor)
         strStatusBar = strMiscWarning;
     }
 
-    // Longer invalid proof-of-work chain
-    if (pindexBest && nBestInvalidWork > nBestChainWork + (pindexBest->GetBlockWork() * 6).getuint256())
+    if (fLargeWorkForkFound)
     {
         nPriority = 2000;
-        strStatusBar = strRPC = _("Warning: Displayed transactions may not be correct! You may need to upgrade, or other nodes may need to upgrade.");
+        strStatusBar = strRPC = _("Warning: The network does not appear to fully agree! Some miners appear to be experiencing issues.");
+    }
+    else if (fLargeWorkInvalidChainFound)
+    {
+        nPriority = 2000;
+        strStatusBar = strRPC = _("Warning: We do not appear to fully agree with our peers! You may need to upgrade, or other nodes may need to upgrade.");
     }
 
     // Alerts
