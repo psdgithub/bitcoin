@@ -117,6 +117,34 @@ std::string HexBits(unsigned int nBits)
     return HexStr(BEGIN(uBits.cBits), END(uBits.cBits));
 }
 
+uint256 ParseHashV(const Value& v, string strName)
+{
+    string strHex;
+    if (v.type() == str_type)
+        strHex = v.get_str();
+    if (!IsHex(strHex)) // Note: IsHex("") is false
+        throw JSONRPCError(RPC_INVALID_PARAMETER, strName+" must be hexadecimal string (not '"+strHex+"')");
+    uint256 result;
+    result.SetHex(strHex);
+    return result;
+}
+uint256 ParseHashO(const Object& o, string strKey)
+{
+    return ParseHashV(find_value(o, strKey), strKey);
+}
+vector<unsigned char> ParseHexV(const Value& v, string strName)
+{
+    string strHex;
+    if (v.type() == str_type)
+        strHex = v.get_str();
+    if (!IsHex(strHex))
+        throw JSONRPCError(RPC_INVALID_PARAMETER, strName+" must be hexadecimal string (not '"+strHex+"')");
+    return ParseHex(strHex);
+}
+vector<unsigned char> ParseHexO(const Object& o, string strKey)
+{
+    return ParseHexV(find_value(o, strKey), strKey);
+}
 
 
 ///
@@ -232,6 +260,7 @@ static const CRPCCommand vRPCCommands[] =
     { "sendfrom",               &sendfrom,               false,     false },
     { "sendmany",               &sendmany,               false,     false },
     { "addmultisigaddress",     &addmultisigaddress,     false,     false },
+    { "addredeemscript",        &addredeemscript,        false,     false },
     { "createmultisig",         &createmultisig,         true,      true  },
     { "getrawmempool",          &getrawmempool,          true,      false },
     { "getblock",               &getblock,               false,     false },
@@ -256,6 +285,7 @@ static const CRPCCommand vRPCCommands[] =
     { "getrawtransaction",      &getrawtransaction,      false,     false },
     { "createrawtransaction",   &createrawtransaction,   false,     false },
     { "decoderawtransaction",   &decoderawtransaction,   false,     false },
+    { "decodescript",           &decodescript,           false,     false },
     { "signrawtransaction",     &signrawtransaction,     false,     false },
     { "sendrawtransaction",     &sendrawtransaction,     false,     false },
     { "gettxoutsetinfo",        &gettxoutsetinfo,        true,      false },
