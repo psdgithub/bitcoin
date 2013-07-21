@@ -237,6 +237,11 @@ public:
 
     std::string ToString() const;
     void print() const;
+
+    // FIXME: These don't belong here
+    // Scan for double spends and flag any affected wallet transactions
+    void ScanForDoubleSpends() const;
+    void ScanInputForDoubleSpends(unsigned int input) const;
 };
 
 /** wrapper for CTxOut that provides a more compact serialization */
