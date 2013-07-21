@@ -182,9 +182,10 @@ std::string HelpMessage()
     strUsage += "  -wallet=<file>         " + _("Specify wallet file (within data directory)") + "\n";
     strUsage += "  -dbcache=<n>           " + _("Set database cache size in megabytes (default: 25)") + "\n";
     strUsage += "  -timeout=<n>           " + _("Specify connection timeout in milliseconds (default: 5000)") + "\n";
-    strUsage += "  -proxy=<ip:port>       " + _("Connect through socks proxy") + "\n";
-    strUsage += "  -socks=<n>             " + _("Select the version of socks proxy to use (4-5, default: 5)") + "\n";
-    strUsage += "  -tor=<ip:port>         " + _("Use proxy to reach tor hidden services (default: same as -proxy)") + "\n";
+    strUsage += "  -proxy=<ip:port>       " + _("Connect through SOCKS proxy") + "\n";
+    strUsage += "  -socks=<n>             " + _("Select SOCKS version for -proxy (4 or 5, default: 5)") + "\n";
+    strUsage += "  -proxy6=<ip:port>      " + _("Use separate SOCKS5 proxy to reach IPv6 peers (default: -proxy)") + "\n";
+    strUsage += "  -tor=<ip:port>         " + _("Use separate SOCKS5 proxy to reach Tor hidden services (default: -proxy)") + "\n";
     strUsage += "  -dns                   " + _("Allow DNS lookups for -addnode, -seednode and -connect") + "\n";
     strUsage += "  -port=<port>           " + _("Listen for connections on <port> (default: 8333 or testnet: 18333)") + "\n";
     strUsage += "  -maxconnections=<n>    " + _("Maintain at most <n> connections to peers (default: 125)") + "\n";
@@ -334,6 +335,31 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
             LoadExternalBlockFile(file);
         }
     }
+}
+
+// check proxies and (if they are valid) set them to be used by the client
+bool ProxyInit(Network net, const std::string& strArg, int nSocksVersion, bool fIsBase)
+{
+    // if network is not limited and -no{proxy/proxy6/tor} was NOT specified
+    if (!IsLimited(net) && (GetArg(strArg, "0") != "0")) {
+        CService addrProxy = CService(mapArgs[strArg], 9050);
+
+        // if address couldn't be set as proxy
+        if (!SetProxy(net, addrProxy, nSocksVersion, fIsBase))
+            return InitError(strprintf(_("Invalid proxy address '%s' for: %s"), mapArgs[strArg].c_str(), strArg.c_str()));
+        // special-case Tor, which needs to be set as reachable manually
+        else if (net == NET_TOR)
+            SetReachable(NET_TOR);
+
+        // everything ok
+        return true;
+    }
+
+    // prerequisites failed (no error for base proxy)
+    if (fIsBase)
+        return true;
+    else
+        return false;
 }
 
 /** Initialize bitcoin.
@@ -659,36 +685,35 @@ bool AppInit2(boost::thread_group& threadGroup)
 #endif
 #endif
 
-    CService addrProxy;
-    bool fProxy = false;
-    if (mapArgs.count("-proxy")) {
-        addrProxy = CService(mapArgs["-proxy"], 9050);
-        if (!addrProxy.IsValid())
-            return InitError(strprintf(_("Invalid -proxy address: '%s'"), mapArgs["-proxy"].c_str()));
+    // check for base SOCKS proxy to reach IPv4 peers
+    if (!ProxyInit(NET_IPV4, "-proxy", nSocksVersion, true))
+        return false; // errors with base SOCKS proxy lead to exit
 
-        if (!IsLimited(NET_IPV4))
-            SetProxy(NET_IPV4, addrProxy, nSocksVersion);
-        if (nSocksVersion > 4) {
+    if (nSocksVersion == 4) {
+        // disable outgoing Tor/IPv6 connections for base SOCKS4 proxy (if no separate SOCKS5 proxy will be used)
+        if (!ProxyInit(NET_TOR, "-tor", 5, false))
+            SetLimited(NET_TOR);
 #ifdef USE_IPV6
-            if (!IsLimited(NET_IPV6))
-                SetProxy(NET_IPV6, addrProxy, nSocksVersion);
+        if (!ProxyInit(NET_IPV6, "-proxy6", 5, false))
+            SetLimited(NET_IPV6);
 #endif
-            SetNameProxy(addrProxy, nSocksVersion);
-        }
-        fProxy = true;
     }
+    else if (nSocksVersion == 5) {
+        // enable outgoing Tor/IPv6 connections for base SOCKS5 proxy (if no separate SOCKS5 proxy will be used)
+        if (!ProxyInit(NET_TOR, "-tor", 5, false))
+            if (!ProxyInit(NET_TOR, "-proxy", 5, true))
+                return false;  // errors with base SOCKS proxy lead to exit
+#ifdef USE_IPV6
+        if (!ProxyInit(NET_IPV6, "-proxy6", 5, false))
+            if (!ProxyInit(NET_IPV6, "-proxy", 5, true))
+                return false;  // errors with base SOCKS proxy lead to exit
+#endif
 
-    // -tor can override normal proxy, -notor disables tor entirely
-    if (!(mapArgs.count("-tor") && mapArgs["-tor"] == "0") && (fProxy || mapArgs.count("-tor"))) {
-        CService addrOnion;
-        if (!mapArgs.count("-tor"))
-            addrOnion = addrProxy;
-        else
-            addrOnion = CService(mapArgs["-tor"], 9050);
-        if (!addrOnion.IsValid())
-            return InitError(strprintf(_("Invalid -tor address: '%s'"), mapArgs["-tor"].c_str()));
-        SetProxy(NET_TOR, addrOnion, 5);
-        SetReachable(NET_TOR);
+        // if -noproxy was not specified
+        if (GetArg("-proxy", "0") != "0")
+            // setup base SOCKS5 name proxy and exit on error
+            if (!SetNameProxy(CService(mapArgs["-proxy"], 9050), 5))
+                return InitError(strprintf(_("Invalid name proxy address '%s' for: -proxy"), mapArgs["-proxy"].c_str()));
     }
 
     // see Step 2: parameter interactions for more information about these

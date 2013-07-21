@@ -66,28 +66,37 @@ Value getinfo(const Array& params, bool fHelp)
             "getinfo\n"
             "Returns an object containing various state info.");
 
-    proxyType proxy;
-    GetProxy(NET_IPV4, proxy);
+    // collect current proxy settings
+    proxyType proxyIpv4;
+    GetProxy(NET_IPV4, proxyIpv4);
+    proxyType proxyIpv6;
+    GetProxy(NET_IPV6, proxyIpv6);
+    proxyType proxyTor;
+    GetProxy(NET_TOR, proxyTor);
 
     Object obj;
-    obj.push_back(Pair("version",       (int)CLIENT_VERSION));
-    obj.push_back(Pair("protocolversion",(int)PROTOCOL_VERSION));
-    obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
-    obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance())));
-    obj.push_back(Pair("blocks",        (int)nBestHeight));
-    obj.push_back(Pair("timeoffset",    (boost::int64_t)GetTimeOffset()));
-    obj.push_back(Pair("connections",   (int)vNodes.size()));
-    obj.push_back(Pair("proxy",         (proxy.first.IsValid() ? proxy.first.ToStringIPPort() : string())));
-    obj.push_back(Pair("difficulty",    (double)GetDifficulty()));
-    obj.push_back(Pair("testnet",       TestNet()));
-    obj.push_back(Pair("keypoololdest", (boost::int64_t)pwalletMain->GetOldestKeyPoolTime()));
-    obj.push_back(Pair("keypoolsize",   pwalletMain->GetKeyPoolSize()));
-    obj.push_back(Pair("paytxfee",      ValueFromAmount(nTransactionFee)));
-    obj.push_back(Pair("maxtxfee",      ValueFromAmount(nTransactionFeeMax)));
-    obj.push_back(Pair("forcetxfee",    fForceFee));
+    obj.push_back(Pair("version",           (int)CLIENT_VERSION));
+    obj.push_back(Pair("protocolversion",   (int)PROTOCOL_VERSION));
+    obj.push_back(Pair("walletversion",     pwalletMain->GetVersion()));
+    obj.push_back(Pair("balance",           ValueFromAmount(pwalletMain->GetBalance())));
+    obj.push_back(Pair("blocks",            (int)nBestHeight));
+    obj.push_back(Pair("timeoffset",        (boost::int64_t)GetTimeOffset()));
+    obj.push_back(Pair("connections",       (int)vNodes.size()));
+    obj.push_back(Pair("proxy-base",        (proxyIpv4.addrProxy.IsValid() ? proxyIpv4.addrProxy.ToStringIPPort() : "none")));
+    obj.push_back(Pair("proxy-ipv6",        (proxyIpv6.addrProxy.IsValid() ? proxyIpv6.addrProxy.ToStringIPPort() : "none")));
+    obj.push_back(Pair("proxy-ipv6-isbase", proxyIpv6.fIsBase));
+    obj.push_back(Pair("proxy-tor",         (proxyTor.addrProxy.IsValid() ? proxyTor.addrProxy.ToStringIPPort() : "none")));
+    obj.push_back(Pair("proxy-tor-isbase",  proxyTor.fIsBase));
+    obj.push_back(Pair("difficulty",        (double)GetDifficulty()));
+    obj.push_back(Pair("testnet",           TestNet()));
+    obj.push_back(Pair("keypoololdest",     (boost::int64_t)pwalletMain->GetOldestKeyPoolTime()));
+    obj.push_back(Pair("keypoolsize",       pwalletMain->GetKeyPoolSize()));
+    obj.push_back(Pair("paytxfee",          ValueFromAmount(nTransactionFee)));
+    obj.push_back(Pair("maxtxfee",          ValueFromAmount(nTransactionFeeMax)));
+    obj.push_back(Pair("forcetxfee",        fForceFee));
     if (pwalletMain->IsCrypted())
         obj.push_back(Pair("unlocked_until", (boost::int64_t)nWalletUnlockTime));
-    obj.push_back(Pair("errors",        GetWarnings("statusbar")));
+    obj.push_back(Pair("errors",            GetWarnings("statusbar")));
     return obj;
 }
 
