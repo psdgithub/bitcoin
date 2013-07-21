@@ -755,6 +755,16 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
 
 int64 GetMinFee(const CTransaction& tx, bool fAllowFree, enum GetMinFee_mode mode)
 {
+    {
+        LOCK(mempool.cs);
+        uint256 hash = tx.GetHash();
+        double dPriorityDelta = 0;
+        int64 nFeeDelta = 0;
+        mempool.ApplyDeltas(hash, dPriorityDelta, nFeeDelta);
+        if (dPriorityDelta > 0 || nFeeDelta > 0)
+            return 0;
+    }
+
     // Base fee is either nMinTxFee or nMinRelayTxFee
     int64 nBaseFee = (mode == GMF_RELAY) ? tx.nMinRelayTxFee : tx.nMinTxFee;
 
@@ -4246,6 +4256,29 @@ public:
 };
 
 
+void CTxMemPool::PrioritiseTransaction(const uint256 hash, const string strHash, double dPriorityDelta, int64 nFeeDelta)
+{
+    {
+        LOCK(cs);
+        std::pair<double, int64> &deltas = mapDeltas[hash];
+        deltas.first += dPriorityDelta;
+        deltas.second += nFeeDelta;
+    }
+    printf("PrioritiseTransaction: %s priority += %f, fee += %"PRI64d"\n", strHash.c_str(), dPriorityDelta, nFeeDelta);
+}
+
+void CTxMemPool::ApplyDeltas(const uint256 hash, double &dPriorityDelta, int64 &nFeeDelta)
+{
+    LOCK(cs);
+    std::map<uint256, std::pair<double, int64> >::iterator pos = mapDeltas.find(hash);
+    if (pos == mapDeltas.end())
+        return;
+    const std::pair<double, int64> &deltas = pos->second;
+    dPriorityDelta += deltas.first;
+    nFeeDelta += deltas.second;
+}
+
+
 uint64 nLastBlockTx = 0;
 uint64 nLastBlockSize = 0;
 
@@ -4381,6 +4414,9 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
             unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
             dPriority /= nTxSize;
 
+            uint256 hash = tx.GetHash();
+            mempool.ApplyDeltas(hash, dPriority, nTotalIn);
+
             // This is a more accurate fee-per-kilobyte than is used by the client code, because the
             // client code rounds up the size to the nearest 1K. That's good, because it gives an
             // incentive to create smaller transactions.
@@ -4425,10 +4461,14 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
                 continue;
 
             // Skip free transactions if we're past the minimum block size:
-            if (fSortedByFee && (dFeePerKb < CTransaction::nMinTxFee) && (nBlockSize + nTxSize >= nBlockMinSize))
+            uint256 hash = tx.GetHash();
+            double dPriorityDelta = 0;
+            int64 nFeeDelta = 0;
+            mempool.ApplyDeltas(hash, dPriorityDelta, nFeeDelta);
+            if (fSortedByFee && (dPriorityDelta <= 0) && (nFeeDelta <= 0) && (dFeePerKb < CTransaction::nMinTxFee) && (nBlockSize + nTxSize >= nBlockMinSize))
                 continue;
 
-            // Prioritize by fee once past the priority size or we run out of high-priority
+            // Prioritise by fee once past the priority size or we run out of high-priority
             // transactions:
             if (!fSortedByFee &&
                 ((nBlockSize + nTxSize >= nBlockPrioritySize) || !AllowFree(dPriority)))
@@ -4452,7 +4492,6 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
                 continue;
 
             CTxUndo txundo;
-            uint256 hash = tx.GetHash();
             UpdateCoins(tx, state, view, txundo, pindexPrev->nHeight+1, hash);
 
             // Added
