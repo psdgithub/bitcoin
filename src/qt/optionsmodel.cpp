@@ -41,17 +41,28 @@ void OptionsModel::Init()
 {
     QSettings settings;
 
-    // These are Qt-only settings:
-    nDisplayUnit = settings.value("nDisplayUnit", BitcoinUnits::BTC).toInt();
-    bDisplayAddresses = settings.value("bDisplayAddresses", false).toBool();
+    // Ensure restart flag is unset on client startup
+    setRestartRequired(false);
+
+    // These are Qt-only settings with their defaults specified:
+
+    // Window
     fMinimizeToTray = settings.value("fMinimizeToTray", false).toBool();
     fMinimizeOnClose = settings.value("fMinimizeOnClose", false).toBool();
-    nTransactionFee = settings.value("nTransactionFee").toLongLong();
-    language = settings.value("language", "").toString();
-    fCoinControlFeatures = settings.value("fCoinControlFeatures", false).toBool();
 
-    // These are shared with core Bitcoin; we want
-    // command-line options to override the GUI settings:
+    // Display
+    //
+    // use command-line value (as language can have one), if empty use QSettings value, if empty default to ""
+    language = QString::fromStdString(GetArg("-lang", settings.value("language", "").toString().toStdString()));
+    nDisplayUnit = settings.value("nDisplayUnit", BitcoinUnits::BTC).toInt();
+    bDisplayAddresses = settings.value("bDisplayAddresses", false).toBool();
+
+    // These are shared with the core or have a command-line parameter
+    // and we want command-line parameters to override the GUI settings:
+
+    // Main
+    nTransactionFee = settings.value("nTransactionFee").toLongLong();
+    fCoinControlFeatures = settings.value("fCoinControlFeatures", false).toBool();
 
     // Network
     if (settings.contains("fUseUPnP"))
@@ -60,8 +71,9 @@ void OptionsModel::Init()
         SoftSetArg("-proxy", settings.value("addrProxy").toString().toStdString());
     if (settings.contains("nSocksVersion") && settings.value("fUseProxy").toBool())
         SoftSetArg("-socks", settings.value("nSocksVersion").toString().toStdString());
+
     // Display
-    if (!language.isEmpty())
+    if (settings.contains("language"))
         SoftSetArg("-lang", language.toStdString());
 }
 
@@ -69,15 +81,12 @@ void OptionsModel::Reset()
 {
     QSettings settings;
 
-    // Remove all entries in this QSettings object
+    // Remove all entries from our QSettings object
     settings.clear();
 
     // default setting for OptionsModel::StartAtStartup - disabled
     if (GUIUtil::GetStartOnSystemStartup())
         GUIUtil::SetStartOnSystemStartup(false);
-
-    // Re-Init to get default values
-    Init();
 
     // Ensure Upgrade() is not running again by setting the bImportFinished flag
     settings.setValue("bImportFinished", true);
@@ -200,7 +209,7 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
             return QVariant(nDisplayUnit);
         case DisplayAddresses:
             return QVariant(bDisplayAddresses);
-        case Language:
+        case Language: // return QSetting or default, not current state
             return settings.value("language", "");
         case CoinControlFeatures:
             return QVariant(fCoinControlFeatures);
@@ -226,7 +235,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             fMinimizeToTray = value.toBool();
             settings.setValue("fMinimizeToTray", fMinimizeToTray);
             break;
-        case MapPortUPnP:
+        case MapPortUPnP: // core option - can be changed on-the-fly
             settings.setValue("fUseUPnP", value.toBool());
             MapPort(value.toBool());
             break;
@@ -237,6 +246,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
         // base proxy
         case ProxyUse:
             settings.setValue("fUseProxy", value.toBool());
+            setRestartRequired(true);
             successful = ApplyProxySettings();
             break;
         case ProxyIP: {
@@ -247,6 +257,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             CNetAddr addr(value.toString().toStdString());
             proxy.addrProxy.SetIP(addr);
             settings.setValue("addrProxy", proxy.addrProxy.ToStringIPPort().c_str());
+            setRestartRequired(true);
             successful = ApplyProxySettings();
         }
         break;
@@ -257,6 +268,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
 
             proxy.addrProxy.SetPort(value.toInt());
             settings.setValue("addrProxy", proxy.addrProxy.ToStringIPPort().c_str());
+            setRestartRequired(true);
             successful = ApplyProxySettings();
         }
         break;
@@ -267,6 +279,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
 
             proxy.nSocksVersion = value.toInt();
             settings.setValue("nSocksVersion", proxy.nSocksVersion);
+            setRestartRequired(true);
             successful = ApplyProxySettings();
         }
         break;
@@ -286,6 +299,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             break;
         case Language:
             settings.setValue("language", value);
+            setRestartRequired(true);
             break;
         case CoinControlFeatures: {
             fCoinControlFeatures = value.toBool();
@@ -321,4 +335,16 @@ bool OptionsModel::getProxySettings(QString& proxyIP, quint16 &proxyPort) const
 bool OptionsModel::getCoinControlFeatures()
 {
     return fCoinControlFeatures;
+}
+
+void OptionsModel::setRestartRequired(bool fRequired)
+{
+    QSettings settings;
+    return settings.setValue("fRestartRequired", fRequired);
+}
+
+bool OptionsModel::isRestartRequired()
+{
+    QSettings settings;
+    return settings.value("fRestartRequired").toBool();
 }

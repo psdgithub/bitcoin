@@ -53,6 +53,10 @@ public:
     bool getProxySettings(QString& proxyIP, quint16 &proxyPort) const;
     bool getCoinControlFeatures();
 
+    /* Restart flag helper */
+    void setRestartRequired(bool fRequired);
+    bool isRestartRequired();
+
 private:
     int nDisplayUnit;
     bool bDisplayAddresses;
