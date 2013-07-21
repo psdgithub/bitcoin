@@ -11,6 +11,7 @@ using namespace std;
 
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, Object& out);
 
+// TODO: move to rpchelpers.cpp
 double GetDifficulty(const CBlockIndex* blockindex)
 {
     // Floating point number that is a multiple of the minimum difficulty,
@@ -42,7 +43,7 @@ double GetDifficulty(const CBlockIndex* blockindex)
     return dDiff;
 }
 
-
+// TODO: move to rpchelpers.cpp
 Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex)
 {
     Object result;
