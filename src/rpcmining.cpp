@@ -3,10 +3,15 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/thread/locks.hpp>
+#include <boost/thread/thread_time.hpp>
+
 #include "chainparams.h"
 #include "db.h"
 #include "init.h"
 #include "bitcoinrpc.h"
+#include "util.h"
 
 using namespace json_spirit;
 using namespace std;
@@ -234,6 +239,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
             "See https://en.bitcoin.it/wiki/BIP_0022 for full specification.");
 
     std::string strMode = "template";
+    Value lpval = Value::null;
     if (params.size() > 0)
     {
         const Object& oparam = params[0].get_obj();
@@ -246,6 +252,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
         }
         else
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
+        lpval = find_value(oparam, "longpollid");
     }
 
     if (strMode != "template")
@@ -257,8 +264,56 @@ Value getblocktemplate(const Array& params, bool fHelp)
     if (IsInitialBlockDownload())
         throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Bitcoin is downloading blocks...");
 
-    // Update block
     static unsigned int nTransactionsUpdatedLast;
+
+    if (lpval.type() != null_type)
+    {
+        // Wait to respond until either the best block changes, OR a minute has passed and there are more transactions
+        uint256 hashWatchedChain;
+        boost::system_time checktxtime;
+        unsigned int nTransactionsUpdatedLastLP;
+
+        if (lpval.type() == str_type)
+        {
+            // Format: <hashBestChain><nTransactionsUpdated>
+            std::string lpstr = lpval.get_str();
+
+            hashWatchedChain.SetHex(lpstr.substr(0, 64));
+            nTransactionsUpdatedLastLP = atoi64(lpstr.substr(64));
+        }
+        else
+        {
+            // NOTE: Spec does not specify behaviour for non-string longpollid, but this makes testing easier
+            hashWatchedChain = hashBestChain;
+            nTransactionsUpdatedLastLP = nTransactionsUpdatedLast;
+        }
+
+        LEAVE_CRITICAL_SECTION(pwalletMain->cs_wallet);
+        LEAVE_CRITICAL_SECTION(cs_main);
+        {
+            checktxtime = boost::get_system_time() + boost::posix_time::minutes(1);
+
+            boost::unique_lock<boost::mutex> lock(csBestBlock);
+            while (hashBestChain == hashWatchedChain && fRPCRunning)
+            {
+                if (!cvBlockChange.timed_wait(lock, checktxtime))
+                {
+                    // Timeout: Check transactions for update
+                    if (nTransactionsUpdated != nTransactionsUpdatedLastLP)
+                        break;
+                    checktxtime += boost::posix_time::seconds(10);
+                }
+            }
+        }
+        ENTER_CRITICAL_SECTION(cs_main);
+        ENTER_CRITICAL_SECTION(pwalletMain->cs_wallet);
+
+        if (!fRPCRunning)
+            throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Shutting down");
+        // TODO: Maybe recheck connections/IBD and (if something wrong) send an expires-immediately template to stop miners?
+    }
+
+    // Update block
     static CBlockIndex* pindexPrev;
     static int64 nStart;
     static CBlockTemplate* pblocktemplate;
@@ -345,6 +400,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
     result.push_back(Pair("transactions", transactions));
     result.push_back(Pair("coinbaseaux", aux));
     result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
+    result.push_back(Pair("longpollid", hashBestChain.GetHex() + i64tostr(nTransactionsUpdatedLast)));
     result.push_back(Pair("target", hashTarget.GetHex()));
     result.push_back(Pair("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1));
     result.push_back(Pair("mutable", aMutable));

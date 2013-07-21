@@ -68,6 +68,7 @@ enum RPCErrorCode
 
 json_spirit::Object JSONRPCError(int code, const std::string& message);
 
+extern bool fRPCRunning;
 void StartRPCThreads();
 void StopRPCThreads();
 int CommandLineRPC(int argc, char *argv[]);
