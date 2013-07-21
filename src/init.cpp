@@ -26,6 +26,10 @@
 #include <signal.h>
 #endif
 
+#if USE_ZMQ
+#include "bitcoin_zmq.h"
+#endif
+
 using namespace std;
 using namespace boost;
 
@@ -122,6 +126,9 @@ void Shutdown()
     boost::filesystem::remove(GetPidFile());
     UnregisterAllWallets();
     delete pwalletMain;
+#if USE_ZMQ
+    BZmq_Shutdown();
+#endif
 }
 
 //
@@ -249,6 +256,19 @@ std::string HelpMessage()
     strUsage += "  -rpcsslcertificatechainfile=<file.cert>  " + _("Server certificate file (default: server.cert)") + "\n";
     strUsage += "  -rpcsslprivatekeyfile=<file.pem>         " + _("Server private key (default: server.pem)") + "\n";
     strUsage += "  -rpcsslciphers=<ciphers>                 " + _("Acceptable ciphers (default: TLSv1+HIGH:!SSLv2:!aNULL:!eNULL:!AH:!3DES:@STRENGTH)") + "\n";
+
+#if USE_ZMQ
+    strUsage += "\n" + _("ZMQ options:") + "\n";
+    strUsage += "  -zmqctxsetopt=<option:value>    " + _("ZMQ_CTX_SET (Example: -zmqctxsetopt=ZMQ_IO_THREADS:2)") + "\n";
+    strUsage += "  -zmqpubsetopt=<option:value>    " + _("ZMQ_SETSOCKOPT for the Publisher socket (Example: -zmqpubsetopt=ZMQ_SNDHWM:10)") + "\n";
+    strUsage += "  -zmqpubbind=\"<endpoint>\"        " + _("ZMQ_BIND Publisher socket to bind to (default: none)") + "\n";
+    strUsage += "  -zmqpubconnect=\"<endpoint>\"     " + _("ZMQ_CONNECT Publisher socket to connect to (default: none)") + "\n";
+    strUsage += "  -zmqpublishduringinitaldownload " + _("If we should publish new blocks during the fIsInitalDownload (default: false)") + "\n";
+    strUsage += "  -zmqrepsetopt=<option:value>    " + _("ZMQ_SETSOCKOPT for the Replier socket (Example: -zmqrepsetopt=ZMQ_LINGER:0)") + "\n";
+    strUsage += "  -zmqrepbind=\"<endpoint>\"        " + _("ZMQ_BIND Replier socket to bind to (default: none)") + "\n";
+    strUsage += "  -zmqrepconnect=\"<endpoint>\"     " + _("ZMQ_CONNECT Replier socket to connect to (default: none)") + "\n";
+#endif
+    strUsage += "\n";
 
     return strUsage;
 }
@@ -544,6 +564,9 @@ bool AppInit2(boost::thread_group& threadGroup)
     printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
     printf("Bitcoin version %s (%s)\n", FormatFullVersion().c_str(), CLIENT_DATE.c_str());
     printf("Using OpenSSL version %s\n", SSLeay_version(SSLEAY_VERSION));
+#if USE_ZMQ
+    BZmq_Version();
+#endif
     if (!fLogTimestamps)
         printf("Startup time: %s\n", DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()).c_str());
     printf("Default data directory %s\n", GetDefaultDataDir().string().c_str());
@@ -1001,6 +1024,61 @@ bool AppInit2(boost::thread_group& threadGroup)
     printf("setKeyPool.size() = %"PRIszu"\n",      pwalletMain->setKeyPool.size());
     printf("mapWallet.size() = %"PRIszu"\n",       pwalletMain->mapWallet.size());
     printf("mapAddressBook.size() = %"PRIszu"\n",  pwalletMain->mapAddressBook.size());
+
+#if USE_ZMQ
+    BZmq_InitCtx();
+
+    if (mapArgs.count("-zmqctxsetopt")) 
+    {
+        BOOST_FOREACH(string strZmqCtxSetOpt, mapMultiArgs["-zmqctxsetopt"]) {
+            BZmq_CtxSetOptions(strZmqCtxSetOpt);
+        }
+    }
+
+    BZmq_InitSockets();
+
+    if (mapArgs.count("-zmqpubsetopt")) 
+    {
+        BOOST_FOREACH(string strZmqPubSetOpt, mapMultiArgs["-zmqpubsetopt"]) {
+            BZmq_PubSetOptions(strZmqPubSetOpt);
+        }
+    }
+
+    if (mapArgs.count("-zmqpubbind")) 
+    {
+        BOOST_FOREACH(string strZmqPubBind, mapMultiArgs["-zmqpubbind"]) {
+            BZmq_PubBind(strZmqPubBind);
+        }
+    }
+
+    if (mapArgs.count("-zmqpubconnect")) 
+    {
+        BOOST_FOREACH(string strZmqPubConnect, mapMultiArgs["-zmqpubconnect"]) {
+            BZmq_PubConnect(strZmqPubConnect);
+        }
+    }
+    if (mapArgs.count("-zmqrepsetopt")) 
+    {
+        BOOST_FOREACH(string strZmqRepSetOpt, mapMultiArgs["-zmqrepsetopt"]) {
+            BZmq_RepSetOptions(strZmqRepSetOpt);
+        }
+    }
+
+    if (mapArgs.count("-zmqrepbind")) 
+    {
+        BOOST_FOREACH(string strZmqRepBind, mapMultiArgs["-zmqrepbind"]) {
+            BZmq_RepBind(strZmqRepBind);
+        }
+    }
+
+    if (mapArgs.count("-zmqrepconnect")) 
+    {
+        BOOST_FOREACH(string strZmqRepConnect, mapMultiArgs["-zmqrepconnect"]) {
+            BZmq_RepConnect(strZmqRepConnect);
+        }
+    }
+    NewThread(BZmq_ThreadReqRep, NULL);
+#endif
 
     StartNode(threadGroup);
 

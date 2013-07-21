@@ -10,6 +10,7 @@ USE_UPNP:=0
 # :=1 --> Enable IPv6 support
 # :=0 --> Disable IPv6 support
 USE_IPV6:=1
+USE_ZMQ:=0
 
 LINK:=$(CXX)
 
@@ -56,6 +57,11 @@ endif
 
 ifneq (${USE_IPV6}, -)
 	DEFS += -DUSE_IPV6=$(USE_IPV6)
+endif
+
+ifeq (${USE_ZMQ}, 1)
+        LIBS += -l zmq
+        DEFS += -DUSE_ZMQ=$(USE_ZMQ)
 endif
 
 LIBS+= \
@@ -152,6 +158,10 @@ TESTOBJS := \
     obj-test/leveldb.o \
     $(patsubst test/%.cpp,obj-test/%.o,$(wildcard test/*.cpp)) \
     $(BASEOBJS)
+
+ifeq (${USE_ZMQ}, 1)
+    OBJS += obj/bitcoin_zmq.o
+endif
 
 
 all: bitcoind
