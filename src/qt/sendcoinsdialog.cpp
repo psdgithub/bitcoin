@@ -140,11 +140,22 @@ void SendCoinsDialog::on_sendButton_clicked()
     QStringList formatted;
     foreach(const SendCoinsRecipient &rcp, recipients)
     {
+        QString amount = BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, rcp.amount);
+        if (rcp.authenticatedMerchant.isEmpty())
+        {
+            QString address = rcp.address;
 #if QT_VERSION < 0x050000
-        formatted.append(tr("<b>%1</b> to %2 (%3)").arg(BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, rcp.amount), Qt::escape(rcp.label), rcp.address));
+            QString to = Qt::escape(rcp.label);
 #else
-        formatted.append(tr("<b>%1</b> to %2 (%3)").arg(BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, rcp.amount), rcp.label.toHtmlEscaped(), rcp.address));
+            QString to = rcp.label.toHtmlEscaped();
 #endif
+            formatted.append(tr("<b>%1</b> to %2 (%3)").arg(amount, to, address));
+        }
+        else
+        {
+            QString merchant = Qt::escape(rcp.authenticatedMerchant);
+            formatted.append(tr("<b>%1</b> to %2").arg(amount, merchant));
+        }
     }
 
     fNewRecipientAllowed = false;
@@ -327,6 +338,12 @@ void SendCoinsDialog::setAddress(const QString &address)
 
 void SendCoinsDialog::pasteEntry(const SendCoinsRecipient &rv)
 {
+    if(!rv.error.isEmpty()) {
+        QMessageBox::warning(this, tr("Send Coins"), rv.error,
+                             QMessageBox::Ok, QMessageBox::Ok);
+        return;
+    }
+
     if(!fNewRecipientAllowed)
         return;
 
@@ -348,20 +365,18 @@ void SendCoinsDialog::pasteEntry(const SendCoinsRecipient &rv)
     entry->setValue(rv);
 }
 
-bool SendCoinsDialog::handleURI(const QString &uri)
+bool SendCoinsDialog::handlePaymentRequest(const SendCoinsRecipient &rv)
 {
-    SendCoinsRecipient rv;
-    // URI has to be valid
-    if (GUIUtil::parseBitcoinURI(uri, &rv))
-    {
-        CBitcoinAddress address(rv.address.toStdString());
-        if (!address.IsValid())
-            return false;
-        pasteEntry(rv);
-        return true;
+    CBitcoinAddress address(rv.address.toStdString());
+    if (!address.IsValid()) {
+        QString strAddress(address.ToString().c_str());
+        QMessageBox::warning(this, tr("Send Coins"),
+                             tr("Invalid payment address %1").arg(strAddress));
+        return false;
     }
 
-    return false;
+    pasteEntry(rv);
+    return true;
 }
 
 void SendCoinsDialog::setBalance(qint64 balance, qint64 unconfirmedBalance, qint64 immatureBalance)

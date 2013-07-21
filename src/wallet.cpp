@@ -498,7 +498,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn)
                         if (GetKeyFromPool(newDefaultKey, false))
                         {
                             SetDefaultKey(newDefaultKey);
-                            SetAddressBookName(vchDefaultKey.GetID(), "");
+                            SetAddressBook(vchDefaultKey.GetID(), "", "receive");
                         }
                     }
                 }
@@ -732,8 +732,8 @@ void CWalletTx::GetAccountAmounts(const string& strAccount, int64& nReceived,
         {
             if (pwallet->mapAddressBook.count(r.first))
             {
-                map<CTxDestination, string>::const_iterator mi = pwallet->mapAddressBook.find(r.first);
-                if (mi != pwallet->mapAddressBook.end() && (*mi).second == strAccount)
+                map<CTxDestination, CAddressBookData>::const_iterator mi = pwallet->mapAddressBook.find(r.first);
+                if (mi != pwallet->mapAddressBook.end() && (*mi).second.name == strAccount)
                     nReceived += r.second;
             }
             else if (strAccount.empty())
@@ -1544,25 +1544,27 @@ DBErrors CWallet::LoadWallet(bool& fFirstRunRet)
 }
 
 
-bool CWallet::SetAddressBookName(const CTxDestination& address, const string& strName)
+bool CWallet::SetAddressBook(const CTxDestination& address, const string& strName, const string& strPurpose)
 {
-    std::map<CTxDestination, std::string>::iterator mi = mapAddressBook.find(address);
-    mapAddressBook[address] = strName;
+    std::map<CTxDestination, CAddressBookData>::iterator mi = mapAddressBook.find(address);
+    mapAddressBook[address].name = strName;
     NotifyAddressBookChanged(this, address, strName, ::IsMine(*this, address), (mi == mapAddressBook.end()) ? CT_NEW : CT_UPDATED);
     if (!fFileBacked)
+        return false;
+    if (!strPurpose.empty() && !CWalletDB(strWalletFile).WritePurpose(CBitcoinAddress(address).ToString(), strPurpose))
         return false;
     return CWalletDB(strWalletFile).WriteName(CBitcoinAddress(address).ToString(), strName);
 }
 
-bool CWallet::DelAddressBookName(const CTxDestination& address)
+bool CWallet::DelAddressBook(const CTxDestination& address)
 {
     mapAddressBook.erase(address);
     NotifyAddressBookChanged(this, address, "", ::IsMine(*this, address), CT_DELETED);
     if (!fFileBacked)
         return false;
+    CWalletDB(strWalletFile).ErasePurpose(CBitcoinAddress(address).ToString());
     return CWalletDB(strWalletFile).EraseName(CBitcoinAddress(address).ToString());
 }
-
 
 void CWallet::PrintWallet(const CBlock& block)
 {
@@ -2026,7 +2028,7 @@ CTxDestination CWallet::GetAccountAddress(const std::string strAccount, bool bFo
         if (!GetKeyFromPool(account.vchPubKey, false))
             return CTxDestination();
 
-        SetAddressBookName(account.vchPubKey.GetID(), strAccount);
+        SetAddressBook(account.vchPubKey.GetID(), strAccount, "receive");
         walletdb.WriteAccount(strAccount, account);
     }
 
@@ -2038,12 +2040,12 @@ bool CWallet::SetAccount(const CTxDestination& dest, const std::string strAccoun
     // Detect when changing the account of an address that is the 'unused current key' of another account:
     if (mapAddressBook.count(dest))
     {
-        string strOldAccount = mapAddressBook[dest];
+        string strOldAccount = mapAddressBook[dest].name;
         if (dest == GetAccountAddress(strOldAccount, false) && !CBitcoinAddress(GetAccountAddress(strOldAccount, true)).IsValid())
             return false;
     }
 
-    return SetAddressBookName(dest, strAccount);
+    return SetAddressBook(dest, strAccount, "receive");
 }
 
 int64 CWallet::GetAddressTally(const CTxDestination& dest, int nMinDepth)
@@ -2094,12 +2096,12 @@ int64 CWallet::GetAccountBalance(const string& strAccount, int nMinDepth)
     return nBalance;
 }
 
-std::set<CTxDestination> CWallet::GetAccountAddresses(std::string strAccount)
+std::set<CTxDestination> CWallet::GetAccountAddresses(std::string strAccount) const
 {
 	set<CTxDestination> setRet;
-    BOOST_FOREACH(const PAIRTYPE(CTxDestination, string)& item, mapAddressBook)
+    BOOST_FOREACH(const PAIRTYPE(CTxDestination, CAddressBookData)& item, mapAddressBook)
     {
-        if (item.second == strAccount)
+        if (item.second.name == strAccount)
         	// push address into set
             setRet.insert(item.first);
     }

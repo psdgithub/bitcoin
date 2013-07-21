@@ -40,9 +40,14 @@ bool AppInit(int argc, char* argv[])
         if (!boost::filesystem::is_directory(GetDataDir(false)))
         {
             fprintf(stderr, "Error: Specified directory does not exist\n");
-            Shutdown();
+            return false;
         }
         ReadConfigFile(mapArgs, mapMultiArgs);
+
+        if (!SelectParamsFromCommandLine()) {
+            fprintf(stderr, "Invalid combination of -testnet and -regtest.");
+            return false;
+        }
 
         if (mapArgs.count("-?") || mapArgs.count("--help"))
         {
@@ -67,10 +72,6 @@ bool AppInit(int argc, char* argv[])
 
         if (fCommandLine)
         {
-            if (!SelectParamsFromCommandLine()) {
-                fprintf(stderr, "Error: invalid combination of -regtest and -testnet.\n");
-                return false;
-            }
             int ret = CommandLineRPC(argc, argv);
             exit(ret);
         }

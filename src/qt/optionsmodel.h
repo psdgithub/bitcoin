@@ -50,6 +50,7 @@ public:
     int getDisplayUnit() { return nDisplayUnit; }
     bool getDisplayAddresses() { return bDisplayAddresses; }
     QString getLanguage() { return language; }
+    bool getProxySettings(QString& proxyIP, quint16 &proxyPort) const;
     bool getCoinControlFeatures();
 
 private:

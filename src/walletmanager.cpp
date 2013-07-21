@@ -192,7 +192,7 @@ void CWalletManager::LoadWallet(const string& strName)
                 err.str("");
             }
             pWallet->SetDefaultKey(newDefaultKey);
-            if (!pWallet->SetAddressBookName(pWallet->vchDefaultKey.GetID(), ""))
+            if (!pWallet->SetAddressBook(pWallet->vchDefaultKey.GetID(), "", "receive"))
             {
                 err << _("Cannot write default address.");
                 printf("%s\n", err.str().c_str());

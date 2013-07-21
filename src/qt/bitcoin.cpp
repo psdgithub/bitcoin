@@ -181,18 +181,18 @@ int main(int argc, char *argv[])
     else
         QApplication::setApplicationName("Bitcoin-Qt");
 
+    // Do this early as we don't want to bother initializing if we are just calling IPC
+    // ... but do it after creating app, so QCoreApplication::arguments is initialized:
+    PaymentServer::LoadRootCAs();
+    if (PaymentServer::ipcSendCommandLine(argc, argv))
+        exit(0);
+
     // Now that QSettings are accessible, initialize translations
     QTranslator qtTranslatorBase, qtTranslator, translatorBase, translator;
     initTranslations(qtTranslatorBase, qtTranslator, translatorBase, translator);
 
     // User language is set up: pick a data directory
     Intro::pickDataDirectory();
-
-    // Do this early as we don't want to bother initializing if we are just calling IPC
-    // ... but do it after creating app, so QCoreApplication::arguments is initialized:
-    if (PaymentServer::ipcSendCommandLine())
-        exit(0);
-    PaymentServer* paymentServer = new PaymentServer(&app);
 
     // Install global event filter that makes sure that long tooltips can be word-wrapped
     app.installEventFilter(new GUIUtil::ToolTipToRichTextFilter(TOOLTIP_WRAP_THRESHOLD, &app));
@@ -206,8 +206,16 @@ int main(int argc, char *argv[])
     }
     ReadConfigFile(mapArgs, mapMultiArgs);
 
+    if (!SelectParamsFromCommandLine()) {
+        QMessageBox::critical(0, "Bitcoin", QString("Invalid combination of -testnet and -regtest."));
+        return false;
+    }
+
     // ... then GUI settings:
     OptionsModel optionsModel;
+
+    // PaymentServer uses network proxy settings from optionsModel:
+    PaymentServer* paymentServer = new PaymentServer(&app, optionsModel);
 
     // Subscribe to global signals from core
     uiInterface.ThreadSafeMessageBox.connect(ThreadSafeMessageBox);
@@ -246,7 +254,7 @@ int main(int argc, char *argv[])
 
         boost::thread_group threadGroup;
 
-        BitcoinGUI window(GetBoolArg("-testnet", false), 0);
+        BitcoinGUI window(TestNet(), 0);
         guiref = &window;
 
         QTimer* pollShutdownTimer = new QTimer(guiref);
@@ -282,8 +290,15 @@ int main(int argc, char *argv[])
                 }
 
                 // Now that initialization/startup is done, process any command-line
-                // bitcoin: URIs
-                QObject::connect(paymentServer, SIGNAL(receivedURI(QString)), &window, SLOT(handleURI(QString)));
+                // bitcoin: URIs or payment requests:
+                QObject::connect(paymentServer, SIGNAL(receivedPaymentRequest(SendCoinsRecipient)),
+                                 &window, SLOT(handlePaymentRequest(SendCoinsRecipient)));
+                QObject::connect(&walletModel, SIGNAL(coinsSent(CWallet*,SendCoinsRecipient,QByteArray)),
+                                 paymentServer, SLOT(fetchPaymentACK(CWallet*,const SendCoinsRecipient&,QByteArray)));
+                QObject::connect(paymentServer, SIGNAL(receivedPaymentACK(QString)),
+                                 &window, SLOT(showPaymentACK(QString)));
+                QObject::connect(paymentServer, SIGNAL(reportError(QString, QString, unsigned int)),
+                                 guiref, SLOT(message(QString, QString, unsigned int)));
                 QTimer::singleShot(100, paymentServer, SLOT(uiReady()));
 
                 app.exec();

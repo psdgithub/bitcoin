@@ -65,6 +65,19 @@ public:
     )
 };
 
+/** Address book data */
+class CAddressBookData
+{
+public:
+    std::string name;
+    std::string purpose;
+
+    CAddressBookData()
+    {
+        purpose = "unknown";
+    }
+};
+
 /** A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
  * and provides the ability to create new transactions.
  */
@@ -121,7 +134,7 @@ public:
     int64 nOrderPosNext;
     std::map<uint256, int> mapRequestCount;
 
-    std::map<CTxDestination, std::string> mapAddressBook;
+    std::map<CTxDestination, CAddressBookData> mapAddressBook;
 
     CPubKey vchDefaultKey;
 
@@ -282,9 +295,9 @@ public:
 
     DBErrors LoadWallet(bool& fFirstRunRet);
 
-    bool SetAddressBookName(const CTxDestination& address, const std::string& strName);
+    bool SetAddressBook(const CTxDestination& address, const std::string& strName, const std::string& purpose);
 
-    bool DelAddressBookName(const CTxDestination& address);
+    bool DelAddressBook(const CTxDestination& address);
 
     void UpdatedTransaction(const uint256 &hashTx);
 
@@ -312,7 +325,7 @@ public:
     bool SetAccount(const CTxDestination& dest, const std::string strAccount);
     int64 GetAccountBalance(const std::string& strAccount, int nMinDepth);
     int64 GetAddressTally(const CTxDestination& dest, int nMinDepth);
-    std::set<CTxDestination> GetAccountAddresses(std::string strAccount);
+    std::set<CTxDestination> GetAccountAddresses(std::string strAccount) const;
     void ListAccountCreditDebit(const std::string& strAccount, std::list<CAccountingEntry>& entries)
     {
         CWalletDB(strWalletFile).ListAccountCreditDebit(strAccount, entries);

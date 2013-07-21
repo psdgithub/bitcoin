@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QString>
+#include <QVariant>
 
 namespace Ui {
     class SendCoinsDialog;
@@ -32,7 +33,7 @@ public:
 
     void setAddress(const QString &address);
     void pasteEntry(const SendCoinsRecipient &rv);
-    bool handleURI(const QString &uri);
+    bool handlePaymentRequest(const SendCoinsRecipient &recipient);
 
 public slots:
     void clear();
