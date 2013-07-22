@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
     app.installEventFilter(new GUIUtil::ToolTipToRichTextFilter(TOOLTIP_WRAP_THRESHOLD, &app));
 
     if (!SelectParamsFromCommandLine()) {
-        QMessageBox::critical(0, "Bitcoin", QString("Invalid combination of -testnet and -regtest."));
+        QMessageBox::critical(0, "Bitcoin-Qt", QString("Invalid combination of -testnet and -regtest."));
         return false;
     }
 
