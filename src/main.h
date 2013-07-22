@@ -11,6 +11,7 @@
 #include "chainparams.h"
 #include "core.h"
 #include "script.h"
+#include "base58.h"
 #include "sync.h"
 #include "uint256.h"
 
@@ -111,6 +112,8 @@ extern bool fHaveGUI;
 extern int64_t nTransactionFee;
 extern int64_t nTransactionFeeMax;
 extern bool fForceFee;
+extern int64_t nDustLimit;
+extern std::set<CBitcoinAddress> filteredAddresses;
 
 // Minimum disk space required - used in CheckDiskSpace()
 static const uint64_t nMinDiskSpace = 52428800;

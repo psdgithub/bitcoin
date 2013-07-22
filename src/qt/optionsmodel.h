@@ -30,6 +30,8 @@ public:
         DisplayAddresses,  // bool
         Language,          // QString
         CoinControlFeatures, // bool
+        DustLimit,         // qint64
+        FilteredAddresses, // QString
         OptionIDRowCount,
     };
 
@@ -52,6 +54,7 @@ public:
     QString getLanguage() { return language; }
     bool getProxySettings(QString& proxyIP, quint16 &proxyPort) const;
     bool getCoinControlFeatures();
+    qint64 getDustLimit();
 
     /* Restart flag helper */
     void setRestartRequired(bool fRequired);
