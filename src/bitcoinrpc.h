@@ -163,6 +163,7 @@ extern json_spirit::Value importprivkey(const json_spirit::Array& params, bool f
 extern json_spirit::Value dumpwallet(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value importwallet(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value forcerescan(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value GetWalletCKeyDump(void);
 
 extern json_spirit::Value getgenerate(const json_spirit::Array& params, bool fHelp); // in rpcmining.cpp
 extern json_spirit::Value setgenerate(const json_spirit::Array& params, bool fHelp);
