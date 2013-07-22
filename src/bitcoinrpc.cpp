@@ -282,6 +282,7 @@ static const CRPCCommand vRPCCommands[] =
     { "dumpprivkey",            &dumpprivkey,            true,      false },
     { "dumpwallet",             &dumpwallet,             true,      false },
     { "importprivkey",          &importprivkey,          false,     false },
+    { "forcerescan",            &forcerescan,          false,     false },
     { "importwallet",           &importwallet,           false,     false },
     { "listunspent",            &listunspent,            false,     false },
     { "getrawtransaction",      &getrawtransaction,      false,     false },
@@ -1253,6 +1254,7 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "listaddressgroupings"   && n > 0) ConvertTo<bool>(params[0]);
     if (strMethod == "listaddressgroupings"   && n > 1) ConvertTo<bool>(params[1]);
     if (strMethod == "keypoolrefill"          && n > 0) ConvertTo<boost::int64_t>(params[0]);
+    if (strMethod == "forcerescan"            && n > 0) ConvertTo<bool>(params[0]);
 
     return params;
 }
