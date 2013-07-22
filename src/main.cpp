@@ -4417,7 +4417,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
 
     // Keep-alive ping. We send a nonce of zero because we don't use it anywhere
     // right now.
-    if (pto->nLastSend && GetTime() - pto->nLastSend > 30 * 60 && pto->vSendMsg.empty()) {
+    if (GetTime() - std::max(pto->nTimeConnected, pto->nLastRecv) > 30) {
         uint64_t nonce = 0;
         if (pto->nVersion > BIP0031_VERSION)
             pto->PushMessage("ping", nonce);
