@@ -115,6 +115,7 @@ BOOST_AUTO_TEST_CASE(rpc_rawparams)
     BOOST_CHECK_THROW(CallRPC("getrawtransaction"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("getrawtransaction not_hex"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("getrawtransaction a3b807410df0b60fcb9736768df5823938b2f838694939ba45f3c0a1bff150ed not_int"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("getrawtransaction a3b807410df0b60fcb9736768df5823938b2f838694939ba45f3c0a1bff150ed 0 not_hex"), runtime_error);
 
     BOOST_CHECK_THROW(CallRPC("createrawtransaction"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("createrawtransaction null null"), runtime_error);
