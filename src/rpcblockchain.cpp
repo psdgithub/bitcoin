@@ -3,8 +3,14 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "main.h"
+
 #include "bitcoinrpc.h"
+#include "main.h"
+#include "sync.h"
+
+#include <stdint.h>
+
+#include "json/json_spirit_value.h"
 
 using namespace json_spirit;
 using namespace std;
@@ -125,13 +131,13 @@ Value settxfee(const Array& params, bool fHelp)
             "                 adjust your fee as it deems necessary");
 
     // Amounts
-    int64 nAmount = 0;
+    int64_t nAmount = 0;
     if (params[0].get_real() != 0.0)
         nAmount = AmountFromValue(params[0]);        // rejects 0.0 amounts
 
     if (params.size() > 1)
     {
-        int64 nAmountMax;
+        int64_t nAmountMax;
         if (params[1].get_real() == 0.0)
             nAmountMax = 0;
         else

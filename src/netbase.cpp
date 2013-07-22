@@ -2,11 +2,14 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
 #include "netbase.h"
-#include "util.h"
-#include "sync.h"
+
 #include "hash.h"
+#include "sync.h"
+#include "uint256.h"
+#include "util.h"
+
+#include <stdint.h>
 
 #ifndef WIN32
 #include <fcntl.h>
@@ -881,10 +884,10 @@ std::vector<unsigned char> CNetAddr::GetGroup() const
     return vchRet;
 }
 
-uint64 CNetAddr::GetHash() const
+uint64_t CNetAddr::GetHash() const
 {
     uint256 hash = Hash(&ip[0], &ip[16]);
-    uint64 nRet;
+    uint64_t nRet;
     memcpy(&nRet, &hash, sizeof(nRet));
     return nRet;
 }

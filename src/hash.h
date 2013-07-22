@@ -5,12 +5,14 @@
 #ifndef BITCOIN_HASH_H
 #define BITCOIN_HASH_H
 
-#include "uint256.h"
 #include "serialize.h"
+#include "uint256.h"
+#include "version.h"
 
-#include <openssl/sha.h>
-#include <openssl/ripemd.h>
 #include <vector>
+
+#include <openssl/ripemd.h>
+#include <openssl/sha.h>
 
 template<typename T1>
 inline uint256 Hash(const T1 pbegin, const T1 pend)

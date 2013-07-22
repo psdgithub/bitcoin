@@ -5,12 +5,13 @@
 #include <QString>
 #include <QVariant>
 
+class SendCoinsEntry;
+class SendCoinsRecipient;
+class WalletModel;
+
 namespace Ui {
     class SendCoinsDialog;
 }
-class WalletModel;
-class SendCoinsEntry;
-class SendCoinsRecipient;
 class OptionsModel;
 
 QT_BEGIN_NAMESPACE

@@ -25,19 +25,19 @@ CWalletTx *WalletModelTransaction::getTransaction()
     return walletTransaction;
 }
 
-int64 WalletModelTransaction::getTransactionFee()
+int64_t WalletModelTransaction::getTransactionFee()
 {
     return fee;
 }
 
-void WalletModelTransaction::setTransactionFee(int64 newFee)
+void WalletModelTransaction::setTransactionFee(int64_t newFee)
 {
     fee=newFee;
 }
 
-uint64 WalletModelTransaction::getTotalTransactionAmount()
+uint64_t WalletModelTransaction::getTotalTransactionAmount()
 {
-    uint64 totalTransactionAmount = 0;
+    uint64_t totalTransactionAmount = 0;
     foreach(const SendCoinsRecipient &rcp, recipients)
     {
         totalTransactionAmount+=rcp.amount;

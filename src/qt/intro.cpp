@@ -9,8 +9,8 @@
 #include <boost/filesystem.hpp>
 
 /* Minimum free space (in bytes) needed for data directory */
-static const uint64 GB_BYTES = 1000000000LL;
-static const uint64 BLOCK_CHAIN_SIZE = 10LL * GB_BYTES;
+static const uint64_t GB_BYTES = 1000000000LL;
+static const uint64_t BLOCK_CHAIN_SIZE = 10LL * GB_BYTES;
 
 /* Check free space asynchronously to prevent hanging the UI thread.
 
@@ -55,7 +55,7 @@ void FreespaceChecker::check()
     namespace fs = boost::filesystem;
     QString dataDirStr = intro->getPathToCheck();
     fs::path dataDir = fs::path(dataDirStr.toStdString());
-    uint64 freeBytesAvailable = 0;
+    uint64_t freeBytesAvailable = 0;
     int replyStatus = ST_OK;
     QString replyMessage = tr("A new data directory will be created.");
 

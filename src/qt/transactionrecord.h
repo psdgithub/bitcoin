@@ -1,9 +1,9 @@
 #ifndef TRANSACTIONRECORD_H
 #define TRANSACTIONRECORD_H
 
-#include "uint256.h"
-
 #include <QList>
+
+#include "uint256.h"
 
 class CWallet;
 class CWalletTx;
@@ -46,8 +46,8 @@ public:
     /** @name Reported status
        @{*/
     Status status;
-    int64 depth;
-    int64 open_for; /**< Timestamp if status==OpenUntilDate, otherwise number
+    qint64 depth;
+    qint64 open_for; /**< Timestamp if status==OpenUntilDate, otherwise number
                       of additional blocks that need to be mined before
                       finalization */
     /**@}*/
@@ -81,15 +81,15 @@ public:
     {
     }
 
-    TransactionRecord(uint256 hash, int64 time):
+    TransactionRecord(uint256 hash, qint64 time):
             hash(hash), time(time), type(Other), address(""), debit(0),
             credit(0), idx(0)
     {
     }
 
-    TransactionRecord(uint256 hash, int64 time,
+    TransactionRecord(uint256 hash, qint64 time,
                 Type type, const std::string &address,
-                int64 debit, int64 credit):
+                qint64 debit, qint64 credit):
             hash(hash), time(time), type(type), address(address), debit(debit), credit(credit),
             idx(0)
     {
@@ -103,11 +103,11 @@ public:
     /** @name Immutable transaction attributes
       @{*/
     uint256 hash;
-    int64 time;
+    qint64 time;
     Type type;
     std::string address;
-    int64 debit;
-    int64 credit;
+    qint64 debit;
+    qint64 credit;
     /**@}*/
 
     /** Subtransaction index, for sort key */

@@ -5,8 +5,8 @@
  * The Bitcoin Developers 2011-2013
  */
 #include "walletstack.h"
+
 #include "walletview.h"
-#include "bitcoingui.h"
 
 #include <QMap>
 #include <QMessageBox>

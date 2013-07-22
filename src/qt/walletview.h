@@ -9,16 +9,16 @@
 
 #include <QStackedWidget>
 
+class AddressBookPage;
 class BitcoinGUI;
 class ClientModel;
-class WalletModel;
-class TransactionView;
 class OverviewPage;
-class AddressBookPage;
+class RPCConsole;
 class SendCoinsDialog;
 class SendCoinsRecipient;
 class SignVerifyMessageDialog;
-class RPCConsole;
+class TransactionView;
+class WalletModel;
 
 QT_BEGIN_NAMESPACE
 class QLabel;

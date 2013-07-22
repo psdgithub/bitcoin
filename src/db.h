@@ -5,20 +5,19 @@
 #ifndef BITCOIN_DB_H
 #define BITCOIN_DB_H
 
-#include "sync.h"
 #include "serialize.h"
+#include "sync.h"
 
 #include <map>
 #include <string>
 #include <vector>
 
-#include <boost/filesystem.hpp>
+#include <boost/filesystem/path.hpp>
 #include <db_cxx.h>
 
 class CAddrMan;
 class CBlockLocator;
 class CDiskBlockIndex;
-class CMasterKey;
 class COutPoint;
 class CWallet;
 

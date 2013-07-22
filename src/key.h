@@ -5,12 +5,14 @@
 #ifndef BITCOIN_KEY_H
 #define BITCOIN_KEY_H
 
+#include "allocators.h"
+#include "hash.h"
+#include "serialize.h"
+
+#include <stdexcept>
 #include <vector>
 
-#include "allocators.h"
-#include "serialize.h"
-#include "uint256.h"
-#include "hash.h"
+class uint256;
 
 // secp256k1:
 // const unsigned int PRIVATE_KEY_SIZE = 279;

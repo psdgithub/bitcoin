@@ -2,6 +2,8 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <boost/filesystem.hpp>
+
 #include "init.h"
 #include "walletmanager.h"
 #include "walletdb.h"
@@ -75,7 +77,7 @@ void CWalletManager::LoadWallet(const string& strName)
     ostringstream err;
     string strFile;
     CWallet* pWallet = NULL;
-    int64 nStart = GetTimeMillis();
+    int64_t nStart = GetTimeMillis();
 
     // Check that the wallet name is valid. A wallet name can only contain alphanumerics and underscores.
     if (!CWalletManager::IsValidName(strName))
@@ -200,7 +202,7 @@ void CWalletManager::LoadWallet(const string& strName)
             }
         }
         
-        printf("    wallet      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+        printf("    wallet      %15"PRId64"ms\n", GetTimeMillis() - nStart);
         
         boost::shared_ptr<CWallet> spWallet(pWallet);
         this->wallets[strName] = spWallet;
@@ -231,7 +233,7 @@ void CWalletManager::LoadWallet(const string& strName)
         printf("Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
         nStart = GetTimeMillis();
         pWallet->ScanForWalletTransactions(pindexRescan, true);
-        printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+        printf(" rescan      %15"PRId64"ms\n", GetTimeMillis() - nStart);
         pWallet->SetBestChain(CBlockLocator(pindexBest));
         nWalletDBUpdated++;
     }

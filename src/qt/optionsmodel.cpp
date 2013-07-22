@@ -2,10 +2,14 @@
 
 #include "bitcoinunits.h"
 #include "init.h"
-#include "walletdb.h"
 #include "guiutil.h"
 
+#include "net.h"
+#include "walletdb.h"
+
 #include <QSettings>
+
+extern qint64 nTransactionFee; 
 
 OptionsModel::OptionsModel(QObject *parent) :
     QAbstractListModel(parent)

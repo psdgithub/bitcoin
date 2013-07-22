@@ -1,15 +1,22 @@
 #include "walletmodel.h"
-#include "guiconstants.h"
-#include "optionsmodel.h"
+
 #include "addresstablemodel.h"
+#include "guiconstants.h"
 #include "transactiontablemodel.h"
 
-#include "ui_interface.h"
-#include "walletdb.h" // for BackupWallet
 #include "base58.h"
+#include "db.h"
+#include "keystore.h"
+#include "sync.h"
+#include "ui_interface.h"
+
+#include <stdint.h>
 
 #include <QSet>
 #include <QTimer>
+
+extern CCriticalSection cs_main;
+extern int64_t nTransactionFee;
 
 WalletModel::WalletModel(CWallet *wallet, OptionsModel *optionsModel, QObject *parent) :
     QObject(parent), wallet(wallet), optionsModel(optionsModel), addressTableModel(0),
@@ -127,8 +134,8 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
 {
     qint64 total = 0;
     QSet<QString> setAddress; // Used to detect duplicates
-    std::vector<std::pair<CScript, int64> > vecSend;
-    int64 nFeeRequired = 0;
+    std::vector<std::pair<CScript, int64_t> > vecSend;
+    int64_t nFeeRequired = 0;
 
     QList<SendCoinsRecipient> recipients = transaction.getRecipients();
 
@@ -144,7 +151,7 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
 
         if (rcp.paymentRequest.IsInitialized())
         {    // PaymentRequest...
-            int64 subtotal = 0;
+            int64_t subtotal = 0;
             const payments::PaymentDetails& details = rcp.paymentRequest.getDetails();
             for (int i = 0; i < details.outputs_size(); i++)
             {
@@ -153,7 +160,7 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
                 subtotal += out.amount();
                 const unsigned char* scriptStr = (const unsigned char*)out.script().data();
                 CScript scriptPubKey(scriptStr, scriptStr+out.script().size());
-                vecSend.push_back(std::pair<CScript, int64>(scriptPubKey, out.amount()));
+                vecSend.push_back(std::pair<CScript, int64_t>(scriptPubKey, out.amount()));
             }
             if (subtotal <= 0)
             {
@@ -174,7 +181,7 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
 
             CScript scriptPubKey;
             scriptPubKey.SetDestination(CBitcoinAddress(rcp.address.toStdString()).Get());
-            vecSend.push_back(std::pair<CScript, int64>(scriptPubKey, rcp.amount));
+            vecSend.push_back(std::pair<CScript, int64_t>(scriptPubKey, rcp.amount));
 
             total += rcp.amount;
         }
@@ -185,7 +192,7 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
     }
 
     // we do not use getBalance() here, because some coins could be locked or coin control could be active
-    int64 nBalance = 0;
+    int64_t nBalance = 0;
     std::vector<COutput> vCoins;
     wallet->AvailableCoins(vCoins, true, coinControl);
     BOOST_FOREACH(const COutput& out, vCoins)

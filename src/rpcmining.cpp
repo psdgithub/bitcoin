@@ -7,14 +7,24 @@
 #include <boost/thread/locks.hpp>
 #include <boost/thread/thread_time.hpp>
 
+#include "bitcoinrpc.h"
 #include "chainparams.h"
 #include "db.h"
 #include "init.h"
-#include "bitcoinrpc.h"
+#include "main.h"
 #include "util.h"
+#include "wallet.h"
+
+#include <stdint.h>
+
+#include "json/json_spirit_utils.h"
+#include "json/json_spirit_value.h"
 
 using namespace json_spirit;
 using namespace std;
+
+extern CWallet* pwalletMain;
+extern std::vector<CNode*> vNodes;
 
 // Key used by getwork/getblocktemplate miners.
 // Allocated in InitRPCMining, free'd in ShutdownRPCMining
@@ -145,7 +155,7 @@ Value getwork(const Array& params, bool fHelp)
         // Update block
         static unsigned int nTransactionsUpdatedLast;
         static CBlockIndex* pindexPrev;
-        static int64 nStart;
+        static int64_t nStart;
         static CBlockTemplate* pblocktemplate;
         if (pindexPrev != pindexBest ||
             (nTransactionsUpdated != nTransactionsUpdatedLast && GetTime() - nStart > 60))
@@ -342,7 +352,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
 
     // Update block
     static CBlockIndex* pindexPrev;
-    static int64 nStart;
+    static int64_t nStart;
     static CBlockTemplate* pblocktemplate;
     if (pindexPrev != pindexBest ||
         (nTransactionsUpdated != nTransactionsUpdatedLast && GetTime() - nStart > 5))

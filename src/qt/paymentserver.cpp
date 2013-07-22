@@ -1,7 +1,6 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
 #include <QByteArray>
 #include <QDataStream>
 #include <QDebug>
@@ -12,6 +11,7 @@
 #include <QLocalServer>
 #include <QLocalSocket>
 #include <QStringList>
+
 #if QT_VERSION < 0x050000
 #include <QNetworkAccessManager>
 #include <QNetworkProxy>
@@ -37,8 +37,6 @@
 #include "util.h"
 #include "wallet.h"
 #include "walletmodel.h"
-
-using namespace boost;
 
 const int BITCOIN_IPC_CONNECT_TIMEOUT = 1000; // milliseconds
 const QString BITCOIN_IPC_PREFIX("bitcoin:");
@@ -407,7 +405,7 @@ PaymentServer::processPaymentRequest(PaymentRequestPlus& request, SendCoinsRecip
     recipient.paymentRequest = request;
 
     // Expired?
-    if (details.has_expires() && (int64)details.expires() < GetTime())
+    if (details.has_expires() && (int64_t)details.expires() < GetTime())
     {
         recipient.error = tr("Payment request expired");
         return false;

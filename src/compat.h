@@ -12,18 +12,19 @@
 #define NOMINMAX
 #endif
 #define FD_SETSIZE 1024 // max number of fds in fd_set
-#include <winsock2.h>
 #include <mswsock.h>
+#include <winsock2.h>
 #include <ws2tcpip.h>
 #else
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/fcntl.h>
 #include <arpa/inet.h>
-#include <netdb.h>
-#include <net/if.h>
-#include <netinet/in.h>
 #include <ifaddrs.h>
+#include <net/if.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/fcntl.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 #endif
 
 typedef u_int SOCKET;

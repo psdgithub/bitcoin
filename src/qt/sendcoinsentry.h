@@ -5,10 +5,12 @@
 
 #include "walletmodel.h"
 
+class SendCoinsRecipient;
+class WalletModel;
+
 namespace Ui {
     class SendCoinsEntry;
 }
-class WalletModel;
 
 /**
  * A single entry in the dialog for sending bitcoins.

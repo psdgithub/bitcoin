@@ -15,14 +15,18 @@
 #ifndef BITCOIN_BASE58_H
 #define BITCOIN_BASE58_H
 
+#include "bignum.h"
+#include "chainparams.h"
+#include "hash.h"
+#include "key.h"
+#include "script.h"
+#include "uint256.h"
+
 #include <string>
 #include <vector>
 
-#include "chainparams.h"
-#include "bignum.h"
-#include "key.h"
-#include "script.h"
-#include "allocators.h"
+#include <boost/variant/apply_visitor.hpp>
+#include <boost/variant/static_visitor.hpp>
 
 static const char* pszBase58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 

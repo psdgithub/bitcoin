@@ -16,10 +16,10 @@ public:
 
     CWalletTx *getTransaction();
 
-    void setTransactionFee(int64 newFee);
-    int64 getTransactionFee();
+    void setTransactionFee(int64_t newFee);
+    int64_t getTransactionFee();
 
-    uint64 getTotalTransactionAmount();
+    uint64_t getTotalTransactionAmount();
 
     void newPossibleKeyChange(CWallet *wallet);
     CReserveKey *getPossibleKeyChange();
@@ -28,7 +28,7 @@ private:
     const QList<SendCoinsRecipient> recipients;
     CWalletTx *walletTransaction;
     CReserveKey *keyChange;
-    int64 fee;
+    int64_t fee;
     
 public slots:
     

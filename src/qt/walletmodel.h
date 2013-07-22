@@ -1,19 +1,20 @@
 #ifndef WALLETMODEL_H
 #define WALLETMODEL_H
 
+#include "allocators.h" /* for SecureString */
+
 #include <QObject>
 #include <vector>
 #include <map>
 
-#include "allocators.h" /* for SecureString */
 #include "paymentrequestplus.h"
 #include "wallet.h"
 #include "walletmodeltransaction.h"
-
-class OptionsModel;
-class AddressTableModel;
-class TransactionTableModel;
 class CWallet;
+
+class AddressTableModel;
+class OptionsModel;
+class TransactionTableModel;
 class CKeyID;
 class CPubKey;
 class COutput;

@@ -5,29 +5,33 @@
  * The Bitcoin Developers 2011-2013
  */
 #include "walletview.h"
-#include "bitcoingui.h"
-#include "transactiontablemodel.h"
+
 #include "addressbookpage.h"
+#include "askpassphrasedialog.h"
+#include "bitcoingui.h"
+#include "clientmodel.h"
+#include "optionsmodel.h"
+#include "overviewpage.h"
 #include "sendcoinsdialog.h"
 #include "signverifymessagedialog.h"
-#include "clientmodel.h"
-#include "walletmodel.h"
-#include "optionsmodel.h"
+#include "transactiontablemodel.h"
 #include "transactionview.h"
-#include "overviewpage.h"
-#include "askpassphrasedialog.h"
+#include "walletmodel.h"
+
 #include "ui_interface.h"
 
-#include <QHBoxLayout>
-#include <QVBoxLayout>
 #include <QAction>
+#include <QActionGroup>
+#include <QFileDialog>
+#include <QHBoxLayout>
+#include <QPushButton>
+#include <QVBoxLayout>
+
 #if QT_VERSION < 0x050000
 #include <QDesktopServices>
 #else
 #include <QStandardPaths>
 #endif
-#include <QFileDialog>
-#include <QPushButton>
 
 WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
     QStackedWidget(parent),

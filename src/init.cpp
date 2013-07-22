@@ -2,37 +2,39 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
 #include "init.h"
-#include "main.h"
-#include "core.h"
-#include "chainparams.h"
-#include "txdb.h"
-#include "walletdb.h"
+
+#include "addrman.h"
 #include "walletmanager.h"
 #include "bitcoinrpc.h"
-#include "net.h"
-#include "util.h"
-#include "ui_interface.h"
+#include "chainparams.h"
 #include "checkpoints.h"
+#include "core.h"
+#include "net.h"
+#include "txdb.h"
+#include "ui_interface.h"
+#include "util.h"
+#include "wallet.h"
+#include "walletdb.h"
 
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
-#include <boost/filesystem/convenience.hpp>
-#include <boost/interprocess/sync/file_lock.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <openssl/crypto.h>
+#include <inttypes.h>
+#include <stdint.h>
 
 #ifndef WIN32
 #include <signal.h>
 #endif
 
-#if USE_ZMQ
-#include "bitcoin_zmq.h"
-#endif
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/interprocess/sync/file_lock.hpp>
+#include <openssl/crypto.h>
 
 using namespace std;
 using namespace boost;
+
+#if USE_ZMQ
+#include "bitcoin_zmq.h"
+#endif
 
 CWalletManager g_walletManager;
 
@@ -522,7 +524,7 @@ bool AppInit2(boost::thread_group& threadGroup)
     // cost to you of processing a transaction.
     if (mapArgs.count("-mintxfee"))
     {
-        int64 n = 0;
+        int64_t n = 0;
         if (ParseMoney(mapArgs["-mintxfee"], n) && n > 0)
             CTransaction::nMinTxFee = n;
         else
@@ -530,7 +532,7 @@ bool AppInit2(boost::thread_group& threadGroup)
     }
     if (mapArgs.count("-minrelaytxfee"))
     {
-        int64 n = 0;
+        int64_t n = 0;
         if (ParseMoney(mapArgs["-minrelaytxfee"], n) && n > 0)
             CTransaction::nMinRelayTxFee = n;
         else
@@ -608,7 +610,7 @@ bool AppInit2(boost::thread_group& threadGroup)
             threadGroup.create_thread(&ThreadScriptCheck);
     }
 
-    int64 nStart;
+    int64_t nStart;
 
     // ********************************************************* Step 5: verify wallet database integrity
 
@@ -618,7 +620,7 @@ bool AppInit2(boost::thread_group& threadGroup)
     {
         // try moving the database env out of the way
         boost::filesystem::path pathDatabase = GetDataDir() / "database";
-        boost::filesystem::path pathDatabaseBak = GetDataDir() / strprintf("database.%"PRI64d".bak", GetTime());
+        boost::filesystem::path pathDatabaseBak = GetDataDir() / strprintf("database.%"PRId64".bak", GetTime());
         try {
             boost::filesystem::rename(pathDatabase, pathDatabaseBak);
             printf("Moved old %s to %s. Retrying.\n", pathDatabase.string().c_str(), pathDatabaseBak.string().c_str());
@@ -883,7 +885,7 @@ bool AppInit2(boost::thread_group& threadGroup)
         printf("Shutdown requested. Exiting.\n");
         return false;
     }
-    printf(" block index %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+    printf(" block index %15"PRId64"ms\n", GetTimeMillis() - nStart);
 
     if (GetBoolArg("-printblockindex", false) || GetBoolArg("-printblocktree", false))
     {
@@ -961,7 +963,7 @@ bool AppInit2(boost::thread_group& threadGroup)
             printf("Invalid or missing peers.dat; recreating\n");
     }
 
-    printf("Loaded %i addresses from peers.dat  %"PRI64d"ms\n",
+    printf("Loaded %i addresses from peers.dat  %"PRId64"ms\n",
            addrman.size(), GetTimeMillis() - nStart);
 
     // ********************************************************* Step 11: start node

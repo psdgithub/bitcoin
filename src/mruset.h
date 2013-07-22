@@ -4,8 +4,8 @@
 #ifndef BITCOIN_MRUSET_H
 #define BITCOIN_MRUSET_H
 
-#include <set>
 #include <deque>
+#include <set>
 
 /** STL-like set container that only keeps the most recent N elements. */
 template <typename T> class mruset

@@ -1,19 +1,22 @@
 //
 // Alert system
 //
-
-#include <algorithm>
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/replace.hpp>
-#include <boost/foreach.hpp>
-#include <map>
-
 #include "alert.h"
+
 #include "key.h"
 #include "net.h"
 #include "sync.h"
 #include "ui_interface.h"
 #include "main.h"
+#include "util.h"
+
+#include <algorithm>
+#include <inttypes.h>
+#include <map>
+
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/foreach.hpp>
 
 using namespace std;
 
@@ -49,8 +52,8 @@ std::string CUnsignedAlert::ToString() const
     return strprintf(
         "CAlert(\n"
         "    nVersion     = %d\n"
-        "    nRelayUntil  = %"PRI64d"\n"
-        "    nExpiration  = %"PRI64d"\n"
+        "    nRelayUntil  = %"PRId64"\n"
+        "    nExpiration  = %"PRId64"\n"
         "    nID          = %d\n"
         "    nCancel      = %d\n"
         "    setCancel    = %s\n"
