@@ -205,6 +205,8 @@ public:
     uint256 GetHash() const;
     bool IsNewerThan(const CTransaction& old) const;
 
+    bool IsDataCarrier() const;
+
     bool IsCoinBase() const
     {
         return (vin.size() == 1 && vin[0].prevout.IsNull());

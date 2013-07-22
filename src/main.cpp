@@ -664,6 +664,10 @@ bool AreInputsStandard(const CTransaction& tx, CCoinsViewCache& mapInputs)
             nArgsExpected += tmpExpected;
         }
 
+        // These are non-standard, as inputs
+        else if (whichType == TX_MULTISIG_DATA)
+            return false;
+
         if (stack.size() != (unsigned int)nArgsExpected)
             return false;
     }
@@ -906,6 +910,30 @@ void CTransaction::ScanInputForDoubleSpends(unsigned int input) const
     }
 }
 
+bool CTransaction::IsDataCarrier() const
+{
+    for (unsigned int i = 0; i < vout.size(); i++)
+    {
+        vector<vector<unsigned char> > vSolutions;
+        txnouttype whichType;
+
+        const CScript& script = vout[i].scriptPubKey;
+        if (!Solver(script, whichType, vSolutions))
+            return false;
+
+        switch (whichType)
+        {
+        case TX_NULL_DATA:
+        case TX_MULTISIG_DATA:
+            return true;
+        default:
+            break;
+        }
+    }
+
+    return false;
+}
+
 int64_t GetMinFee(const CTransaction& tx, bool fAllowFree, enum GetMinFee_mode mode)
 {
     {
@@ -934,6 +962,10 @@ int64_t GetMinFee(const CTransaction& tx, bool fAllowFree, enum GetMinFee_mode m
         if (nBytes < (mode == GMF_SEND ? (DEFAULT_BLOCK_PRIORITY_SIZE - 17000) : (DEFAULT_BLOCK_PRIORITY_SIZE - 1000)))
             nMinFee = 0;
     }
+
+    // OP_DATA multisig transactions are never free
+    if (tx.IsDataCarrier())
+        nMinFee = nBaseFee;
 
     // To limit dust spam, require base fee if any output is less than 0.01
     if (nMinFee < nBaseFee)
