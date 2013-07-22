@@ -69,6 +69,8 @@ string AccountFromValue(const Value& value)
     return strAccount;
 }
 
+extern bool fNetworkActive;
+
 Value getinfo(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
@@ -99,6 +101,7 @@ Value getinfo(const Array& params, bool fHelp)
     obj.push_back(Pair("proxy-tor-isbase",  proxyTor.fIsBase));
     obj.push_back(Pair("difficulty",        (double)GetDifficulty()));
     obj.push_back(Pair("testnet",           TestNet()));
+    obj.push_back(Pair("networkactive",     fNetworkActive));
     obj.push_back(Pair("keypoololdest",     (boost::int64_t)pwalletMain->GetOldestKeyPoolTime()));
     obj.push_back(Pair("keypoolsize",       (int)pwalletMain->GetKeyPoolSize()));
     obj.push_back(Pair("paytxfee",          ValueFromAmount(nTransactionFee)));
