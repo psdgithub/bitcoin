@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(script_canon)
         string test = tv.get_str();
         if (IsHex(test)) {
             std::vector<unsigned char> sig = ParseHex(test);
-            BOOST_CHECK_MESSAGE(IsCanonicalSignature(sig), test);
+            BOOST_CHECK_MESSAGE(IsCanonicalSignature(sig, SCRIPT_VERIFY_STRICTENC), test);
             BOOST_CHECK_MESSAGE(IsCanonicalSignature_OpenSSL(sig), test);
         }
     }
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(script_noncanon)
         string test = tv.get_str();
         if (IsHex(test)) {
             std::vector<unsigned char> sig = ParseHex(test);
-            BOOST_CHECK_MESSAGE(!IsCanonicalSignature(sig), test);
+            BOOST_CHECK_MESSAGE(!IsCanonicalSignature(sig, SCRIPT_VERIFY_STRICTENC), test);
             BOOST_CHECK_MESSAGE(!IsCanonicalSignature_OpenSSL(sig), test);
         }
     }
