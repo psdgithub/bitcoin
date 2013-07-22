@@ -19,6 +19,8 @@ packages:
 - "unzip"
 - "pkg-config"
 - "libpng12-dev"
+- "yasm"
+- "m4"
 reference_datetime: "2013-06-01 00:00:00"
 remotes:
 - "url": "https://github.com/bitcoin/bitcoin.git"
@@ -27,9 +29,16 @@ files:
 - "miniupnpc-1.6.tar.gz"
 - "qrencode-3.2.0.tar.bz2"
 - "protobuf-2.5.0.tar.bz2"
+- "gmp-5.0.5.tar.xz"
 script: |
   INSTDIR="$HOME/install"
   export LIBRARY_PATH="$INSTDIR/lib"
+  #
+  tar xJf gmp-5.0.5.tar.xz
+  cd gmp-5.0.5
+  ./configure --prefix=$INSTDIR
+  make $MAKEOPTS install
+  cd ..
   #
   tar xzfm miniupnpc-1.6.tar.gz
   cd miniupnpc-1.6

@@ -88,6 +88,7 @@ void RunTest(const TestVector &test) {
         // Test public key
         CBitcoinExtPubKey b58pubkey; b58pubkey.SetKey(pubkey);
         BOOST_CHECK(b58pubkey.ToString() == derive.pub);
+#ifndef USE_SECP256K1
         // Derive new keys
         CExtKey keyNew;
         BOOST_CHECK(key.Derive(keyNew, derive.nChild));
@@ -100,6 +101,9 @@ void RunTest(const TestVector &test) {
         }
         key = keyNew;
         pubkey = pubkeyNew;
+#else
+        break;
+#endif
     }
 }
 
