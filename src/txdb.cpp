@@ -70,6 +70,10 @@ bool CCoinsViewDB::BatchWrite(const std::map<uint256, CCoins> &mapCoins, CBlockI
 }
 
 CBlockTreeDB::CBlockTreeDB(size_t nCacheSize, bool fMemory, bool fWipe) : CLevelDB(GetDataDir() / "blocks" / "index", nCacheSize, fMemory, fWipe) {
+    if (!Read('S', salt)) {
+        salt = GetRandHash();
+        Write('S', salt);
+    }
 }
 
 bool CBlockTreeDB::WriteBlockIndex(const CDiskBlockIndex& blockindex)
@@ -116,8 +120,8 @@ bool CBlockTreeDB::ReadLastBlockFile(int &nFile) {
 }
 
 bool CCoinsViewDB::GetStats(CCoinsStats &stats) {
-    leveldb::Iterator *pcursor = db.NewIterator();
-    pcursor->SeekToFirst();
+    CLevelDBIterator *pcursor = db.NewIterator();
+    pcursor->Seek('c');
 
     CHashWriter ss(SER_GETHASH, PROTOCOL_VERSION);
     stats.hashBlock = GetBestBlock()->GetBlockHash();
@@ -125,22 +129,10 @@ bool CCoinsViewDB::GetStats(CCoinsStats &stats) {
     int64_t nTotalAmount = 0;
     while (pcursor->Valid()) {
         boost::this_thread::interruption_point();
-        try {
-            leveldb::Slice slKey = pcursor->key();
-            CDataStream ssKey(slKey.data(), slKey.data()+slKey.size(), SER_DISK, CLIENT_VERSION);
-            char chType;
-            ssKey >> chType;
-            if (chType == 'c') {
-                leveldb::Slice slValue = pcursor->value();
-                CDataStream ssValue(slValue.data(), slValue.data()+slValue.size(), SER_DISK, CLIENT_VERSION);
-                CCoins coins;
-                ssValue >> coins;
-                uint256 txhash;
-                ssKey >> txhash;
-                ss << txhash;
-                ss << VARINT(coins.nVersion);
-                ss << (coins.fCoinBase ? 'c' : 'n'); 
-                ss << VARINT(coins.nHeight);
+        std::pair<char, uint256> key;
+        CCoins coins;
+        if (pcursor->GetKey(key) && key.first == 'c') {
+            if (pcursor->GetValue(coins)) {
                 stats.nTransactions++;
                 for (unsigned int i=0; i<coins.vout.size(); i++) {
                     const CTxOut &out = coins.vout[i];
@@ -151,13 +143,15 @@ bool CCoinsViewDB::GetStats(CCoinsStats &stats) {
                         nTotalAmount += out.nValue;
                     }
                 }
-                stats.nSerializedSize += 32 + slValue.size();
+                stats.nSerializedSize += 32 + pcursor->GetKeySize();
                 ss << VARINT(0);
+            } else {
+                return error("CCoinsViewDB::GetStats() : unable to read value");
             }
-            pcursor->Next();
-        } catch (std::exception &e) {
-            return error("%s() : deserialize error", __PRETTY_FUNCTION__);
+        } else {
+            break;
         }
+        pcursor->Next();
     }
     delete pcursor;
     stats.nHeight = GetBestBlock()->nHeight;
@@ -177,6 +171,40 @@ bool CBlockTreeDB::WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos>
     return WriteBatch(batch);
 }
 
+bool CBlockTreeDB::ReadAddrIndex(uint160 addrid, std::vector<CExtDiskTxPos> &list) {
+    CLevelDBIterator *iter = NewIterator();
+    uint64_t lookupid;
+    {
+        CHashWriter ss(SER_GETHASH, 0);
+        ss << salt;
+        ss << addrid;
+        lookupid = ss.GetHash().Get64(0);
+    }
+    iter->Seek(make_pair('a', lookupid));
+    while (iter->Valid()) {
+        std::pair<std::pair<char, uint64_t>, CExtDiskTxPos> key;
+        if (iter->GetKey(key) && key.first.first == 'a' && key.first.second == lookupid) {
+            list.push_back(key.second);
+        } else {
+            break;
+        }
+        iter->Next();
+    }
+    return true;
+}
+
+bool CBlockTreeDB::AddAddrIndex(const std::vector<std::pair<uint160, CExtDiskTxPos> > &list) {
+    unsigned char foo[0];
+    CLevelDBBatch batch;
+    for (std::vector<std::pair<uint160, CExtDiskTxPos> >::const_iterator it=list.begin(); it!=list.end(); it++) {
+        CHashWriter ss(SER_GETHASH, 0);
+        ss << salt;
+        ss << it->first;
+        batch.Write(make_pair(make_pair('a', ss.GetHash().Get64(0)), it->second), FLATDATA(foo));
+    }
+    return WriteBatch(batch);
+}
+
 bool CBlockTreeDB::WriteFlag(const std::string &name, bool fValue) {
     return Write(std::make_pair('F', name), fValue ? '1' : '0');
 }
@@ -191,26 +219,17 @@ bool CBlockTreeDB::ReadFlag(const std::string &name, bool &fValue) {
 
 bool CBlockTreeDB::LoadBlockIndexGuts()
 {
-    leveldb::Iterator *pcursor = NewIterator();
+    CLevelDBIterator *pcursor = NewIterator();
 
-    CDataStream ssKeySet(SER_DISK, CLIENT_VERSION);
-    ssKeySet << make_pair('b', uint256(0));
-    pcursor->Seek(ssKeySet.str());
+    pcursor->Seek(make_pair('b', uint256(0)));
 
     // Load mapBlockIndex
     while (pcursor->Valid()) {
         boost::this_thread::interruption_point();
-        try {
-            leveldb::Slice slKey = pcursor->key();
-            CDataStream ssKey(slKey.data(), slKey.data()+slKey.size(), SER_DISK, CLIENT_VERSION);
-            char chType;
-            ssKey >> chType;
-            if (chType == 'b') {
-                leveldb::Slice slValue = pcursor->value();
-                CDataStream ssValue(slValue.data(), slValue.data()+slValue.size(), SER_DISK, CLIENT_VERSION);
-                CDiskBlockIndex diskindex;
-                ssValue >> diskindex;
-
+        std::pair<char, uint256> key;
+        if (pcursor->GetKey(key) && key.first == 'b') {
+            CDiskBlockIndex diskindex;
+            if (pcursor->GetValue(diskindex)) {
                 // Construct block index object
                 CBlockIndex* pindexNew = InsertBlockIndex(diskindex.GetBlockHash());
                 pindexNew->pprev          = InsertBlockIndex(diskindex.hashPrev);
@@ -235,10 +254,10 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
 
                 pcursor->Next();
             } else {
-                break; // if shutdown requested or finished loading block index
+                return error("LoadBlockIndex() : failed to read value");
             }
-        } catch (std::exception &e) {
-            return error("%s() : deserialize error", __PRETTY_FUNCTION__);
+        } else {
+            break;
         }
     }
     delete pcursor;
