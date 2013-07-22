@@ -12,8 +12,8 @@
 #define NOMINMAX
 #endif
 #define FD_SETSIZE 1024 // max number of fds in fd_set
-#include <mswsock.h>
 #include <winsock2.h>
+#include <mswsock.h>
 #include <ws2tcpip.h>
 #else
 #include <arpa/inet.h>
