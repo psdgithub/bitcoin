@@ -110,6 +110,7 @@ contains(BITCOIN_NEED_QT_PLUGINS, 1) {
     QTPLUGIN += qcncodecs qjpcodecs qtwcodecs qkrcodecs qtaccessiblewidgets
 }
 
+!win32 {
 INCLUDEPATH += src/secp256k1/include
 LIBS += $$PWD/src/secp256k1/libsecp256k1.a -lgmp
 QMAKE_CXXFLAGS *= -DUSE_SECP256K1
@@ -119,6 +120,7 @@ gensecp256k1.depends = FORCE
 PRE_TARGETDEPS += $$PWD/src/secp256k1/libsecp256k1.a
 QMAKE_EXTRA_TARGETS += gensecp256k1
 QMAKE_CLEAN += $$PWD/src/secp256k1/libsecp256k1.a
+}
 
 contains(USE_SYSTEM_LEVELDB, 1) {
     LIBS += -lleveldb
