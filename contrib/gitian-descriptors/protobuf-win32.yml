@@ -27,7 +27,7 @@ script: |
   cp src/protoc host
   # Now recompile with the mingw cross-compiler:
   make distclean
-  ./configure --enable-shared=no --disable-dependency-tracking --with-protoc=$(pwd)/host/protoc CXX=i586-mingw32msvc-g++ CC=i586-mingw32msvc-gcc CXXFLAGS=-frandom-seed=11 AR=i586-mingw32msvc-ar STRIP=i586-mingw32msvc-strip RANLIB=i586-mingw32msvc-ranlib OBJDUMP=i586-mingw32msvc-objdump LD=i586-mingw32msvc-ld
+  ./configure --enable-shared=no --disable-dependency-tracking --with-protoc=$(pwd)/host/protoc --host=i586-mingw32msvc CXXFLAGS=-frandom-seed=11
   make
   cd ..
   mkdir -p protobuf-win32
@@ -37,4 +37,3 @@ script: |
   cp -r protobuf-2.5.0/src/google protobuf-win32/
   zip -r $OUTDIR/protobuf-win32-2.5.0-gitian-r1.zip protobuf-win32
   # Kill wine processes as gitian won't figure out we are done otherwise
-  killall wineserver services.exe explorer.exe winedevice.exe
