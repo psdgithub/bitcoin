@@ -685,12 +685,19 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTransaction &tx)
 }
 
 
-bool CTxMemPool::remove(CTransaction &tx)
+bool CTxMemPool::remove(CTransaction &tx, bool fRecursive)
 {
     // Remove transaction from memory pool
     {
         LOCK(cs);
         uint256 hash = tx.GetHash();
+        if (fRecursive) {
+            for (unsigned int i = 0; i < tx.vout.size(); i++) {
+                std::map<COutPoint, CInPoint>::iterator it = mapNextTx.find(COutPoint(hash, i));
+                if (it != mapNextTx.end())
+                    remove(*it->second.ptx, true);
+            }
+        }
         if (mapTx.count(hash))
         {
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
@@ -1591,7 +1598,10 @@ bool static Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
 
     // Resurrect memory transactions that were in the disconnected branch
     BOOST_FOREACH(CTransaction& tx, vResurrect)
-        tx.AcceptToMemoryPool_new(txdb, true, false, NULL);
+    {
+        if (!tx.AcceptToMemoryPool_new(txdb, true, false, NULL))
+            mempool.remove(tx, true);
+    }
 
     // Delete redundant memory transactions that are in the connected branch
     BOOST_FOREACH(CTransaction& tx, vDelete)
