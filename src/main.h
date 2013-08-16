@@ -678,7 +678,7 @@ public:
      @return	Returns true if all inputs are in txdb or mapTestPool
      */
     bool FetchInputs(CTxDB& txdb, const std::map<uint256, CTxIndex>& mapTestPool,
-                     bool fBlock, bool fMiner, MapPrevTx& inputsRet, bool& fInvalid);
+                     bool fBlock, bool fMiner, MapPrevTx& inputsRet, bool& fInvalid) const;
 
     /** Sanity check previous transactions, then, if all checks succeed,
         mark them as spent by this transaction.
@@ -694,19 +694,19 @@ public:
     */
     bool ConnectInputs(MapPrevTx inputs,
                        std::map<uint256, CTxIndex>& mapTestPool, const CDiskTxPos& posThisTx,
-                       const CBlockIndex* pindexBlock, bool fBlock, bool fMiner, bool fStrictPayToScriptHash=true);
+                       const CBlockIndex* pindexBlock, bool fBlock, bool fMiner, bool fStrictPayToScriptHash=true) const;
     bool ClientConnectInputs();
     bool CheckTransaction() const;
     // AcceptToMemoryPool(txdb, fCheckInputs=true, pfMissingInputs=NULL) => CTxMemPool_accept(txdb, fCheckInputs, ?, pfMissingInputs)
-    bool CTxMemPool_accept(CTxDB& txdb, bool fCheckInputs, bool fLimitFree, bool* pfMissingInputs);
+    bool CTxMemPool_accept(CTxDB& txdb, bool fCheckInputs, bool fLimitFree, bool* pfMissingInputs) const;
 
     // Try to accept this transaction into the memory pool
     // AcceptToMemoryPool(fCheckInputs=true, pfMissingInputs=NULL) => AcceptToMemoryPool_new(fCheckInputs, ?, pfMissingInputs)
-    bool AcceptToMemoryPool_new(bool fCheckInputs=true, bool fLimitFree = true, bool* pfMissingInputs=NULL);
+    bool AcceptToMemoryPool_new(bool fCheckInputs=true, bool fLimitFree = true, bool* pfMissingInputs=NULL) const;
 
 protected:
     const CTxOut& GetOutputFor(const CTxIn& input, const MapPrevTx& inputs) const;
-    bool AddToMemoryPoolUnchecked();
+    bool AddToMemoryPoolUnchecked() const;
 public:
     bool RemoveFromMemoryPool();
 };
