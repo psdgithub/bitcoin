@@ -621,7 +621,7 @@ public:
      @return	Returns true if all inputs are in txdb or mapTestPool
      */
     bool FetchInputs(CTxDB& txdb, const std::map<uint256, CTxIndex>& mapTestPool,
-                     bool fBlock, bool fMiner, MapPrevTx& inputsRet, bool& fInvalid);
+                     bool fBlock, bool fMiner, MapPrevTx& inputsRet, bool& fInvalid) const;
 
     /** Sanity check previous transactions, then, if all checks succeed,
         mark them as spent by this transaction.
@@ -637,13 +637,13 @@ public:
      */
     bool ConnectInputs(MapPrevTx inputs,
                        std::map<uint256, CTxIndex>& mapTestPool, const CDiskTxPos& posThisTx,
-                       const CBlockIndex* pindexBlock, bool fBlock, bool fMiner, bool fStrictPayToScriptHash=true);
+                       const CBlockIndex* pindexBlock, bool fBlock, bool fMiner, bool fStrictPayToScriptHash=true) const;
     bool ClientConnectInputs();
     bool CheckTransaction() const;
 
     // Try to accept this transaction into the memory pool
     // AcceptToMemoryPool(txdb, fCheckInputs=true, pfMissingInputs=NULL) => AcceptToMemoryPool_new(txdb, fCheckInputs, ?, pfMissingInputs)
-    bool AcceptToMemoryPool_new(CTxDB& txdb, bool fCheckInputs=true, bool fLimitFree = true, bool* pfMissingInputs=NULL);
+    bool AcceptToMemoryPool_new(CTxDB& txdb, bool fCheckInputs=true, bool fLimitFree = true, bool* pfMissingInputs=NULL) const;
 
 protected:
     const CTxOut& GetOutputFor(const CTxIn& input, const MapPrevTx& inputs) const;
@@ -1364,9 +1364,9 @@ public:
     std::map<COutPoint, CInPoint> mapNextTx;
 
     // accept(txdb, tx, fCheckInputs, pfMissingInputs) => accept_new(txdb, tx, fCheckInputs, ?, pfMissingInputs)
-    bool accept_new(CTxDB& txdb, CTransaction &tx,
+    bool accept_new(CTxDB& txdb, const CTransaction &tx,
                 bool fCheckInputs, bool fLimitFree, bool* pfMissingInputs);
-    bool addUnchecked(const uint256& hash, CTransaction &tx);
+    bool addUnchecked(const uint256& hash, const CTransaction &tx);
     bool remove(CTransaction &tx);
     void clear();
     void queryHashes(std::vector<uint256>& vtxid);
