@@ -649,6 +649,14 @@ bool CTxMemPool::accept(CValidationState &state, CTransaction &tx, bool fCheckIn
     if ((int64)tx.nLockTime > std::numeric_limits<int>::max())
         return error("CTxMemPool::accept() : not accepting nLockTime beyond 2038 yet");
 
+    const char *blacklistname;
+    BOOST_FOREACH(const CTxOut& txout, tx.vout)
+    {
+        blacklistname = txout.scriptPubKey.IsBlacklisted();
+        if (blacklistname)
+            return error("CTxMemPool::accept() : ignoring transaction %s with blacklisted output (%s)", tx.GetHash().ToString().c_str(), blacklistname);
+    }
+
     // Rather not work on nonstandard transactions (unless -testnet)
     if (!fTestNet && !tx.IsStandard())
         return error("CTxMemPool::accept() : nonstandard transaction type");
