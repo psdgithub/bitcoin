@@ -749,6 +749,14 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                          error("AcceptToMemoryPool : nonstandard transaction: %s", reason),
                          REJECT_NONSTANDARD, reason);
 
+    const char *blacklistname;
+    BOOST_FOREACH(const CTxOut& txout, tx.vout)
+    {
+        blacklistname = txout.scriptPubKey.IsBlacklisted();
+        if (blacklistname)
+            return error("AcceptToMemoryPool : ignoring transaction %s with blacklisted output (%s)", tx.GetHash().ToString().c_str(), blacklistname);
+    }
+
     // is it already in the memory pool?
     uint256 hash = tx.GetHash();
     if (pool.exists(hash))
