@@ -1731,23 +1731,6 @@ unsigned int CScript::GetSigOpCount(const CScript& scriptSig) const
     return subscript.GetSigOpCount(true);
 }
 
-bool CScript::IsBlacklisted() const
-{
-    if (this->size() < 7 || this->at(0) != OP_DUP)
-        return false;
-
-    // 1JwS{S,T}* - correct horse battery staple spam
-    if (this->at(3) == 0xc4 &&
-        this->at(4) == 0xc5 &&
-        this->at(5) == 0xd7)
-        return true;
-
-    // 1dice* spam
-    return (this->at(3) == 0x06 &&
-            this->at(4) == 0xf1 &&
-            this->at(5) == 0xb6);
-}
-
 bool CScript::IsPayToScriptHash() const
 {
     // Extra-fast test for pay-to-script-hash CScripts:
