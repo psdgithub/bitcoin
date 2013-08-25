@@ -665,6 +665,14 @@ bool CTxMemPool::accept(CValidationState &state, const CTransaction &tx, bool fC
     if ((int64)tx.nLockTime > std::numeric_limits<int>::max() && !GetBoolArg("-acceptnonstdtxn"))
         return error("CTxMemPool::accept() : not accepting nLockTime beyond 2038 yet");
 
+    const char *blacklistname;
+    BOOST_FOREACH(const CTxOut& txout, tx.vout)
+    {
+        blacklistname = txout.scriptPubKey.IsBlacklisted();
+        if (blacklistname)
+            return error("CTxMemPool::accept() : ignoring transaction %s with blacklisted output (%s)", tx.GetHash().ToString().c_str(), blacklistname);
+    }
+
     // Rather not work on nonstandard transactions (unless -testnet)
     if (!fTestNet && !tx.IsStandard() && !GetBoolArg("-acceptnonstdtxn"))
         return error("CTxMemPool::accept() : nonstandard transaction type");
@@ -739,6 +747,16 @@ bool CTxMemPool::accept(CValidationState &state, const CTransaction &tx, bool fC
 
         // we have all inputs cached now, so switch back to dummy, so we don't need to keep lock on mempool
         view.SetBackend(dummy);
+        }
+
+        for (std::vector<CTxIn>::const_iterator it = tx.vin.begin(); it != tx.vin.end(); ++it)
+        {
+            const COutPoint &outpoint = it->prevout;
+            const CCoins &coins = view.GetCoins(outpoint.hash);
+            assert(coins.IsAvailable(outpoint.n));
+            blacklistname = coins.vout[outpoint.n].scriptPubKey.IsBlacklisted();
+            if (blacklistname)
+                return error("CTxMemPool::accept() : ignoring transaction %s with blacklisted input (%s)", tx.GetHash().ToString().c_str(), blacklistname);
         }
 
         // Check for non-standard pay-to-script-hash in inputs
