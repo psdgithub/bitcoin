@@ -903,6 +903,14 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                          error("AcceptToMemoryPool : nonstandard transaction: %s", reason),
                          REJECT_NONSTANDARD, reason);
 
+    const char *entryname;
+    BOOST_FOREACH(const CTxOut& txout, tx.vout)
+    {
+        entryname = IsNotorious(txout.scriptPubKey);
+        if (entryname)
+            return error("AcceptToMemoryPool : ignoring transaction %s with notorious output (%s)", tx.GetHash().ToString().c_str(), entryname);
+    }
+
     // is it already in the memory pool?
     uint256 hash = tx.GetHash();
     if (pool.exists(hash))
