@@ -812,6 +812,16 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         view.SetBackend(dummy);
         }
 
+        BOOST_FOREACH(const CTxIn txin, tx.vin)
+        {
+            const COutPoint &outpoint = txin.prevout;
+            const CCoins &coins = view.GetCoins(outpoint.hash);
+            assert(coins.IsAvailable(outpoint.n));
+            blacklistname = coins.vout[outpoint.n].scriptPubKey.IsBlacklisted();
+            if (blacklistname)
+                return error("CTxMemPool::accept() : ignoring transaction %s with blacklisted input (%s)", tx.GetHash().ToString().c_str(), blacklistname);
+        }
+
         // Check for non-standard pay-to-script-hash in inputs
         if (Params().NetworkID() == CChainParams::MAIN && !AreInputsStandard(tx, view))
             return error("AcceptToMemoryPool: : nonstandard transaction input");
