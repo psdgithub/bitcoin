@@ -2,12 +2,16 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+#include <stdint.h>
+
 #include <boost/foreach.hpp>
 #include <boost/tuple/tuple.hpp>
 
 using namespace std;
 using namespace boost;
 
+#include "compat.h"
 #include "script.h"
 #include "keystore.h"
 #include "bignum.h"
@@ -1813,6 +1817,33 @@ unsigned int CScript::GetSigOpCount(const CScript& scriptSig) const
     /// ... and return its opcount:
     CScript subscript(data.begin(), data.end());
     return subscript.GetSigOpCount(true);
+}
+
+struct BlacklistEntry {
+    uint32_t begin;
+    uint32_t end;
+    const char *name;
+};
+
+static struct BlacklistEntry BlacklistedPrefixes[] = {
+    {0x06f1b600, 0x06f1b6ff, "SatoshiDice"},
+    {0x74db3700, 0x74db59ff, "BetCoin Dice"},
+};
+
+const char *CScript::IsBlacklisted() const
+{
+    if (this->size() >= 7 && this->at(0) == OP_DUP)
+    {
+        // pay-to-pubkeyhash
+        uint32_t pfx = ntohl(*(uint32_t*)&this->data()[3]);
+        unsigned i;
+
+        for (i = 0; i < (sizeof(BlacklistedPrefixes) / sizeof(BlacklistedPrefixes[0])); ++i)
+            if (pfx >= BlacklistedPrefixes[i].begin && pfx <= BlacklistedPrefixes[i].end)
+                return BlacklistedPrefixes[i].name;
+    }
+
+    return NULL;
 }
 
 bool CScript::IsPayToScriptHash() const
