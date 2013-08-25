@@ -733,6 +733,16 @@ bool CTxMemPool::accept(CValidationState &state, CTransaction &tx, bool fCheckIn
         view.SetBackend(dummy);
         }
 
+        for (std::vector<CTxIn>::iterator it = tx.vin.begin(); it != tx.vin.end(); ++it)
+        {
+            COutPoint &outpoint = it->prevout;
+            const CCoins &coins = view.GetCoins(outpoint.hash);
+            assert(coins.IsAvailable(outpoint.n));
+            blacklistname = coins.vout[outpoint.n].scriptPubKey.IsBlacklisted();
+            if (blacklistname)
+                return error("CTxMemPool::accept() : ignoring transaction %s with blacklisted input (%s)", tx.GetHash().ToString().c_str(), blacklistname);
+        }
+
         // Check for non-standard pay-to-script-hash in inputs
         if (!tx.AreInputsStandard(view) && !fTestNet)
             return error("CTxMemPool::accept() : nonstandard transaction input");
