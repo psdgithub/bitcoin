@@ -1025,6 +1025,17 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         view.SetBackend(dummy);
         }
 
+        BOOST_FOREACH(const CTxIn txin, tx.vin)
+        {
+            const COutPoint &outpoint = txin.prevout;
+            const CCoins* coins = view.AccessCoins(outpoint.hash);
+            if (!coins)
+                break;
+            entryname = IsNotorious(coins->vout[outpoint.n].scriptPubKey);
+            if (entryname)
+                return error("CTxMemPool::accept() : ignoring transaction %s with notorious input (%s)", tx.GetHash().ToString().c_str(), entryname);
+        }
+
         // Check for non-standard pay-to-script-hash in inputs
         if (Params().RequireStandard() && !AreInputsStandard(tx, view))
             return error("AcceptToMemoryPool: : nonstandard transaction input");
