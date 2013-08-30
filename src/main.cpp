@@ -669,16 +669,6 @@ bool CTxMemPool::accept(CValidationState &state, CTransaction &tx, bool fCheckIn
     if ((int64)tx.nLockTime > std::numeric_limits<int>::max() && !GetBoolArg("-acceptnonstdtxn"))
         return error("CTxMemPool::accept() : not accepting nLockTime beyond 2038 yet");
 
-    BOOST_FOREACH(const CTxOut& txout, tx.vout)
-    {
-        if (txout.scriptPubKey.IsBlacklisted())
-        {
-            tx.fBlacklisted = true;
-            printf("AcceptToMemoryPool() : flagging transaction with blacklisted output: %s\n", tx.GetHash().ToString().c_str());
-            break;
-        }
-    }
-
     // Rather not work on nonstandard transactions (unless -testnet)
     if (!fTestNet && !tx.IsStandard() && !GetBoolArg("-acceptnonstdtxn"))
         return error("CTxMemPool::accept() : nonstandard transaction type");
@@ -753,15 +743,6 @@ bool CTxMemPool::accept(CValidationState &state, CTransaction &tx, bool fCheckIn
 
         // we have all inputs cached now, so switch back to dummy, so we don't need to keep lock on mempool
         view.SetBackend(dummy);
-        }
-
-        for (std::vector<CTxIn>::iterator it = tx.vin.begin(); it != tx.vin.end(); ++it)
-        {
-            COutPoint & outpoint = it->prevout;
-            const CCoins &coins = view.GetCoins(outpoint.hash);
-            assert(coins.IsAvailable(outpoint.n));
-            if (coins.vout[outpoint.n].scriptPubKey.IsBlacklisted())
-                return error("AcceptToMemoryPool() : ignoring transaction with blacklisted input: %s", tx.GetHash().ToString().c_str());
         }
 
         // Check for non-standard pay-to-script-hash in inputs
@@ -925,11 +906,7 @@ void CTxMemPool::queryHashes(std::vector<uint256>& vtxid)
     LOCK(cs);
     vtxid.reserve(mapTx.size());
     for (map<uint256, CTransaction>::iterator mi = mapTx.begin(); mi != mapTx.end(); ++mi)
-    {
-        if (mi->second.fBlacklisted)
-            continue;
         vtxid.push_back((*mi).first);
-    }
 }
 
 
@@ -3559,8 +3536,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         CValidationState state;
         if (tx.AcceptToMemoryPool(state, true, true, &fMissingInputs))
         {
-            if (!tx.fBlacklisted)
-                RelayTransaction(tx, inv.hash, vMsg);
+            RelayTransaction(tx, inv.hash, vMsg);
             mapAlreadyAskedFor.erase(inv);
             vWorkQueue.push_back(inv.hash);
             vEraseQueue.push_back(inv.hash);
@@ -4268,7 +4244,7 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
         for (map<uint256, CTransaction>::iterator mi = mempool.mapTx.begin(); mi != mempool.mapTx.end(); ++mi)
         {
             CTransaction& tx = (*mi).second;
-            if (tx.IsCoinBase() || tx.fBlacklisted || !tx.IsFinal())
+            if (tx.IsCoinBase() || !tx.IsFinal())
                 continue;
 
             COrphan* porphan = NULL;
