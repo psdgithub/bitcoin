@@ -163,7 +163,8 @@ HEADERS += src/qt/bitcoingui.h \
     src/qt/qtipcserver.h \
     src/allocators.h \
     src/ui_interface.h \
-    src/netbase.h
+    src/netbase.h \
+    src/limitedmap.h
 
 SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/qt/transactiontablemodel.cpp \

@@ -2494,7 +2494,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
     {
         vector<CInv> vInv;
         vRecv >> vInv;
-        if (vInv.size() > 50000)
+        if (vInv.size() > MAX_INV_SZ)
         {
             pfrom->Misbehaving(20);
             return error("message inv size() = %d", vInv.size());
@@ -2545,7 +2545,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
     {
         vector<CInv> vInv;
         vRecv >> vInv;
-        if (vInv.size() > 50000)
+        if (vInv.size() > MAX_INV_SZ)
         {
             pfrom->Misbehaving(20);
             return error("message getdata size() = %d", vInv.size());
@@ -3152,7 +3152,6 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
                     vGetData.clear();
                 }
             }
-            mapAlreadyAskedFor[inv] = nNow;
             pto->mapAskFor.erase(pto->mapAskFor.begin());
         }
         if (!vGetData.empty())
