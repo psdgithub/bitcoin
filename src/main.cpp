@@ -1777,7 +1777,8 @@ bool CBlock::AcceptBlock()
             (fTestNet && CBlockIndex::IsSuperMajority(2, pindexPrev, 51, 100)))
         {
             CScript expect = CScript() << nHeight;
-            if (!std::equal(expect.begin(), expect.end(), vtx[0].vin[0].scriptSig.begin()))
+            if (vtx[0].vin[0].scriptSig.size() < expect.size() ||
+                !std::equal(expect.begin(), expect.end(), vtx[0].vin[0].scriptSig.begin()))
                 return error("AcceptBlock() : block height mismatch in coinbase");
         }
     }
