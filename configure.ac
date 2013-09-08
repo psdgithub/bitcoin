@@ -625,7 +625,7 @@ fi
 AC_LANG_POP
 
 if test "x$use_ccache" != "xno"; then
-  AC_MSG_CHECKING(if ccache should be enabled)
+  AC_MSG_CHECKING(if ccache should be used)
   if test x$CCACHE = x; then
     if test "x$use_ccache" = "xyes"; then
       AC_MSG_ERROR([ccache not found.]);
@@ -642,7 +642,7 @@ if test "x$use_ccache" != "xno"; then
 fi
 
 dnl enable ipv6 support
-AC_MSG_CHECKING([if ipv6 should be enabled])
+AC_MSG_CHECKING([whether to build with support for IPv6])
 if test x$have_ipv6 = xno; then
   if test x$use_ipv6 = xyes; then
      AC_MSG_ERROR("ipv6 requested but cannot be built. use --disable-ipv6")
@@ -658,7 +658,7 @@ else
 fi
 
 dnl enable upnp support
-AC_MSG_CHECKING([if upnp should be enabled])
+AC_MSG_CHECKING([whether to build with support for UPnP])
 if test x$have_miniupnpc = xno; then
   if test x$use_upnp = xyes; then
      AC_MSG_ERROR("upnp requested but cannot be built. use --without-miniupnpc")
@@ -667,7 +667,7 @@ if test x$have_miniupnpc = xno; then
 else
   if test x$use_upnp != xno; then
     AC_MSG_RESULT(yes)
-    AC_MSG_CHECKING([if upnp should be on by default])
+    AC_MSG_CHECKING([whether to build with UPnP enabled by default])
     use_upnp=yes
     upnp_setting=0
     if test x$use_upnp_default != xno; then
@@ -684,7 +684,7 @@ else
   fi
 fi
 
-AC_MSG_CHECKING([if bitcoind should be enabled])
+AC_MSG_CHECKING([whether to build bitcoind])
 if test "x$build_bitcoind" != "xno"; then
   build_bitcoind=yes
 fi
@@ -692,7 +692,7 @@ AM_CONDITIONAL([BUILD_BITCOIND], [test x$build_bitcoind = xyes])
 AC_MSG_RESULT($build_bitcoind)
 
 dnl enable qt support
-AC_MSG_CHECKING([if bitcoin-qt should be enabled])
+AC_MSG_CHECKING([whether to build bitcoin-qt])
 BITCOIN_QT_CHECK([
   use_qt=yes
   BUILD_QT=qt
@@ -705,7 +705,7 @@ dnl these are only used when qt is enabled
 if test x$use_qt = xyes; then
 
   dnl enable dbus support
-  AC_MSG_CHECKING([if dbus should be enabled])
+  AC_MSG_CHECKING([whether to build bitcoin-qt with support for D-Bus])
   if test x$use_dbus != xno; then
     use_dbus=yes
     AC_DEFINE([USE_DBUS],[1],[Define if dbus support should be compiled in])
@@ -715,7 +715,7 @@ if test x$use_qt = xyes; then
   AC_MSG_RESULT($use_dbus)
 
   dnl enable qr support
-  AC_MSG_CHECKING([if qr should be enabled])
+  AC_MSG_CHECKING([whether to build bitcoin-qt with support for QR codes])
   if test x$have_qrencode = xno; then
     if test x$use_qr == xyes; then
      AC_MSG_ERROR("QR support requested but cannot be built. use --without-qrencode")
@@ -731,13 +731,21 @@ if test x$use_qt = xyes; then
     fi
   fi
 
+  AC_MSG_CHECKING([whether to build test_bitcoin-qt])
   if test x$use_tests$have_qt_test = xyesyes; then
+    AC_MSG_RESULT([yes])
     BUILD_TEST_QT="test"
+  else
+    AC_MSG_RESULT([no])
   fi
 fi
 
+AC_MSG_CHECKING([whether to build test_bitcoin])
 if test x$use_tests = xyes; then
+  AC_MSG_RESULT([yes])
   BUILD_TEST="test"
+else
+  AC_MSG_RESULT([no])
 fi
 
 if test "x$use_tests$build_bitcoind$use_qt" = "xnonono"; then
