@@ -6,7 +6,11 @@ endif
 
 noinst_LIBRARIES = libbitcoin.a
 
-bin_PROGRAMS = bitcoind
+bin_PROGRAMS =
+
+if BUILD_BITCOIND
+  bin_PROGRAMS += bitcoind
+endif
 
 SUBDIRS = . $(BUILD_QT) $(BUILD_TEST)
 DIST_SUBDIRS = . qt test

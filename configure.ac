@@ -65,6 +65,8 @@ AC_ARG_ENABLE([ipv6],
   [use_ipv6=$enableval],
   [use_ipv6=yes])
 
+build_bitcoind=yes
+
 dnl enable qt support
 AC_ARG_WITH([qt],
   [AS_HELP_STRING([--with-qt],
@@ -659,6 +661,13 @@ else
   fi
 fi
 
+AC_MSG_CHECKING([if bitcoind should be enabled])
+if test "x$build_bitcoind" != "xno"; then
+  build_bitcoind=yes
+fi
+AM_CONDITIONAL([BUILD_BITCOIND], [test x$build_bitcoind = xyes])
+AC_MSG_RESULT($build_bitcoind)
+
 dnl enable qt support
 AC_MSG_CHECKING([if qt should be enabled])
 BITCOIN_QT_CHECK([
@@ -667,7 +676,6 @@ BITCOIN_QT_CHECK([
 ],[
   use_qt=no
 ])
-
 AC_MSG_RESULT($use_qt)
 
 dnl these are only used when qt is enabled
