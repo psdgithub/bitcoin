@@ -66,13 +66,36 @@ AC_ARG_ENABLE([ipv6],
   [use_ipv6=yes])
 
 build_bitcoind=yes
+use_qt=auto
+AC_ARG_ENABLE([frontends],
+  [AS_HELP_STRING(
+    [--enable-frontends[=ARG]],
+    [specify comma-delimited list of frontends to build; supported: bitcoind and bitcoin-qt (default is both)]
+  )],[
+    if test "x$enableval" != "xyes"; then
+      frontends=`IFS=,; echo $enableval`
+      build_bitcoind=no
+      use_qt=no
+      for frontend in $frontends; do
+        case "$frontend" in
+        bitcoind)
+          build_bitcoind=yes
+          ;;
+        bitcoin-qt)
+          use_qt=yes
+          ;;
+        no)
+          true  # --disable-frontends makes sense with tests only
+          ;;
+        *)
+          AC_MSG_ERROR([Unrecognised frontend: $frontend])
+          ;;
+        esac
+      done
+    fi
+  ]
+)
 
-dnl enable qt support
-AC_ARG_WITH([qt],
-  [AS_HELP_STRING([--with-qt],
-  [enable qt (default is yes)])],
-  [use_qt=$withval],
-  [use_qt=auto])
 AC_DEFUN([BITCOIN_QT_FAIL],[
   if test "x$use_qt" = "xauto"; then
     AC_MSG_WARN([$1; bitcoin-qt frontend will not be built])
@@ -669,7 +692,7 @@ AM_CONDITIONAL([BUILD_BITCOIND], [test x$build_bitcoind = xyes])
 AC_MSG_RESULT($build_bitcoind)
 
 dnl enable qt support
-AC_MSG_CHECKING([if qt should be enabled])
+AC_MSG_CHECKING([if bitcoin-qt should be enabled])
 BITCOIN_QT_CHECK([
   use_qt=yes
   BUILD_QT=qt
@@ -715,6 +738,10 @@ fi
 
 if test x$use_tests = xyes; then
   BUILD_TEST="test"
+fi
+
+if test "x$use_tests$build_bitcoind$use_qt" = "xnonono"; then
+  AC_MSG_ERROR([No targets! Please specify at least one frontend (with --enable-frontends=bitcoind,bitcoin-qt) or --enable-tests])
 fi
 
 AM_CONDITIONAL([TARGET_DARWIN], [test x$TARGET_OS = xdarwin])
