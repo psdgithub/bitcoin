@@ -22,6 +22,11 @@ AH_BOTTOM([#endif //BITCOIN_CONFIG_H])
 m4_include([pkg.m4])
 
 dnl reset CXXFLAGS if empty (autoconf adds its own defaults otherwise)
+if test "x${CXXFLAGS+set}" = "xset"; then
+  CXXFLAGS_overridden=yes
+else
+  CXXFLAGS_overridden=no
+fi
 : ${CFLAGS=""}
 : ${CXXFLAGS=""}
 
@@ -179,7 +184,9 @@ PKG_PROG_PKG_CONFIG
 ## TODO: Remove these hard-coded paths and flags. They are here for the sake of
 ##       compatibility with the legacy buildsystem.
 ##
-CXXFLAGS="$CXXFLAGS -Wall -Wextra -Wformat -Wformat-security -Wno-unused-parameter"
+if test "x$CXXFLAGS_overridden" = "xno"; then
+    CXXFLAGS="$CXXFLAGS -Wall -Wextra -Wformat -Wformat-security -Wno-unused-parameter"
+fi
 CPPFLAGS="$CPPFLAGS -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO"
 DEBUG_CXXFLAGS="-O1 -ggdb"
 RELEASE_CXXFLAGS="-O2 -g0"
@@ -220,7 +227,9 @@ case $host in
 
      CPPFLAGS="$CPPFLAGS -D_MT -DWIN32 -D_WINDOWS -DBOOST_THREAD_USE_LIB"
      LEVELDB_TARGET_FLAGS="TARGET_OS=OS_WINDOWS_CROSSCOMPILE"
-     CXXFLAGS="$CXXFLAGS -w"
+     if test "x$CXXFLAGS_overridden" = "xno"; then
+       CXXFLAGS="$CXXFLAGS -w"
+     fi
      ;;
   *darwin*)
      TARGET_OS=darwin
@@ -261,10 +270,12 @@ case $host in
      ;;
 esac
 
-if test x$use_debug == xyes; then
-  CXXFLAGS="$DEBUG_CXXFLAGS $CXXFLAGS"
-else
-  CXXFLAGS="$RELEASE_CXXFLAGS $CXXFLAGS"
+if test "x$CXXFLAGS_overridden" = "xno"; then
+  if test x$use_debug == xyes; then
+    CXXFLAGS="$DEBUG_CXXFLAGS $CXXFLAGS"
+  else
+    CXXFLAGS="$RELEASE_CXXFLAGS $CXXFLAGS"
+  fi
 fi
 
 if test x$use_comparison_tool != xno; then
