@@ -99,9 +99,9 @@ AC_DEFUN([BITCOIN_QT_PATH_PROGS],[
 
 dnl compile with full warnings and debugging symbols
 AC_ARG_ENABLE(debug,
-    AS_HELP_STRING([--enable-debug],[compile with debug symbols (default is yes)]),
+    AS_HELP_STRING([--enable-debug],[compile with debug symbols (default is no)]),
     [use_debug=$enableval],
-    [use_debug=yes])
+    [use_debug=no])
     AC_MSG_CHECKING([if compiling with debugging symbols])
 
 AC_ARG_ENABLE(tests,
