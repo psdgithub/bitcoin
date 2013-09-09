@@ -332,10 +332,22 @@ AC_TRY_COMPILE([#include <sys/socket.h>],
  [ AC_MSG_RESULT(no)]
 )
 
+dnl Check for leveldb, only if explicitly requested
 LEVELDB_CPPFLAGS=
 LIBLEVELDB=
 LIBMEMENV=
-AM_CONDITIONAL([EMBEDDED_LEVELDB],[true])
+AC_ARG_WITH([system-leveldb],
+  [AS_HELP_STRING([--with-system-leveldb],
+  [Build with system LevelDB (default is no; DANGEROUS; NOT SUPPORTED)])],
+  [system_leveldb=$withval],
+  [system_leveldb=no]
+)
+if test x$system_leveldb != xno; then
+  LEVELDB_CPPFLAGS=
+  LIBLEVELDB=-lleveldb
+  LIBMEMENV=-lmemenv
+fi
+AM_CONDITIONAL([EMBEDDED_LEVELDB],[test x$system_leveldb = xno])
 AC_SUBST(LEVELDB_CPPFLAGS)
 AC_SUBST(LIBLEVELDB)
 AC_SUBST(LIBMEMENV)
