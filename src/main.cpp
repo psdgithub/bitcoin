@@ -1501,12 +1501,12 @@ bool CBlock::DisconnectBlock(CValidationState &state, CBlockIndex *pindex, CCoin
         const CTransaction &tx = vtx[i];
         uint256 hash = tx.GetHash();
 
-        // check that all outputs are available
-        if (!view.HaveCoins(hash)) {
-            fClean = fClean && error("DisconnectBlock() : outputs still spent? database corrupted");
-            view.SetCoins(hash, CCoins());
-        }
-        CCoins &outs = view.GetCoins(hash);
+        // Check that all outputs are available and match the outputs in the block itself
+        // exactly. Note that transactions with only provably unspendable outputs won't
+        // have outputs available even in the block itself, so we handle that case
+        // specially with outsEmpty.
+        CCoins outsEmpty;
+        CCoins &outs = view.HaveCoins(hash) ? view.GetCoins(hash) : outsEmpty;
         outs.ClearUnspendable();
 
         CCoins outsBlock = CCoins(tx, pindex->nHeight);
