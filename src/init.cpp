@@ -278,9 +278,9 @@ std::string HelpMessage(HelpMessageMode hmm)
     strUsage += "  -spendzeroconfchange   " + _("Spend unconfirmed change when sending transactions (default: 1)") + "\n";
 #endif
     strUsage += "\n" + _("Block creation options:") + "\n";
-    strUsage += "  -blockminsize=<n>      " + _("Set minimum block size in bytes (default: 0)") + "\n";
-    strUsage += "  -blockmaxsize=<n>      " + strprintf(_("Set maximum block size in bytes (default: %d)"), DEFAULT_BLOCK_MAX_SIZE) + "\n";
-    strUsage += "  -blockprioritysize=<n> " + strprintf(_("Set maximum size of high-priority/low-fee transactions in bytes (default: %d)"), DEFAULT_BLOCK_PRIORITY_SIZE) + "\n";
+    strUsage += "  -blockminsize=<n>      " + _("Minimum block size in bytes") + "\n";
+    strUsage += "  -blockmaxsize=<n>      " + _("Maximum block size in bytes") + "\n";
+    strUsage += "  -blockprioritysize=<n> " + _("Maximum size of high-priority/low-fee transactions in bytes") + "\n";
 
     strUsage += "\n" + _("SSL options: (see the Bitcoin Wiki for SSL setup instructions)") + "\n";
     strUsage += "  -rpcssl                                  " + _("Use OpenSSL (https) for JSON-RPC connections") + "\n";
