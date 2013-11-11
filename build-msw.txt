@@ -52,7 +52,7 @@ classes that do the rote work of constructing all the UI elements.
 
 wxWidgets
 ---------
-DOS shell:
+MSYS shell:
 cd \wxWidgets-2.9.1-mgw\build\msw
 mingw32-make -f makefile.gcc
 
@@ -81,7 +81,7 @@ make
 
 Boost
 -----
-DOS prompt:
+MSYS shell:
 downloaded boost jam 3.1.18
 cd \boost-1.43.0-mgw
 bjam toolset=gcc --build-type=complete stage
@@ -92,7 +92,7 @@ builds fine with boost 1.43.0
 
 Bitcoin
 -------
-DOS prompt:
+MSYS shell:
 cd \bitcoin
 mingw32-make bitcoin.exe bitcoind.exe -f makefile.mingw
 strip bitcoin.exe
