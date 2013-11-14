@@ -2059,15 +2059,26 @@ public:
 
 
 
+enum MemPool_SPK_State {
+    MSS_UNSEEN  = 0,
+    MSS_SPENT   = 1,
+    MSS_CREATED = 2,
+    MSS_BOTH    = 3,
+};
+
+typedef std::map<uint160, enum MemPool_SPK_State> SPKStates_t;
+
 class CTxMemPool
 {
 public:
     mutable CCriticalSection cs;
     std::map<uint256, CTransaction> mapTx;
     std::map<COutPoint, CInPoint> mapNextTx;
+    std::map<uint256, SPKStates_t> mapTxSPK;
+    SPKStates_t mapUsedSPK;
 
     bool accept(CValidationState &state, CTransaction &tx, bool fCheckInputs, bool fLimitFree, bool* pfMissingInputs);
-    bool addUnchecked(const uint256& hash, const CTransaction &tx);
+    bool addUnchecked(const uint256& hash, const CTransaction &tx, const SPKStates_t& mapSPK = SPKStates_t());
     bool remove(const CTransaction &tx, bool fRecursive = false);
     bool removeConflicts(const CTransaction &tx);
     void clear();

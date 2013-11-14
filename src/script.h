@@ -588,6 +588,13 @@ public:
     {
         return CScriptID(Hash160(*this));
     }
+
+    uint160 ScriptPubkeyReuseHash() const
+    {
+        uint160 hash;
+        RIPEMD160(this->data(), this->size(), (unsigned char*)&hash);
+        return hash;
+    }
 };
 
 /** Compact serializer for scripts.

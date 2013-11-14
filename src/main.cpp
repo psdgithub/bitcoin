@@ -699,6 +699,16 @@ bool CTxMemPool::accept(CValidationState &state, CTransaction &tx, bool fCheckIn
             break;
         }
     }
+    SPKStates_t mapSPK;
+    BOOST_FOREACH(const CTxOut& txout, tx.vout)
+    {
+        uint160 hashSPK = txout.scriptPubKey.ScriptPubkeyReuseHash();
+        if (mapUsedSPK.find(hashSPK) != mapUsedSPK.end())
+            return error("CTxMemPool::accept() : scriptPubKey already in mempool");
+        if (mapSPK.find(hashSPK) != mapSPK.end())
+            return error("CTxMemPool::accept() : same scriptPubKey used twice");
+        mapSPK[hashSPK] = MSS_CREATED;
+    }
 
     if (fCheckInputs)
     {
@@ -734,6 +744,23 @@ bool CTxMemPool::accept(CValidationState &state, CTransaction &tx, bool fCheckIn
 
         // we have all inputs cached now, so switch back to dummy, so we don't need to keep lock on mempool
         view.SetBackend(dummy);
+        }
+
+        for (std::vector<CTxIn>::iterator it = tx.vin.begin(); tx.vin.end() != it; ++it)
+        {
+            COutPoint &outpoint = it->prevout;
+            const CCoins &coins = view.GetCoins(outpoint.hash);
+            assert(coins.IsAvailable(outpoint.n));
+            uint160 hashSPK = coins.vout[outpoint.n].scriptPubKey.ScriptPubkeyReuseHash();
+
+            SPKStates_t::iterator mssit;
+            if ((mssit = mapSPK.find(hashSPK)) != mapSPK.end())
+                if (mssit->second == MSS_CREATED)
+                    return error("CTxMemPool::accept() : same scriptPubKey spent by input as used for output");
+            if ((mssit = mapUsedSPK.find(hashSPK)) != mapUsedSPK.end())
+                if (mssit->second == MSS_SPENT)
+                    return error("CTxMemPool::accept() : scriptSig spending scriptPubKey already spent in mempool");
+            mapSPK[hashSPK] = MSS_SPENT;
         }
 
         // Check for non-standard pay-to-script-hash in inputs
@@ -793,7 +820,7 @@ bool CTxMemPool::accept(CValidationState &state, CTransaction &tx, bool fCheckIn
             printf("CTxMemPool::accept() : replacing tx %s with new version\n", ptxOld->GetHash().ToString().c_str());
             remove(*ptxOld);
         }
-        addUnchecked(hash, tx);
+        addUnchecked(hash, tx, mapSPK);
     }
 
     ///// are we sure this is ok when loading transactions or restoring block txes
@@ -817,7 +844,7 @@ bool CTransaction::AcceptToMemoryPool(CValidationState &state, bool fCheckInputs
     }
 }
 
-bool CTxMemPool::addUnchecked(const uint256& hash, const CTransaction &tx)
+bool CTxMemPool::addUnchecked(const uint256& hash, const CTransaction &tx, const SPKStates_t& mapSPK)
 {
     // Add to memory pool without checking anything.  Don't call this directly,
     // call CTxMemPool::accept to properly check the transaction first.
@@ -825,6 +852,13 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTransaction &tx)
         mapTx[hash] = tx;
         for (unsigned int i = 0; i < tx.vin.size(); i++)
             mapNextTx[tx.vin[i].prevout] = CInPoint(&mapTx[hash], i);
+
+        mapTxSPK[hash] = mapSPK;
+        BOOST_FOREACH(const SPKStates_t::value_type& vSPK, mapSPK)
+        {
+            mapUsedSPK[vSPK.first] = MemPool_SPK_State(mapUsedSPK[vSPK.first] | vSPK.second);
+        }
+
         nTransactionsUpdated++;
     }
     return true;
@@ -848,7 +882,17 @@ bool CTxMemPool::remove(const CTransaction &tx, bool fRecursive)
         {
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
                 mapNextTx.erase(txin.prevout);
+
+            BOOST_FOREACH(const SPKStates_t::value_type& vSPK, mapTxSPK[hash])
+            {
+                if (vSPK.second == mapUsedSPK.find(vSPK.first)->second)
+                    mapUsedSPK.erase(vSPK.first);
+                else
+                    mapUsedSPK[vSPK.first] = MemPool_SPK_State(mapUsedSPK[vSPK.first] & ~vSPK.second);
+            }
+
             mapTx.erase(hash);
+            mapTxSPK.erase(hash);
             nTransactionsUpdated++;
         }
     }
@@ -875,6 +919,8 @@ void CTxMemPool::clear()
     LOCK(cs);
     mapTx.clear();
     mapNextTx.clear();
+    mapTxSPK.clear();
+    mapUsedSPK.clear();
     ++nTransactionsUpdated;
 }
 
