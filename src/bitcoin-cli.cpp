@@ -21,18 +21,6 @@ static bool AppInitRPC(int argc, char* argv[])
     // Parameters
     //
     ParseParameters(argc, argv);
-    if (!boost::filesystem::is_directory(GetDataDir(false)))
-    {
-        fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", mapArgs["-datadir"].c_str());
-        return false;
-    }
-    ReadConfigFile(mapArgs, mapMultiArgs);
-    // Check for -testnet or -regtest parameter (TestNet() calls are only valid after this clause)
-    if (!SelectParamsFromCommandLine()) {
-        fprintf(stderr, "Error: Invalid combination of -regtest and -testnet.\n");
-        return false;
-    }
-
     if (argc<2 || mapArgs.count("-?") || mapArgs.count("--help"))
     {
         // First part of help message is specific to RPC client
@@ -47,6 +35,16 @@ static bool AppInitRPC(int argc, char* argv[])
         fprintf(stdout, "%s", strUsage.c_str());
         return false;
     }
+    // Allow the data directory to not exist or not be creatable,
+    // in that case don't read the config file.
+    if (boost::filesystem::is_directory(GetDataDir(false)))
+        ReadConfigFile(mapArgs, mapMultiArgs);
+    // Check for -testnet or -regtest parameter (TestNet() calls are only valid after this clause)
+    if (!SelectParamsFromCommandLine()) {
+        fprintf(stderr, "Error: Invalid combination of -regtest and -testnet.\n");
+        return false;
+    }
+
     return true;
 }
 
