@@ -679,8 +679,22 @@ bool CTxMemPool::accept(CValidationState &state, const CTransaction &tx, bool fC
             return error("CTxMemPool::accept() : ignoring transaction %s with blacklisted output (%s)", tx.GetHash().ToString().c_str(), blacklistname);
     }
 
+    if (fTestNet)
+    {}  // No checks
+    if (GetBoolArg("-acceptnonstdtxn"))
+    {
+        if (!tx.IsFinal())
+            return error("CTxMemPool::accept() : nonfinal transaction");
+
+        BOOST_FOREACH(const CTxIn& txin, tx.vin)
+        {
+            if (!txin.scriptSig.HasCanonicalPushes())
+                return error("CTxMemPool::accept() : transaction contains noncanonical pushes");
+        }
+    }
+    else
     // Rather not work on nonstandard transactions (unless -testnet)
-    if (!fTestNet && !tx.IsStandard() && !GetBoolArg("-acceptnonstdtxn"))
+    if (!tx.IsStandard())
         return error("CTxMemPool::accept() : nonstandard transaction type");
 
     // is it already in the memory pool?
