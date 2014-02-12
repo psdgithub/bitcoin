@@ -85,7 +85,7 @@ Dependency Build Instructions: Gentoo
 Note: If you just want to install bitcoind on Gentoo, you can add the Bitcoin overlay and use your package manager:
 
 	layman -a bitcoin && emerge bitcoind
-	emerge -av1 --noreplace boost glib openssl sys-libs/db:4.8
+	emerge -av1 --noreplace boost openssl sys-libs/db:4.8
 
 Take the following steps to build (no UPnP support):
 
