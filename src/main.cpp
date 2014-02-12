@@ -818,9 +818,6 @@ bool CTxMemPool::accept(CValidationState &state, const CTransaction &tx, bool fC
         EraseFromWallets(ptxOld->GetHash());
     SyncWithWallets(hash, tx, NULL, true);
 
-    printf("CTxMemPool::accept() : accepted %s (poolsz %"PRIszu")\n",
-           hash.ToString().c_str(),
-           mapTx.size());
     return true;
 }
 
@@ -3219,8 +3216,10 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             pfrom->nVersion = 300;
         if (!vRecv.empty())
             vRecv >> addrFrom >> nNonce;
-        if (!vRecv.empty())
+        if (!vRecv.empty()) {
             vRecv >> pfrom->strSubVer;
+            pfrom->cleanSubVer = SanitizeString(pfrom->strSubVer);
+        }
         if (!vRecv.empty())
             vRecv >> pfrom->nStartingHeight;
         if (!vRecv.empty())
@@ -3288,7 +3287,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 
         pfrom->fSuccessfullyConnected = true;
 
-        printf("receive version message: version %d, blocks=%d, us=%s, them=%s, peer=%s\n", pfrom->nVersion, pfrom->nStartingHeight, addrMe.ToString().c_str(), addrFrom.ToString().c_str(), pfrom->addr.ToString().c_str());
+        printf("receive version message: %s: version %d, blocks=%d, us=%s, them=%s, peer=%s\n", pfrom->cleanSubVer.c_str(), pfrom->nVersion, pfrom->nStartingHeight, addrMe.ToString().c_str(), addrFrom.ToString().c_str(), pfrom->addr.ToString().c_str());
 
         cPeerBlockCounts.input(pfrom->nStartingHeight);
     }
@@ -3536,6 +3535,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             vWorkQueue.push_back(inv.hash);
             vEraseQueue.push_back(inv.hash);
 
+            printf("AcceptToMemoryPool: %s %s : accepted %s (poolsz %"PRIszu")\n",
+                pfrom->addr.ToString().c_str(), pfrom->cleanSubVer.c_str(),
+                tx.GetHash().ToString().c_str(),
+                mempool.mapTx.size());
+
             // Recursively process any orphan transactions that depended on this one
             for (unsigned int i = 0; i < vWorkQueue.size(); i++)
             {
@@ -3581,9 +3585,14 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             if (nEvicted > 0)
                 printf("mapOrphan overflow, removed %u tx\n", nEvicted);
         }
-        int nDoS;
+        int nDoS = 0;
         if (state.IsInvalid(nDoS))
-            pfrom->Misbehaving(nDoS);
+        {
+            printf("%s from %s %s was not accepted into the memory pool\n", tx.GetHash().ToString().c_str(),
+                pfrom->addr.ToString().c_str(), pfrom->cleanSubVer.c_str());
+            if (nDoS > 0)
+                pfrom->Misbehaving(nDoS);
+        }
     }
 
 
@@ -3601,9 +3610,10 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         CValidationState state;
         if (ProcessBlock(state, pfrom, &block) || state.CorruptionPossible())
             mapAlreadyAskedFor.erase(inv);
-        int nDoS;
+        int nDoS = 0;
         if (state.IsInvalid(nDoS))
-            pfrom->Misbehaving(nDoS);
+            if (nDoS > 0)
+                pfrom->Misbehaving(nDoS);
     }
 
 
