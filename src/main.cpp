@@ -654,7 +654,7 @@ void CTxMemPool::pruneSpent(const uint256 &hashTx, CCoins &coins)
     }
 }
 
-bool CTxMemPool::accept(CValidationState &state, const CTransaction &tx, bool fCheckInputs, bool fLimitFree,
+bool CTxMemPool::accept(CValidationState &state, CTransaction &tx, bool fCheckInputs, bool fLimitFree,
                         bool* pfMissingInputs)
 {
     if (pfMissingInputs)
@@ -818,7 +818,7 @@ bool CTxMemPool::accept(CValidationState &state, const CTransaction &tx, bool fC
     return true;
 }
 
-bool CTransaction::AcceptToMemoryPool(CValidationState &state, bool fCheckInputs, bool fLimitFree, bool* pfMissingInputs) const
+bool CTransaction::AcceptToMemoryPool(CValidationState &state, bool fCheckInputs, bool fLimitFree, bool* pfMissingInputs)
 {
     try {
         return mempool.accept(state, *this, fCheckInputs, fLimitFree, pfMissingInputs);
@@ -3553,7 +3553,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
                     // anyone relaying LegitTxX banned)
                     CValidationState stateDummy;
 
-                    if (orphanTx.AcceptToMemoryPool(stateDummy, true, true, &fMissingInputs2))
+                    if (tx.AcceptToMemoryPool(stateDummy, true, true, &fMissingInputs2))
                     {
                         printf("   accepted orphan tx %s\n", orphanHash.ToString().c_str());
                         RelayTransaction(orphanTx, orphanHash);
