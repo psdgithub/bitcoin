@@ -33,6 +33,7 @@ public:
         DisplayUnit,       // BitcoinUnits::Unit
         DisplayAddresses,  // bool
         Language,          // QString
+        SpendZeroConfChange,    // bool
         OptionIDRowCount,
     };
 
