@@ -90,7 +90,6 @@ void ReceiveCoinsDialog::clear()
     ui->reqAmount->clear();
     ui->reqLabel->setText("");
     ui->reqMessage->setText("");
-    ui->reuseAddress->setChecked(false);
     updateDisplayUnit();
 }
 
@@ -119,22 +118,7 @@ void ReceiveCoinsDialog::on_receiveButton_clicked()
 
     QString address;
     QString label = ui->reqLabel->text();
-    if(ui->reuseAddress->isChecked())
     {
-        /* Choose existing receiving address */
-        AddressBookPage dlg(AddressBookPage::ForSelection, AddressBookPage::ReceivingTab, this);
-        dlg.setModel(model->getAddressTableModel());
-        if(dlg.exec())
-        {
-            address = dlg.getReturnValue();
-            if(label.isEmpty()) /* If no label provided, use the previously used label */
-            {
-                label = model->getAddressTableModel()->labelForAddress(address);
-            }
-        } else {
-            return;
-        }
-    } else {
         /* Generate new receiving address */
         address = model->getAddressTableModel()->addRow(AddressTableModel::Receive, label, "");
     }
