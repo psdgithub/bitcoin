@@ -3570,7 +3570,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             pfrom->AddInventoryKnown(inv);
 
             bool fAlreadyHave = AlreadyHave(inv);
-            LogPrint("net", "  got inventory: %s  %s\n", inv.ToString(), fAlreadyHave ? "have" : "new");
+            LogPrint("net", "  got inventory: %s  %s (from %s at %"PRId64")\n", inv.ToString(), fAlreadyHave ? "have" : "new", pfrom->addr.ToString().c_str(), GetTime());
 
             if (!fAlreadyHave) {
                 if (!fImporting && !fReindex)
