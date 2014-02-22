@@ -277,6 +277,8 @@ std::string HelpMessage(HelpMessageMode hmm)
     strUsage += "  -walletnotify=<cmd>    " + _("Execute command when a wallet transaction changes (%s in cmd is replaced by TxID)") + "\n";
     strUsage += "  -spendzeroconfchange   " + _("Spend unconfirmed change when sending transactions (default: 1)") + "\n";
 #endif
+    strUsage += "\n" + _("Node relay options:") + "\n";
+    strUsage += "  -acceptnonstdtxn       " + _("Accept \"non-standard\" transactions for relay and blocks") + "\n";
     strUsage += "\n" + _("Block creation options:") + "\n";
     strUsage += "  -blockminsize=<n>      " + _("Set minimum block size in bytes (default: 0)") + "\n";
     strUsage += "  -blockmaxsize=<n>      " + strprintf(_("Set maximum block size in bytes (default: %d)"), DEFAULT_BLOCK_MAX_SIZE) + "\n";
