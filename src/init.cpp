@@ -340,6 +340,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += "  -testnet               " + _("Use the test network") + "\n";
 
     strUsage += "\n" + _("Node relay options:") + "\n";
+    strUsage += "  -acceptnonstdtxn       " + strprintf(_("Relay and mine \"non-standard\" transactions (default: %u)"), 0) + "\n";
     strUsage += "  -datacarrier           " + strprintf(_("Relay and mine data carrier transactions (default: %u)"), 1) + "\n";
     strUsage += "  -datacarriersize       " + strprintf(_("Maximum size of data in data carrier transactions we relay and mine (default: %u)"), MAX_OP_RETURN_RELAY) + "\n";
 
@@ -706,6 +707,7 @@ bool AppInit2(boost::thread_group& threadGroup)
 
     fIsBareMultisigStd = GetArg("-permitbaremultisig", true) != 0;
     nMaxDatacarrierBytes = GetArg("-datacarriersize", nMaxDatacarrierBytes);
+    fRequireStandard = GetArg("-acceptnonstdtxn", !Params().RequireStandardDefault()) == 0;
 
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
 

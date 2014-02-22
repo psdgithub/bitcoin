@@ -50,6 +50,7 @@ bool fImporting = false;
 bool fReindex = false;
 bool fTxIndex = false;
 bool fIsBareMultisigStd = true;
+bool fRequireStandard = true;
 unsigned int nCoinCacheSize = 5000;
 
 
@@ -916,7 +917,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 
     // Rather not work on nonstandard transactions (unless -testnet/-regtest)
     string reason;
-    if (Params().RequireStandard() && !IsStandardTx(tx, reason))
+    if (fRequireStandard && !IsStandardTx(tx, reason))
         return state.DoS(0,
                          error("AcceptToMemoryPool : nonstandard transaction: %s", reason),
                          REJECT_NONSTANDARD, reason);
@@ -980,7 +981,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         }
 
         // Check for non-standard pay-to-script-hash in inputs
-        if (Params().RequireStandard() && !AreInputsStandard(tx, view))
+        if (fRequireStandard && !AreInputsStandard(tx, view))
             return error("AcceptToMemoryPool: : nonstandard transaction input");
 
         // Check that the transaction doesn't have an excessive number of
