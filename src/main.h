@@ -110,6 +110,7 @@ extern int nScriptCheckThreads;
 extern bool fTxIndex;
 extern bool fIsBareMultisigStd;
 extern bool fRequireStandard;
+extern unsigned nBytesPerSigOp;
 extern bool fCheckBlockIndex;
 extern bool fCheckpointsEnabled;
 extern size_t nCoinCacheUsage;

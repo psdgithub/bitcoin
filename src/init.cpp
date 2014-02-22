@@ -397,6 +397,7 @@ std::string HelpMessage(HelpMessageMode mode)
 
     strUsage += HelpMessageGroup(_("Node relay options:"));
     strUsage += HelpMessageOpt("-acceptnonstdtxn", strprintf(_("Relay and mine \"non-standard\" transactions (%sdefault: %u)"), "", strprintf(_("%u or testnet: %u"), !Params(CBaseChainParams::MAIN).RequireStandardDefault(), !Params(CBaseChainParams::TESTNET).RequireStandardDefault())));
+    strUsage += HelpMessageOpt("-bytespersigop", strprintf(_("Maximum rate of sigops per byte in transactions we relay and mine (default: %u)"), nBytesPerSigOp));
     strUsage += HelpMessageOpt("-datacarrier", strprintf(_("Relay and mine data carrier transactions (default: %u)"), 1));
     strUsage += HelpMessageOpt("-datacarriersize", strprintf(_("Maximum size of data in data carrier transactions we relay and mine (default: %u)"), MAX_OP_RETURN_RELAY));
 
@@ -810,6 +811,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 
     fRequireStandard = !GetBoolArg("-acceptnonstdtxn", !Params().RequireStandardDefault());
+    nBytesPerSigOp = GetArg("-bytespersigop", nBytesPerSigOp);
 
 #ifdef ENABLE_WALLET
     if (mapArgs.count("-mintxfee"))
