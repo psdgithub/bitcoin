@@ -40,6 +40,38 @@ void InitRPCMining()
     pMiningKey = new CReserveKey(pwalletMain);
 }
 
+bool IsMiningSetup()
+{
+    return
+        mapArgs.count("-blockminsize") &&
+        mapArgs.count("-blockmaxsize") &&
+        mapArgs.count("-blockprioritysize");
+}
+
+void CheckMiningSetup(const char * const strWhatAmI)
+{
+    if (IsMiningSetup())
+        return;
+
+    unsigned long minsz = insecure_rand() % MAX_BLOCK_SIZE;
+    unsigned long maxsz = std::max((unsigned long)250000, minsz);
+    maxsz = maxsz + (insecure_rand() % (MAX_BLOCK_SIZE - maxsz));
+    unsigned long prisz = insecure_rand() % MAX_BLOCK_SIZE;
+    throw JSONRPCError(RPC_NOT_CONFIGURED, strprintf(
+        _("To use %s, you must set mining options in the configuration file:\n"
+          "%s\n"
+          "For example (randomly chosen, please choose your own values):\n"
+          "blockminsize=%lu\n"
+          "blockmaxsize=%lu\n"
+          "blockprioritysize=%lu\n"
+          "These values must all be at least zero, and no larger than %lu.\n"),
+            strWhatAmI,
+            GetConfigFile().string().c_str(),
+            minsz, maxsz, prisz,
+            (unsigned long)MAX_BLOCK_SIZE
+    ));
+}
+
 void ShutdownRPCMining()
 {
     if (!pMiningKey)
@@ -169,6 +201,9 @@ Value setgenerate(const Array& params, bool fHelp)
     bool fGenerate = true;
     if (params.size() > 0)
         fGenerate = params[0].get_bool();
+
+    if (fGenerate)
+        CheckMiningSetup("setgenerate");
 
     int nGenProcLimit = -1;
     if (params.size() > 1)
@@ -316,6 +351,8 @@ Value getwork(const Array& params, bool fHelp)
             + HelpExampleCli("getwork", "")
             + HelpExampleRpc("getwork", "")
         );
+
+    CheckMiningSetup("getwork");
 
     if (vNodes.empty())
         throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Bitcoin is not connected!");
@@ -482,6 +519,8 @@ Value getblocktemplate(const Array& params, bool fHelp)
             + HelpExampleCli("getblocktemplate", "")
             + HelpExampleRpc("getblocktemplate", "")
          );
+
+    CheckMiningSetup("getblocktemplate");
 
     std::string strMode = "template";
     Value lpval = Value::null;
