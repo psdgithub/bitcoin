@@ -131,7 +131,7 @@ void UnregisterNodeSignals(CNodeSignals& nodeSignals);
 void PushGetBlocks(CNode* pnode, CBlockIndex* pindexBegin, uint256 hashEnd);
 
 /** Process an incoming block */
-bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBlockPos *dbp = NULL);
+bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBlockPos *dbp = NULL, bool fCheckPOW = true);
 /** Check whether enough disk space is available for an incoming block */
 bool CheckDiskSpace(uint64_t nAdditionalBytes = 0);
 /** Open a block file (blk?????.dat) */
@@ -157,7 +157,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle);
 /** Run an instance of the script checking thread */
 void ThreadScriptCheck();
 /** Check whether a block hash satisfies the proof-of-work requirement specified by nBits */
-bool CheckProofOfWork(uint256 hash, unsigned int nBits);
+bool CheckProofOfWork(uint256 hash, unsigned int nBits, bool fSilent = false);
 /** Calculate the minimum amount of work a received block needs, without knowing its direct parent */
 unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime);
 /** Get the number of active peers */
@@ -603,7 +603,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW = t
 
 // Store block on disk
 // if dbp is provided, the file is known to already reside on disk
-bool AcceptBlock(CBlock& block, CValidationState& state, CDiskBlockPos* dbp = NULL);
+bool AcceptBlock(CBlock& block, CValidationState& state, CDiskBlockPos* dbp = NULL, bool fWriteToDisk = true);
 
 
 
@@ -939,6 +939,7 @@ private:
         MODE_VALID,   // everything ok
         MODE_INVALID, // network rule violation (DoS value may be set)
         MODE_ERROR,   // run-time error
+        MODE_ORPHAN,  // orphan data, processing deferred
     } mode;
     int nDoS;
     std::string strRejectReason;
@@ -972,8 +973,16 @@ public:
         AbortNode(msg);
         return Error(msg);
     }
+    bool Orphan() {
+        if (IsValid())
+            mode = MODE_ORPHAN;
+        return true;
+    }
     bool IsValid() const {
-        return mode == MODE_VALID;
+        return mode == MODE_VALID || mode == MODE_ORPHAN;
+    }
+    bool IsOrphan() const {
+        return mode == MODE_ORPHAN;
     }
     bool IsInvalid() const {
         return mode == MODE_INVALID;
