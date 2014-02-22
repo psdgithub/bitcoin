@@ -498,6 +498,18 @@ unsigned int LimitOrphanTxSize(unsigned int nMaxOrphans)
 
 
 
+bool IsPushCanonicalTx(const CTransaction& tx, string& reason)
+{
+    BOOST_FOREACH(const CTxIn& txin, tx.vin)
+    {
+        if (!txin.scriptSig.HasCanonicalPushes()) {
+            reason = "scriptsig-non-canonical-push";
+            return false;
+        }
+    }
+    return true;
+}
+
 bool IsStandardTx(const CTransaction& tx, string& reason)
 {
     AssertLockHeld(cs_main);
@@ -555,11 +567,9 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
             reason = "scriptsig-not-pushonly";
             return false;
         }
-        if (!txin.scriptSig.HasCanonicalPushes()) {
-            reason = "scriptsig-non-canonical-push";
-            return false;
-        }
     }
+    if (!IsPushCanonicalTx(tx, reason))
+        return false;
 
     unsigned int nDataOut = 0;
     txnouttype whichType;
