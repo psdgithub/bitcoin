@@ -307,6 +307,8 @@ void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCach
 // Context-independent validity checks
 bool CheckTransaction(const CTransaction& tx, CValidationState& state);
 
+bool IsPushCanonicalTx(const CTransaction&, string& reason);
+
 /** Check for standard transaction types
     @return True if all outputs (scriptPubKeys) use only standard transaction forms
 */
