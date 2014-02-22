@@ -51,6 +51,7 @@ bool fReindex = false;
 bool fTxIndex = false;
 bool fIsBareMultisigStd = true;
 bool fRequireStandard = true;
+unsigned nBytesPerSigOp = 0;
 unsigned int nCoinCacheSize = 5000;
 
 
@@ -984,6 +985,13 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         if (fRequireStandard && !AreInputsStandard(tx, view))
             return error("AcceptToMemoryPool: : nonstandard transaction input");
 
+        CAmount nValueOut = tx.GetValueOut();
+        CAmount nFees = nValueIn-nValueOut;
+        double dPriority = view.GetPriority(tx, chainActive.Height());
+
+        CTxMemPoolEntry entry(tx, nFees, GetTime(), dPriority, chainActive.Height());
+        unsigned int nSize = entry.GetTxSize();
+
         // Check that the transaction doesn't have an excessive number of
         // sigops, making it impossible to mine. Since the coinbase transaction
         // itself can contain sigops MAX_TX_SIGOPS is less than
@@ -991,18 +999,11 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         // merely non-standard transaction.
         unsigned int nSigOps = GetLegacySigOpCount(tx);
         nSigOps += GetP2SHSigOpCount(tx, view);
-        if (nSigOps > MAX_TX_SIGOPS)
+        if ((nSigOps > MAX_TX_SIGOPS) || (nBytesPerSigOp && nSigOps > nSize / nBytesPerSigOp))
             return state.DoS(0,
-                             error("AcceptToMemoryPool : too many sigops %s, %d > %d",
-                                   hash.ToString(), nSigOps, MAX_TX_SIGOPS),
+                             error("AcceptToMemoryPool : too many sigops %s (%d)",
+                                   hash.ToString(), nSigOps),
                              REJECT_NONSTANDARD, "bad-txns-too-many-sigops");
-
-        CAmount nValueOut = tx.GetValueOut();
-        CAmount nFees = nValueIn-nValueOut;
-        double dPriority = view.GetPriority(tx, chainActive.Height());
-
-        CTxMemPoolEntry entry(tx, nFees, GetTime(), dPriority, chainActive.Height());
-        unsigned int nSize = entry.GetTxSize();
 
         // Don't accept it if it can't get into a block
         CAmount txMinFee = GetMinRelayFee(tx, nSize, true);
