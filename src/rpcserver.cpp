@@ -252,6 +252,7 @@ static const CRPCCommand vRPCCommands[] =
     /* Mining */
     { "getnetworkhashps",       &getnetworkhashps,       true,      false,      false },
     { "getmininginfo",          &getmininginfo,          true,      false,      false },
+    { "prioritisetransaction",  &prioritisetransaction,  true,      false,      false },
     { "getblocktemplate",       &getblocktemplate,       true,      false,      false },
     { "submitblock",            &submitblock,            false,     false,      false },
     { "validateaddress",        &validateaddress,        true,      false,      false },
