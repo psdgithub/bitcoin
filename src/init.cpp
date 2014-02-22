@@ -270,7 +270,8 @@ std::string HelpMessage(HelpMessageMode hmm)
     strUsage += "  -disablewallet         " + _("Do not load the wallet and disable wallet RPC calls") + "\n";
     strUsage += "  -paytxfee=<amt>        " + _("Fee per kB to add to transactions you send") + "\n";
     strUsage += "  -rescan                " + _("Rescan the block chain for missing wallet transactions") + "\n";
-    strUsage += "  -zapwallettxes         " + _("Clear list of wallet transactions (diagnostic tool; implies -rescan)") + "\n";
+    strUsage += "  -zapwallettxes=<mode>  " + _("Clear list of wallet transactions and recover those part of the blockchain through -rescan on startup") + "\n";
+    strUsage += "                         " + _("(default: 1, 1 = keep tx meta data e.g. account owner and payment request information, 2 = drop tx meta data)") + "\n";
     strUsage += "  -salvagewallet         " + _("Attempt to recover private keys from a corrupt wallet.dat") + "\n";
     strUsage += "  -upgradewallet         " + _("Upgrade wallet to latest format") + "\n";
     strUsage += "  -wallet=<file>         " + _("Specify wallet file (within data directory)") + "\n";
@@ -462,7 +463,7 @@ bool AppInit2(boost::thread_group& threadGroup)
     // -zapwallettx implies a rescan
     if (GetBoolArg("-zapwallettxes", false)) {
         if (SoftSetBoolArg("-rescan", true))
-            LogPrintf("AppInit2 : parameter interaction: -zapwallettxes=1 -> setting -rescan=1\n");
+            LogPrintf("AppInit2 : parameter interaction: -zapwallettxes=<mode> -> setting -rescan=1\n");
     }
 
     // Make sure enough file descriptors are available
@@ -912,11 +913,15 @@ bool AppInit2(boost::thread_group& threadGroup)
         pwalletMain = NULL;
         LogPrintf("Wallet disabled!\n");
     } else {
+
+        // needed to restore wallet transaction meta data after -zapwallettxes
+        std::vector<CWalletTx> vWtx;
+
         if (GetBoolArg("-zapwallettxes", false)) {
             uiInterface.InitMessage(_("Zapping all transactions from wallet..."));
 
             pwalletMain = new CWallet(strWalletFile);
-            DBErrors nZapWalletRet = pwalletMain->ZapWalletTx();
+            DBErrors nZapWalletRet = pwalletMain->ZapWalletTx(vWtx);
             if (nZapWalletRet != DB_LOAD_OK) {
                 uiInterface.InitMessage(_("Error loading wallet.dat: Wallet corrupted"));
                 return false;
@@ -1011,6 +1016,32 @@ bool AppInit2(boost::thread_group& threadGroup)
             LogPrintf(" rescan      %15"PRId64"ms\n", GetTimeMillis() - nStart);
             pwalletMain->SetBestChain(chainActive.GetLocator());
             nWalletDBUpdated++;
+
+            // Restore wallet transaction metadata after -zapwallettxes=1
+            if (GetBoolArg("-zapwallettxes", false) && GetArg("-zapwallettxes", "1") != "2")
+            {
+                BOOST_FOREACH(const CWalletTx& wtxOld, vWtx)
+                {
+                    uint256 hash = wtxOld.GetHash();
+                    std::map<uint256, CWalletTx>::iterator mi = pwalletMain->mapWallet.find(hash);
+                    if (mi != pwalletMain->mapWallet.end())
+                    {
+                        const CWalletTx* copyFrom = &wtxOld;
+                        CWalletTx* copyTo = &mi->second;
+                        copyTo->mapValue = copyFrom->mapValue;
+                        copyTo->vOrderForm = copyFrom->vOrderForm;
+                        // fTimeReceivedIsTxTime not copied on purpose
+                        // nTimeReceived not copied on purpose
+                        copyTo->nTimeSmart = copyFrom->nTimeSmart;
+                        copyTo->fFromMe = copyFrom->fFromMe;
+                        copyTo->strFromAccount = copyFrom->strFromAccount;
+                        // vfSpent not copied on purpose
+                        // nOrderPos not copied on purpose
+                        // cached members not copied on purpose
+                        copyTo->WriteToDisk();
+                    }
+                }
+            }
         }
     } // (!fDisableWallet)
 #else // ENABLE_WALLET
