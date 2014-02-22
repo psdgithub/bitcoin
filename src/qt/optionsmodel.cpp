@@ -24,6 +24,8 @@
 #include <QSettings>
 #include <QStringList>
 
+#include <boost/algorithm/string.hpp>
+
 OptionsModel::OptionsModel(QObject *parent) :
     QAbstractListModel(parent)
 {
@@ -62,6 +64,14 @@ void OptionsModel::Init()
         settings.setValue("fCoinControlFeatures", false);
     fCoinControlFeatures = settings.value("fCoinControlFeatures", false).toBool();
 
+    CTransaction::filteredAddresses.clear();
+    int size = settings.beginReadArray("filteredAddresses");
+    for (int i = 0; i < size; i++) {
+        settings.setArrayIndex(i);
+        CTransaction::filteredAddresses.insert(CBitcoinAddress(settings.value("address").toString().toStdString()));
+    }
+    settings.endArray();
+
     // These are shared with the core or have a command-line parameter
     // and we want command-line parameters to overwrite the GUI settings.
     //
@@ -94,6 +104,8 @@ void OptionsModel::Init()
     if (!SoftSetBoolArg("-spendzeroconfchange", settings.value("bSpendZeroConfChange").toBool()))
         strOverriddenByCommandLine += "-spendzeroconfchange ";
 #endif
+
+    CTransaction::nDustLimit = settings.value("nDustLimit").toLongLong();
 
     // Network
     if (!settings.contains("fUseUPnP"))
@@ -202,6 +214,16 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
             return settings.value("language");
         case CoinControlFeatures:
             return fCoinControlFeatures;
+        case DustLimit:
+            return QVariant(CTransaction::nDustLimit);
+        case FilteredAddresses:
+        {
+            std::string s;
+            BOOST_FOREACH(const CBitcoinAddress& addr, CTransaction::filteredAddresses) {
+                s += addr.ToString() + "\n";
+            }
+            return QVariant(QString::fromStdString(s));
+        }
         case DatabaseCache:
             return settings.value("nDatabaseCache");
         case ThreadsScriptVerif:
@@ -322,6 +344,37 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
                 setRestartRequired(true);
             }
             break;
+        case DustLimit:
+            CTransaction::nDustLimit = value.toLongLong();
+            settings.setValue("nDustLimit", CTransaction::nDustLimit);
+            break;
+        case FilteredAddresses: {
+            std::vector<std::string> addresses;
+            std::string s = value.toString().toStdString();
+            std::string::size_type prev_pos = 0, pos = 0;
+            while ((pos = s.find("\n", pos)) != std::string::npos) {
+                std::string substring(s.substr(prev_pos, pos-prev_pos));
+                boost::algorithm::trim(substring);
+                addresses.push_back(substring);
+                prev_pos = ++pos;
+            }
+            addresses.push_back(s.substr(prev_pos, pos-prev_pos));
+
+            CTransaction::filteredAddresses.clear();
+
+            int i = 0;
+            settings.beginWriteArray("filteredAddresses");
+            BOOST_FOREACH(const std::string& addr, addresses) {
+                CBitcoinAddress btaddr(addr);
+                if (btaddr.IsValid()) {
+                    CTransaction::filteredAddresses.insert(btaddr);
+                    settings.setArrayIndex(i++);
+                    settings.setValue("address", QString::fromStdString(btaddr.ToString()));
+                }
+            }
+            settings.endArray();
+        }
+        break;
         default:
             break;
         }
@@ -363,4 +416,9 @@ bool OptionsModel::isRestartRequired()
 {
     QSettings settings;
     return settings.value("fRestartRequired", false).toBool();
+}
+
+qint64 OptionsModel::getDustLimit()
+{
+    return CTransaction::nDustLimit;
 }

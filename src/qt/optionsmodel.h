@@ -39,6 +39,8 @@ public:
         Language,               // QString
         CoinControlFeatures,    // bool
         ThreadsScriptVerif,     // int
+        DustLimit,              // qint64
+        FilteredAddresses,      // QString
         DatabaseCache,          // int
         SpendZeroConfChange,    // bool
         OptionIDRowCount,
@@ -58,6 +60,7 @@ public:
     bool getDisplayAddresses() { return bDisplayAddresses; }
     bool getProxySettings(QNetworkProxy& proxy) const;
     bool getCoinControlFeatures() { return fCoinControlFeatures; }
+    qint64 getDustLimit();
     const QString& getOverriddenByCommandLine() { return strOverriddenByCommandLine; }
 
     /* Restart flag helper */
