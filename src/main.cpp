@@ -395,6 +395,18 @@ unsigned int LimitOrphanTxSize(unsigned int nMaxOrphans)
 
 
 
+bool IsPushCanonicalTx(const CTransaction& tx, string& reason)
+{
+    BOOST_FOREACH(const CTxIn& txin, tx.vin)
+    {
+        if (!txin.scriptSig.HasCanonicalPushes()) {
+            reason = "scriptsig-non-canonical-push";
+            return false;
+        }
+    }
+    return true;
+}
+
 bool IsStandardTx(const CTransaction& tx, string& reason)
 {
     if (tx.nVersion > CTransaction::CURRENT_VERSION || tx.nVersion < 1) {
@@ -447,11 +459,9 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
             reason = "scriptsig-not-pushonly";
             return false;
         }
-        if (!txin.scriptSig.HasCanonicalPushes()) {
-            reason = "scriptsig-non-canonical-push";
-            return false;
-        }
     }
+    if (!IsPushCanonicalTx(tx, reason))
+        return false;
 
     unsigned int nDataOut = 0;
     txnouttype whichType;
@@ -758,11 +768,16 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                          REJECT_INVALID, "coinbase");
 
     // Rather not work on nonstandard transactions (unless -testnet/-regtest)
+    bool fIsNonStandard = false;
     string reason;
     if (Params().NetworkID() == CChainParams::MAIN && !IsStandardTx(tx, reason))
-        return state.DoS(0,
-                         error("AcceptToMemoryPool : nonstandard transaction: %s", reason),
-                         REJECT_NONSTANDARD, reason);
+    {
+        fIsNonStandard = true;
+        if ((!GetBoolArg("-acceptnonstdtxn", false)) || !IsPushCanonicalTx(tx, reason))
+            return state.DoS(0,
+                             error("AcceptToMemoryPool : nonstandard transaction: %s", reason),
+                             REJECT_NONSTANDARD, reason);
+    }
 
     // is it already in the memory pool?
     uint256 hash = tx.GetHash();
@@ -821,11 +836,11 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 
         // Check for non-standard pay-to-script-hash in inputs
         if (Params().NetworkID() == CChainParams::MAIN && !AreInputsStandard(tx, view))
-            return error("AcceptToMemoryPool: : nonstandard transaction input");
-
-        // Note: if you modify this code to accept non-standard transactions, then
-        // you should add code here to check that the transaction does a
-        // reasonable number of ECDSA signature verifications.
+        {
+            fIsNonStandard = true;
+            if (!GetBoolArg("-acceptnonstdtxn", false))
+                return error("AcceptToMemoryPool: : nonstandard transaction input");
+        }
 
         int64_t nValueIn = view.GetValueIn(tx);
         int64_t nValueOut = tx.GetValueOut();
@@ -834,6 +849,17 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 
         CTxMemPoolEntry entry(tx, nFees, GetTime(), dPriority, chainActive.Height());
         unsigned int nSize = entry.GetTxSize();
+
+        if (fIsNonStandard)
+        {
+            // Unnecessary/implied for standard transactions
+            long nBytesPerSigOp = GetArg("-bytespersigop", 0);
+            int nSigOps = GetLegacySigOpCount(tx);
+            nSigOps += GetP2SHSigOpCount(tx, view);
+
+            if (nBytesPerSigOp && nSigOps > nSize / nBytesPerSigOp)
+                return error("AcceptToMemoryPool : transaction with out-of-bounds SigOpCount");
+        }
 
         // Don't accept it if it can't get into a block
         int64_t txMinFee = GetMinFee(tx, nSize, true, GMF_RELAY);
