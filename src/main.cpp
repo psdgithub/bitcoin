@@ -46,6 +46,7 @@ bool fImporting = false;
 bool fReindex = false;
 bool fBenchmark = false;
 bool fTxIndex = false;
+bool fIsBareMultisigStd = true;
 unsigned int nCoinCacheSize = 5000;
 
 /** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
@@ -395,8 +396,12 @@ bool CTransaction::IsStandard() const
             return false;
         }
     }
+    unsigned int verfFlags = 0;
+    if (fIsBareMultisigStd)
+        verfFlags |= SCRIPT_VERIFY_BARE_MSIG_OK;
+    txnouttype whichType;
     BOOST_FOREACH(const CTxOut& txout, vout) {
-        if (!::IsStandard(txout.scriptPubKey))
+        if (!::IsStandard(txout.scriptPubKey, whichType, verfFlags))
             return false;
         if (txout.IsDust())
             return false;

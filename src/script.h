@@ -35,6 +35,7 @@ enum
     SCRIPT_VERIFY_P2SH      = (1U << 0),
     SCRIPT_VERIFY_STRICTENC = (1U << 1),
     SCRIPT_VERIFY_NOCACHE   = (1U << 2),
+    SCRIPT_VERIFY_BARE_MSIG_OK = (1U << 4), // are bare msig outputs permitted?
 };
 
 enum txnouttype
@@ -674,7 +675,8 @@ bool IsCanonicalSignature(const std::vector<unsigned char> &vchSig);
 bool EvalScript(std::vector<std::vector<unsigned char> >& stack, const CScript& script, const CTransaction& txTo, unsigned int nIn, unsigned int flags, int nHashType);
 bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, std::vector<std::vector<unsigned char> >& vSolutionsRet);
 int ScriptSigArgsExpected(txnouttype t, const std::vector<std::vector<unsigned char> >& vSolutions);
-bool IsStandard(const CScript& scriptPubKey);
+bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType,
+                unsigned int flags);
 bool IsMine(const CKeyStore& keystore, const CScript& scriptPubKey);
 bool IsMine(const CKeyStore& keystore, const CTxDestination &dest);
 bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet);
