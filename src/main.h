@@ -1892,15 +1892,17 @@ private:
     } mode;
     int nDoS;
     std::string strMsg;
+    bool corruptionPossible;
 public:
     CValidationState() : mode(MODE_VALID), nDoS(0) {}
-    bool DoS(int level, const std::string &strRR, bool ret = false) {
+    bool DoS(int level, const std::string &strRR, bool ret = false, bool corruptionIn = false) {
         if (mode == MODE_ERROR)
             return ret;
         nDoS += level;
         mode = MODE_INVALID;
         if (strMsg.empty())
             strMsg = strRR;
+        corruptionPossible = corruptionIn;
         return ret;
     }
     bool DoS(int level, bool ret = false) {
@@ -1961,6 +1963,9 @@ public:
     bool IsInvalid(std::string &strRROut) {
         int nDummy;
         return IsInvalid(nDummy, strRROut);
+    }
+    bool CorruptionPossible() {
+        return corruptionPossible;
     }
 };
 
