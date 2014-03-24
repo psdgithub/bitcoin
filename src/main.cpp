@@ -367,32 +367,43 @@ bool CTxOut::IsDust() const
     return ((nValue*1000)/(3*((int)GetSerializeSize(SER_DISK,0)+148)) < CTransaction::nMinRelayTxFee);
 }
 
-bool CTransaction::IsStandard() const
+bool CTransaction::IsStandard(string& strReason) const
 {
-    if (nVersion > CTransaction::CURRENT_VERSION || nVersion < 1)
+    if (nVersion > CTransaction::CURRENT_VERSION || nVersion < 1) {
+        strReason = "version";
         return false;
+    }
 
-    if (!IsFinal())
+    if (!IsFinal()) {
+        strReason = "not-final";
         return false;
+    }
 
     // Extremely large transactions with lots of inputs can cost the network
     // almost as much to process as they cost the sender in fees, because
     // computing signature hashes is O(ninputs*txsize). Limiting transactions
     // to MAX_STANDARD_TX_SIZE mitigates CPU exhaustion attacks.
     unsigned int sz = this->GetSerializeSize(SER_NETWORK, CTransaction::CURRENT_VERSION);
-    if (sz >= MAX_STANDARD_TX_SIZE)
+    if (sz >= MAX_STANDARD_TX_SIZE) {
+        strReason = "tx-size";
         return false;
+    }
 
     BOOST_FOREACH(const CTxIn& txin, vin)
     {
         // Biggest 'standard' txin is a 3-signature 3-of-3 CHECKMULTISIG
         // pay-to-script-hash, which is 3 ~80-byte signatures, 3
         // ~65-byte public keys, plus a few script ops.
-        if (txin.scriptSig.size() > 500)
+        if (txin.scriptSig.size() > 500) {
+            strReason = "scriptsig-size";
             return false;
-        if (!txin.scriptSig.IsPushOnly())
+        }
+        if (!txin.scriptSig.IsPushOnly()) {
+            strReason = "scriptsig-not-pushonly";
             return false;
+        }
         if (!txin.scriptSig.HasCanonicalPushes()) {
+            strReason = "scriptsig-non-canonical-push";
             return false;
         }
     }
@@ -401,11 +412,16 @@ bool CTransaction::IsStandard() const
         verfFlags |= SCRIPT_VERIFY_BARE_MSIG_OK;
     txnouttype whichType;
     BOOST_FOREACH(const CTxOut& txout, vout) {
-        if (!::IsStandard(txout.scriptPubKey, whichType, verfFlags))
+        if (!::IsStandard(txout.scriptPubKey, whichType, verfFlags)) {
+            strReason = "scriptpubkey";
             return false;
-        if (txout.IsDust())
+        }
+        if (txout.IsDust()) {
+            strReason = "dust";
             return false;
+        }
         if (!txout.scriptPubKey.HasCanonicalPushes()) {
+            strReason = "scriptpubkey-non-canonical-push";
             return false;
         }
     }
@@ -698,9 +714,13 @@ bool CTxMemPool::accept(CValidationState &state, const CTransaction &tx, bool fC
         }
     }
     else
-    // Rather not work on nonstandard transactions (unless -testnet)
-    if (!tx.IsStandard())
-        return error("CTxMemPool::accept() : nonstandard transaction type");
+    {
+        // Rather not work on nonstandard transactions (unless -testnet)
+        string strNonStd;
+        if (!tx.IsStandard(strNonStd))
+            return error("CTxMemPool::accept() : nonstandard transaction (%s)",
+                         strNonStd.c_str());
+    }
 
     // is it already in the memory pool?
     uint256 hash = tx.GetHash();
