@@ -36,7 +36,7 @@ namespace GUIUtil
     void setupAmountWidget(QLineEdit *widget, QWidget *parent);
 
     // Parse "bitcoin:" URI into recipient object, return true on successful parsing
-    // See Bitcoin URI definition discussion here: https://bitcointalk.org/index.php?topic=33490.0
+    // See Bitcoin URI definition discussion here: https://github.com/bitcoin/bips/blob/master/bip-0021.mediawiki
     bool parseBitcoinURI(const QUrl &uri, SendCoinsRecipient *out);
     bool parseBitcoinURI(QString uri, SendCoinsRecipient *out);
 
