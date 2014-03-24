@@ -624,23 +624,20 @@ int64 CTransaction::GetMinFee(unsigned int nBlockSize, bool fAllowFree,
 
     if (fAllowFree)
     {
-        if (nBlockSize == 1)
-        {
-            // Transactions under 10K are free
-            // (about 4500 BTC if made of 50 BTC inputs)
-            if (nBytes < 10000)
-                nMinFee = 0;
-        }
-        else
-        {
-            // Free transaction area
-            if (nNewBlockSize < 27000)
-                nMinFee = 0;
-        }
+        // There is a free transaction area in blocks created by most miners,
+        // * If we are relaying we allow transactions up to DEFAULT_BLOCK_PRIORITY_SIZE - 1000
+        //   to be considered to fall into this category. We don't want to encourage sending
+        //   multiple transactions instead of one big transaction to avoid fees.
+        // * If we are creating a transaction we allow transactions up to 1,000 bytes
+        //   to be considered safe and assume they can likely make it into this section.
+        if (nBytes < (mode == GMF_SEND ? 1000 : (DEFAULT_BLOCK_PRIORITY_SIZE - 1000)))
+            nMinFee = 0;
     }
 
-    // To limit dust spam, require base fee if any output is less than 0.01
-    if (nMinFee < nBaseFee)
+    // This code can be removed after enough miners have upgraded to version 0.9.
+    // Until then, be safe when sending and require a fee if any output
+    // is less than CENT:
+    if (nMinFee < nBaseFee && mode == GMF_SEND)
     {
         BOOST_FOREACH(const CTxOut& txout, vout)
             if (txout.nValue < CENT)
@@ -882,9 +879,6 @@ bool CTxMemPool::accept(CValidationState &state, const CTransaction &tx, bool fC
         EraseFromWallets(ptxOld->GetHash());
     SyncWithWallets(hash, tx, NULL, true);
 
-    printf("CTxMemPool::accept() : accepted %s (poolsz %"PRIszu")\n",
-           hash.ToString().c_str(),
-           mapTx.size());
     return true;
 }
 
@@ -3307,8 +3301,10 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             pfrom->nVersion = 300;
         if (!vRecv.empty())
             vRecv >> addrFrom >> nNonce;
-        if (!vRecv.empty())
+        if (!vRecv.empty()) {
             vRecv >> pfrom->strSubVer;
+            pfrom->cleanSubVer = SanitizeString(pfrom->strSubVer);
+        }
         if (!vRecv.empty())
             vRecv >> pfrom->nStartingHeight;
         if (!vRecv.empty())
@@ -3376,7 +3372,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
 
         pfrom->fSuccessfullyConnected = true;
 
-        printf("receive version message: version %d, blocks=%d, us=%s, them=%s, peer=%s\n", pfrom->nVersion, pfrom->nStartingHeight, addrMe.ToString().c_str(), addrFrom.ToString().c_str(), pfrom->addr.ToString().c_str());
+        printf("receive version message: %s: version %d, blocks=%d, us=%s, them=%s, peer=%s\n", pfrom->cleanSubVer.c_str(), pfrom->nVersion, pfrom->nStartingHeight, addrMe.ToString().c_str(), addrFrom.ToString().c_str(), pfrom->addr.ToString().c_str());
 
         cPeerBlockCounts.input(pfrom->nStartingHeight);
     }
@@ -3624,6 +3620,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             vWorkQueue.push_back(inv.hash);
             vEraseQueue.push_back(inv.hash);
 
+            printf("AcceptToMemoryPool: %s %s : accepted %s (poolsz %"PRIszu")\n",
+                pfrom->addr.ToString().c_str(), pfrom->cleanSubVer.c_str(),
+                tx.GetHash().ToString().c_str(),
+                mempool.mapTx.size());
+
             // Recursively process any orphan transactions that depended on this one
             for (unsigned int i = 0; i < vWorkQueue.size(); i++)
             {
@@ -3669,9 +3670,14 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             if (nEvicted > 0)
                 printf("mapOrphan overflow, removed %u tx\n", nEvicted);
         }
-        int nDoS;
+        int nDoS = 0;
         if (state.IsInvalid(nDoS))
-            pfrom->Misbehaving(nDoS);
+        {
+            printf("%s from %s %s was not accepted into the memory pool\n", tx.GetHash().ToString().c_str(),
+                pfrom->addr.ToString().c_str(), pfrom->cleanSubVer.c_str());
+            if (nDoS > 0)
+                pfrom->Misbehaving(nDoS);
+        }
     }
 
 
@@ -3689,9 +3695,10 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         CValidationState state;
         if (ProcessBlock(state, pfrom, &block) || state.CorruptionPossible())
             mapAlreadyAskedFor.erase(inv);
-        int nDoS;
+        int nDoS = 0;
         if (state.IsInvalid(nDoS))
-            pfrom->Misbehaving(nDoS);
+            if (nDoS > 0)
+                pfrom->Misbehaving(nDoS);
     }
 
 
@@ -4438,7 +4445,7 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
     pblocktemplate->vTxSigOps.push_back(-1); // updated at end
 
     // Largest block you're willing to create:
-    unsigned int nBlockMaxSize = GetArg("-blockmaxsize", MAX_BLOCK_SIZE_GEN/2);
+    unsigned int nBlockMaxSize = GetArg("-blockmaxsize", DEFAULT_BLOCK_MAX_SIZE);
     // Limit to betweeen 1K and MAX_BLOCK_SIZE-1K for sanity:
     nBlockMaxSize = std::max((unsigned int)1000, std::min((unsigned int)(MAX_BLOCK_SIZE-1000), nBlockMaxSize));
 
@@ -4448,7 +4455,7 @@ CBlockTemplate* CreateNewBlock(CReserveKey& reservekey)
 
     // How much of the block should be dedicated to high-priority transactions,
     // included regardless of the fees they pay
-    unsigned int nBlockPrioritySize = GetArg("-blockprioritysize", 27000);
+    unsigned int nBlockPrioritySize = GetArg("-blockprioritysize", DEFAULT_BLOCK_PRIORITY_SIZE);
     nBlockPrioritySize = std::min(nBlockMaxSize, nBlockPrioritySize);
 
     // Minimum block size you want to create; block will be filled with free transactions
