@@ -1749,6 +1749,8 @@ static struct BlacklistEntry BlacklistedPrefixes[] = {
     {0xc4c5d791, 0xc4c5d791, "CHBS"},  // 1JwSSubhmg6iPtRjtyqhUYYH7bZg3Lfy1T
 };
 
+extern bool fIsBareMultisigStd;
+
 const char *CScript::IsBlacklisted() const
 {
     if (this->size() >= 7 && this->at(0) == OP_DUP)
@@ -1760,6 +1762,15 @@ const char *CScript::IsBlacklisted() const
         for (i = 0; i < (sizeof(BlacklistedPrefixes) / sizeof(BlacklistedPrefixes[0])); ++i)
             if (pfx >= BlacklistedPrefixes[i].begin && pfx <= BlacklistedPrefixes[i].end)
                 return BlacklistedPrefixes[i].name;
+    }
+    else
+    if (!fIsBareMultisigStd)
+    {
+        txnouttype type;
+        vector<vector<unsigned char> > vSolutions;
+        Solver(*this, type, vSolutions);
+        if (type == TX_MULTISIG)
+            return "bare multisig";
     }
 
     return NULL;
