@@ -290,7 +290,7 @@ std::string HelpMessage(HelpMessageMode hmm)
     }
     strUsage += "  -mintxfee=<amt>        " + _("Fees smaller than this are considered zero fee (for transaction creation) (default:") + " " + FormatMoney(CTransaction::nMinTxFee) + ")" + "\n";
     strUsage += "  -minrelaytxfee=<amt>   " + _("Fees smaller than this are considered zero fee (for relaying) (default:") + " " + FormatMoney(CTransaction::nMinRelayTxFee) + ")" + "\n";
-    strUsage += "  -permitbaremultisig    " + _("Relay non-P2SH multisig (default: 1)") + "\n";
+    strUsage += "  -permitbaremultisig    " + _("Relay non-P2SH multisig (default: 0)") + "\n";
     strUsage += "  -printtoconsole        " + _("Send trace/debug info to console instead of debug.log file") + "\n";
     if (GetBoolArg("-help-debug", false))
     {
@@ -606,7 +606,7 @@ bool AppInit2(boost::thread_group& threadGroup)
             InitWarning(_("Warning: -paytxfee is set very high! This is the transaction fee you will pay if you send a transaction."));
     }
     bSpendZeroConfChange = GetArg("-spendzeroconfchange", true);
-    fIsBareMultisigStd = GetArg("-permitbaremultisig", true);
+    fIsBareMultisigStd = GetArg("-permitbaremultisig", false);
 
     strWalletFile = GetArg("-wallet", "wallet.dat");
 #endif // ENABLE_WALLET
