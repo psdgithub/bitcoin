@@ -47,7 +47,6 @@ bool fImporting = false;
 bool fReindex = false;
 bool fBenchmark = false;
 bool fTxIndex = false;
-bool fIsBareMultisigStd = true;
 unsigned int nCoinCacheSize = 5000;
 
 /** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
