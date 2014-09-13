@@ -576,16 +576,23 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
     if (!IsPushCanonicalTx(tx, reason))
         return false;
 
+    unsigned int verfFlags = 0;
+    if (fIsBareMultisigStd)
+        verfFlags |= SCRIPT_VERIFY_BARE_MSIG_OK;
     unsigned int nDataOut = 0;
     txnouttype whichType;
     BOOST_FOREACH(const CTxOut& txout, tx.vout) {
-        if (!::IsStandard(txout.scriptPubKey, whichType)) {
+        if (!::IsStandard(txout.scriptPubKey, whichType, verfFlags)) {
             reason = "scriptpubkey";
             return false;
         }
+
         if (whichType == TX_NULL_DATA)
             nDataOut++;
-        else if (txout.IsDust(CTransaction::nMinRelayTxFee)) {
+        else if ((whichType == TX_MULTISIG) && (!fIsBareMultisigStd)) {
+            reason = "bare-multisig";
+            return false;
+        } else if (txout.IsDust(CTransaction::nMinRelayTxFee)) {
             reason = "dust";
             return false;
         }
@@ -895,6 +902,14 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                              REJECT_NONSTANDARD, reason);
     }
 
+    const char *blacklistname;
+    BOOST_FOREACH(const CTxOut& txout, tx.vout)
+    {
+        blacklistname = txout.scriptPubKey.IsBlacklisted();
+        if (blacklistname)
+            return error("AcceptToMemoryPool : ignoring transaction %s with blacklisted output (%s)", tx.GetHash().ToString().c_str(), blacklistname);
+    }
+
     // is it already in the memory pool?
     uint256 hash = tx.GetHash();
     if (pool.exists(hash))
@@ -948,6 +963,16 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 
         // we have all inputs cached now, so switch back to dummy, so we don't need to keep lock on mempool
         view.SetBackend(dummy);
+        }
+
+        BOOST_FOREACH(const CTxIn txin, tx.vin)
+        {
+            const COutPoint &outpoint = txin.prevout;
+            const CCoins &coins = view.GetCoins(outpoint.hash);
+            assert(coins.IsAvailable(outpoint.n));
+            blacklistname = coins.vout[outpoint.n].scriptPubKey.IsBlacklisted();
+            if (blacklistname)
+                return error("CTxMemPool::accept() : ignoring transaction %s with blacklisted input (%s)", tx.GetHash().ToString().c_str(), blacklistname);
         }
 
         // Check for non-standard pay-to-script-hash in inputs

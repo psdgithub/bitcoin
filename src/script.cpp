@@ -3,6 +3,9 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <stdint.h>
+
+#include "compat.h"
 #include "script.h"
 
 #include "core.h"
@@ -1400,7 +1403,8 @@ int ScriptSigArgsExpected(txnouttype t, const std::vector<std::vector<unsigned c
     return -1;
 }
 
-bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType)
+bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType,
+                unsigned int flags)
 {
     vector<valtype> vSolutions;
     if (!Solver(scriptPubKey, whichType, vSolutions))
@@ -1408,6 +1412,8 @@ bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType)
 
     if (whichType == TX_MULTISIG)
     {
+        if (!(flags & SCRIPT_VERIFY_BARE_MSIG_OK))
+            return false;
         unsigned char m = vSolutions.front()[0];
         unsigned char n = vSolutions.back()[0];
         // Support up to x-of-3 multisig txns as standard
@@ -1841,6 +1847,49 @@ unsigned int CScript::GetSigOpCount(const CScript& scriptSig) const
     /// ... and return its opcount:
     CScript subscript(data.begin(), data.end());
     return subscript.GetSigOpCount(true);
+}
+
+struct BlacklistEntry {
+    uint32_t begin;
+    uint32_t end;
+    const char *name;
+};
+
+static struct BlacklistEntry BlacklistedPrefixes[] = {
+    {0x946cb2e0, 0x946cb2e0, "Mastercoin"},
+    {0x06f1b600, 0x06f1b6ff, "SatoshiDice"},
+    {0x74db3700, 0x74db59ff, "BetCoin Dice"},
+    {0xc4c5d791, 0xc4c5d791, "CHBS"},  // 1JwSSubhmg6iPtRjtyqhUYYH7bZg3Lfy1T
+    {0x434e5452, 0x434e5452, "Counterparty"},
+    {0x069532d8, 0x069532da, "SatoshiBones"},
+    {0xda5dde84, 0xda5dde94, "Lucky Bit"},
+};
+
+bool fIsBareMultisigStd = false;
+
+const char *CScript::IsBlacklisted() const
+{
+    if (this->size() >= 7 && this->at(0) == OP_DUP)
+    {
+        // pay-to-pubkeyhash
+        uint32_t pfx = ntohl(*(uint32_t*)&this->data()[3]);
+        unsigned i;
+
+        for (i = 0; i < (sizeof(BlacklistedPrefixes) / sizeof(BlacklistedPrefixes[0])); ++i)
+            if (pfx >= BlacklistedPrefixes[i].begin && pfx <= BlacklistedPrefixes[i].end)
+                return BlacklistedPrefixes[i].name;
+    }
+    else
+    if (!fIsBareMultisigStd)
+    {
+        txnouttype type;
+        vector<vector<unsigned char> > vSolutions;
+        Solver(*this, type, vSolutions);
+        if (type == TX_MULTISIG)
+            return "bare multisig";
+    }
+
+    return NULL;
 }
 
 bool CScript::IsPayToScriptHash() const
