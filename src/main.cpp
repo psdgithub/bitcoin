@@ -3593,6 +3593,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             }
         }
 
+        // Trigger download of remote node's memory pool
+        if (!IsInitialBlockDownload() && !pfrom->fInbound &&
+            pfrom->nVersion >= MEMPOOL_GD_VERSION)
+            pfrom->PushMessage("mempool");
+
         // Relay alerts
         {
             LOCK(cs_mapAlerts);
