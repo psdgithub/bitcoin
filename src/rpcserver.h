@@ -19,6 +19,7 @@
 #include "json/json_spirit_writer_template.h"
 
 class CBlockIndex;
+extern bool fRPCRunning;
 
 /* Start RPC threads */
 void StartRPCThreads();
