@@ -692,7 +692,23 @@ Value submitblock(const Array& params, bool fHelp)
     CValidationState state;
     bool fAccepted = ProcessBlock(state, NULL, &pblock);
     if (!fAccepted)
-        return "rejected"; // TODO: report validation state
+    {
+        std::string strRejectReason = state.GetRejectReason();
+        if (state.IsError())
+            throw JSONRPCError(RPC_VERIFY_ERROR, strRejectReason);
+        if (state.IsInvalid())
+        {
+            if (strRejectReason.empty())
+                return "rejected";
+            return strRejectReason;
+        }
+        // Should be impossible
+        return "valid?";
+    }
+
+    // NOTE: If we process an orphan, it is accepted yet not immediately processed
+    if (state.IsOrphan())
+        return "orphan";
 
     return Value::null;
 }
