@@ -1856,9 +1856,13 @@ struct BlacklistEntry {
 };
 
 static struct BlacklistEntry BlacklistedPrefixes[] = {
+    {0x946cb2e0, 0x946cb2e0, "Mastercoin"},
     {0x06f1b600, 0x06f1b6ff, "SatoshiDice"},
     {0x74db3700, 0x74db59ff, "BetCoin Dice"},
     {0xc4c5d791, 0xc4c5d791, "CHBS"},  // 1JwSSubhmg6iPtRjtyqhUYYH7bZg3Lfy1T
+    {0x434e5452, 0x434e5452, "Counterparty"},
+    {0x069532d8, 0x069532da, "SatoshiBones"},
+    {0xda5dde84, 0xda5dde94, "Lucky Bit"},
 };
 
 extern bool fIsBareMultisigStd;
