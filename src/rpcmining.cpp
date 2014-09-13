@@ -419,6 +419,8 @@ Value getwork(const Array& params, bool fHelp)
 }
 #endif
 
+static Value TestBlock(const Value& valData, bool fCheckPOW);
+
 Value getblocktemplate(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
@@ -495,6 +497,16 @@ Value getblocktemplate(const Array& params, bool fHelp)
         }
         else
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
+
+        if (strMode == "proposal")
+        {
+            const Value& dataval = find_value(oparam, "data");
+            if (dataval.type() == str_type)
+                return TestBlock(dataval, false);
+            else
+                throw JSONRPCError(RPC_TYPE_ERROR, "Missing data String key for proposal");
+        }
+
         lpval = find_value(oparam, "longpollid");
     }
 
@@ -591,6 +603,10 @@ Value getblocktemplate(const Array& params, bool fHelp)
     UpdateTime(*pblock, pindexPrev);
     pblock->nNonce = 0;
 
+    static Array aCaps;
+    if (aCaps.empty())
+        aCaps.push_back("proposal");
+
     Array transactions;
     map<uint256, int64_t> setTxIndex;
     int i = 0;
@@ -639,6 +655,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
     }
 
     Object result;
+    result.push_back(Pair("capabilities", aCaps));
     result.push_back(Pair("version", pblock->nVersion));
     result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
     result.push_back(Pair("transactions", transactions));
@@ -656,6 +673,42 @@ Value getblocktemplate(const Array& params, bool fHelp)
     result.push_back(Pair("height", (int64_t)(pindexPrev->nHeight+1)));
 
     return result;
+}
+
+static Value TestBlock(const Value& valData, bool fCheckPOW)
+{
+    vector<unsigned char> blockData(ParseHex(valData.get_str()));
+    CDataStream ssBlock(blockData, SER_NETWORK, PROTOCOL_VERSION);
+    CBlock pblock;
+    try {
+        ssBlock >> pblock;
+    }
+    catch (std::exception &e) {
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block decode failed");
+    }
+
+    CValidationState state;
+    bool fAccepted = ProcessBlock(state, NULL, &pblock, NULL, fCheckPOW);
+    if (!fAccepted)
+    {
+        std::string strRejectReason = state.GetRejectReason();
+        if (state.IsError())
+            throw JSONRPCError(RPC_VERIFY_ERROR, strRejectReason);
+        if (state.IsInvalid())
+        {
+            if (strRejectReason.empty())
+                return "rejected";
+            return strRejectReason;
+        }
+        // Should be impossible
+        return "valid?";
+    }
+
+    // NOTE: If we process an orphan, it is accepted yet not immediately processed
+    if (state.IsOrphan())
+        return "orphan";
+
+    return Value::null;
 }
 
 Value submitblock(const Array& params, bool fHelp)
@@ -679,36 +732,5 @@ Value submitblock(const Array& params, bool fHelp)
             + HelpExampleRpc("submitblock", "\"mydata\"")
         );
 
-    vector<unsigned char> blockData(ParseHex(params[0].get_str()));
-    CDataStream ssBlock(blockData, SER_NETWORK, PROTOCOL_VERSION);
-    CBlock pblock;
-    try {
-        ssBlock >> pblock;
-    }
-    catch (std::exception &e) {
-        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block decode failed");
-    }
-
-    CValidationState state;
-    bool fAccepted = ProcessBlock(state, NULL, &pblock);
-    if (!fAccepted)
-    {
-        std::string strRejectReason = state.GetRejectReason();
-        if (state.IsError())
-            throw JSONRPCError(RPC_VERIFY_ERROR, strRejectReason);
-        if (state.IsInvalid())
-        {
-            if (strRejectReason.empty())
-                return "rejected";
-            return strRejectReason;
-        }
-        // Should be impossible
-        return "valid?";
-    }
-
-    // NOTE: If we process an orphan, it is accepted yet not immediately processed
-    if (state.IsOrphan())
-        return "orphan";
-
-    return Value::null;
+    return TestBlock(params[0], true);
 }

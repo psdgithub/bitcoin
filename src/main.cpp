@@ -1331,18 +1331,18 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     return bnNew.GetCompact();
 }
 
-bool CheckProofOfWork(uint256 hash, unsigned int nBits)
+bool CheckProofOfWork(uint256 hash, unsigned int nBits, bool fSilent)
 {
     CBigNum bnTarget;
     bnTarget.SetCompact(nBits);
 
     // Check range
     if (bnTarget <= 0 || bnTarget > Params().ProofOfWorkLimit())
-        return error("CheckProofOfWork() : nBits below minimum work");
+        return fSilent ? false : error("CheckProofOfWork() : nBits below minimum work");
 
     // Check proof of work matches claimed amount
     if (hash > bnTarget.getuint256())
-        return error("CheckProofOfWork() : hash doesn't match nBits");
+        return fSilent ? false : error("CheckProofOfWork() : hash doesn't match nBits");
 
     return true;
 }
@@ -2397,7 +2397,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW, bo
     return true;
 }
 
-bool AcceptBlock(CBlock& block, CValidationState& state, CDiskBlockPos* dbp)
+bool AcceptBlock(CBlock& block, CValidationState& state, CDiskBlockPos* dbp, bool fWriteToDisk)
 {
     AssertLockHeld(cs_main);
     // Check for duplicate
@@ -2467,6 +2467,9 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CDiskBlockPos* dbp)
         }
     }
 
+    if (!fWriteToDisk)
+        return true;
+
     // Write block to history file
     try {
         unsigned int nBlockSize = ::GetSerializeSize(block, SER_DISK, CLIENT_VERSION);
@@ -2534,7 +2537,7 @@ void PushGetBlocks(CNode* pnode, CBlockIndex* pindexBegin, uint256 hashEnd)
     pnode->PushMessage("getblocks", chainActive.GetLocator(pindexBegin), hashEnd);
 }
 
-bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBlockPos *dbp)
+bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBlockPos *dbp, bool fCheckPOW)
 {
     AssertLockHeld(cs_main);
 
@@ -2546,8 +2549,15 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
         return state.Invalid(error("ProcessBlock() : already have block (orphan) %s", hash.ToString()), 0, "duplicate");
 
     // Preliminary checks
-    if (!CheckBlock(*pblock, state))
+    if (!CheckBlock(*pblock, state, fCheckPOW))
         return error("ProcessBlock() : CheckBlock FAILED");
+
+    bool fHasPOW = fCheckPOW;
+    if (!fHasPOW)
+    {
+        CValidationState dummy;
+        fHasPOW = CheckProofOfWork(pblock->GetHash(), pblock->nBits, true);
+    }
 
     CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(mapBlockIndex);
     if (pcheckpoint && pblock->hashPrevBlock != (chainActive.Tip() ? chainActive.Tip()->GetBlockHash() : uint256(0)))
@@ -2598,8 +2608,21 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
     }
 
     // Store to disk
-    if (!AcceptBlock(*pblock, state, dbp))
+    if (!AcceptBlock(*pblock, state, dbp, fHasPOW))
         return error("ProcessBlock() : AcceptBlock FAILED");
+
+    if (!fHasPOW)
+    {
+        // The block isn't committed to disk since it was just a proposal, but we need to do connect checks still
+        CBlockIndex* pindexPrev = mapBlockIndex[pblock->hashPrevBlock];
+        if (pblock->hashPrevBlock != pcoinsTip->GetBestBlock())
+            return state.Invalid("stale-prevblk", error("ProcessBlock() : proposed block built on non-best %s", pblock->hashPrevBlock.ToString().c_str()));
+        CBlockIndex indexDummy(*pblock);
+        indexDummy.pprev = pindexPrev;
+        indexDummy.nHeight = pindexPrev->nHeight + 1;
+        CCoinsViewCache viewNew(*pcoinsTip, true);
+        return ConnectBlock(*pblock, state, &indexDummy, viewNew, true);
+    }
 
     // Recursively process any orphan blocks that depended on this one
     vector<uint256> vWorkQueue;
