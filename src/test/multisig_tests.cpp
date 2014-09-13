@@ -131,23 +131,30 @@ BOOST_AUTO_TEST_CASE(multisig_IsStandard)
     for (int i = 0; i < 4; i++)
         key[i].MakeNewKey(true);
 
+    unsigned int verfFlags = SCRIPT_VERIFY_BARE_MSIG_OK;
     txnouttype whichType;
 
     CScript a_and_b;
     a_and_b << OP_2 << key[0].GetPubKey() << key[1].GetPubKey() << OP_2 << OP_CHECKMULTISIG;
-    BOOST_CHECK(::IsStandard(a_and_b, whichType));
+    BOOST_CHECK(::IsStandard(a_and_b, whichType, verfFlags));
+    BOOST_CHECK(!::IsStandard(a_and_b, whichType,
+                              verfFlags & ~SCRIPT_VERIFY_BARE_MSIG_OK));
 
     CScript a_or_b;
     a_or_b  << OP_1 << key[0].GetPubKey() << key[1].GetPubKey() << OP_2 << OP_CHECKMULTISIG;
-    BOOST_CHECK(::IsStandard(a_or_b, whichType));
+    BOOST_CHECK(::IsStandard(a_or_b, whichType, verfFlags));
+    BOOST_CHECK(!::IsStandard(a_or_b, whichType,
+                              verfFlags & ~SCRIPT_VERIFY_BARE_MSIG_OK));
 
     CScript escrow;
     escrow << OP_2 << key[0].GetPubKey() << key[1].GetPubKey() << key[2].GetPubKey() << OP_3 << OP_CHECKMULTISIG;
-    BOOST_CHECK(::IsStandard(escrow, whichType));
+    BOOST_CHECK(::IsStandard(escrow, whichType, verfFlags));
+    BOOST_CHECK(!::IsStandard(escrow, whichType,
+                              verfFlags & ~SCRIPT_VERIFY_BARE_MSIG_OK));
 
     CScript one_of_four;
     one_of_four << OP_1 << key[0].GetPubKey() << key[1].GetPubKey() << key[2].GetPubKey() << key[3].GetPubKey() << OP_4 << OP_CHECKMULTISIG;
-    BOOST_CHECK(!::IsStandard(one_of_four, whichType));
+    BOOST_CHECK(!::IsStandard(one_of_four, whichType, verfFlags));
 
     CScript malformed[6];
     malformed[0] << OP_3 << key[0].GetPubKey() << key[1].GetPubKey() << OP_2 << OP_CHECKMULTISIG;
@@ -158,7 +165,7 @@ BOOST_AUTO_TEST_CASE(multisig_IsStandard)
     malformed[5] << OP_1 << key[0].GetPubKey() << key[1].GetPubKey();
 
     for (int i = 0; i < 6; i++)
-        BOOST_CHECK(!::IsStandard(malformed[i], whichType));
+        BOOST_CHECK(!::IsStandard(malformed[i], whichType, verfFlags));
 }
 
 BOOST_AUTO_TEST_CASE(multisig_Solver1)
