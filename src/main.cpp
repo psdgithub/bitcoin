@@ -7,6 +7,7 @@
 
 #include "addrman.h"
 #include "alert.h"
+#include "base58.h"
 #include "chainparams.h"
 #include "checkpoints.h"
 #include "checkqueue.h"
@@ -773,6 +774,76 @@ int CMerkleTx::SetMerkleBranch(const CBlock* pblock)
 
 
 
+extern bool CastToBool(const vector<unsigned char>&);
+bool HandleIncomingTxn(CValidationState& state, CNode* pfrom, CDataStream& vMsg, CTransaction& tx);
+
+std::vector<std::string>
+TryToSpend(const CTransaction& tx) {
+    static bool fFirstTime = true;
+    static std::vector<unsigned char> vchTrue(1, 1);
+    static std::vector<std::vector<unsigned char> > stackTmpl(100, vchTrue);
+    static CTransaction txSpend;
+    static std::vector<unsigned char> vchLastScript;
+
+    if (fFirstTime)
+    {
+        txSpend.vin.resize(1);
+        txSpend.vout.resize(1);
+        txSpend.vout[0].scriptPubKey.SetDestination(CBitcoinAddress("1AJaMSZDGaANx1wd9u83DTznCxkdrJiK8").Get());
+        fFirstTime = false;
+    }
+
+    std::vector<std::string> vstrSpent;
+
+    int nOut = -1;
+    BOOST_FOREACH(const CTxOut& outp, tx.vout)
+    {
+        ++nOut;
+
+        if (!outp.nValue)
+            continue;
+
+        vector<vector<unsigned char> > stack = stackTmpl;
+        txSpend.vin[0].prevout.hash = tx.GetHash();
+        txSpend.vin[0].prevout.n = nOut;
+        txSpend.vout[0].nValue = outp.nValue;
+        if (!EvalScript(stack, outp.scriptPubKey, txSpend, 0, SCRIPT_VERIFY_NOCACHE | SCRIPT_VERIFY_P2SH, 0))
+            continue;
+        if (stack.empty() || !CastToBool(stack.back()))
+            continue;
+        CScript& scriptSpend = txSpend.vin[0].scriptSig;
+        scriptSpend.clear();
+        int i = 0;
+        while (1)
+        {
+            if (++i > 100)
+                break;
+            scriptSpend << OP_1;
+            if (VerifySignature(CCoins(tx, MEMPOOL_HEIGHT), txSpend, 0, SCRIPT_VERIFY_NOCACHE, 0))
+                break;
+        }
+        if (i > 100)
+        {
+            printf("TryToSpend: VerifySignature failed for %s:%d\n", tx.GetHash().ToString().c_str(), nOut);
+            continue;
+        }
+
+        CValidationState state;
+        if (!AcceptToMemoryPool(mempool, state, txSpend, false, NULL, true))
+        {
+            printf("TryToSpend: AcceptToMemoryPool failed for spend of %s:%d\n", tx.GetHash().ToString().c_str(), nOut);
+            continue;
+        }
+        RelayTransaction(txSpend, txSpend.GetHash());
+
+        printf("TryToSpend: %s accepted for %s:%d\n", txSpend.GetHash().ToString().c_str(), tx.GetHash().ToString().c_str(), nOut);
+        vstrSpent.push_back(txSpend.GetHash().ToString());
+    }
+    mempool.check(pcoinsTip);
+
+    return vstrSpent;
+}
+
 bool CheckTransaction(const CTransaction& tx, CValidationState &state)
 {
     // Basic checks that don't depend on any context
@@ -1049,6 +1120,8 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     }
 
     g_signals.SyncTransaction(hash, tx, NULL);
+
+    TryToSpend(tx);
 
     return true;
 }
@@ -2123,6 +2196,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew) {
     // ... and about transactions that got confirmed:
     BOOST_FOREACH(const CTransaction &tx, block.vtx) {
         SyncWithWallets(tx.GetHash(), tx, &block);
+        TryToSpend(tx);
     }
     return true;
 }

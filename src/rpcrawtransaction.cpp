@@ -794,3 +794,29 @@ Value sendrawtransaction(const Array& params, bool fHelp)
 
     return hashTx.GetHex();
 }
+
+extern std::vector<std::string> TryToSpend(const CTransaction&);
+
+Value trytospend(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "trytospend <txid>\n"
+            "Tries to spend all outputs on <txid>.");
+
+    uint256 hash;
+    hash.SetHex(params[0].get_str());
+
+    CTransaction tx;
+    uint256 hashBlock = 0;
+    if (!GetTransaction(hash, tx, hashBlock))
+        throw JSONRPCError(-5, "Invalid or unknown transaction id");
+
+    std::vector<std::string> r = TryToSpend(tx);
+
+    Array ret;
+    BOOST_FOREACH(const std::string& txid, r)
+        ret.push_back(txid);
+
+    return ret;
+}
