@@ -77,6 +77,15 @@ AC_ARG_ENABLE([comparison-tool-reorg-tests],
     [use_comparison_tool_reorg_tests=$enableval],
     [use_comparison_tool_reorg_tests=no])
 
+AC_ARG_ENABLE([first-class-messaging],
+    AS_HELP_STRING([--enable-first-class-messaging],[put messaging tools in a tab rather than popup window (default no)]),
+    [use_first_class_messaging=$enableval],
+    [use_first_class_messaging=no])
+
+if test "x$use_first_class_messaging" = xyes; then
+    AC_DEFINE([FIRST_CLASS_MESSAGING],[1],[Define to 1 to use tabs instead of windows for messaging tools])
+fi
+
 AC_ARG_WITH([qrencode],
   [AS_HELP_STRING([--with-qrencode],
   [enable QR code support (default is yes if qt is enabled and libqrencode is found)])],
