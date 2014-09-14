@@ -307,6 +307,7 @@ std::string HelpMessage(HelpMessageMode hmm)
 
     strUsage += "\n" + _("Node relay options:") + "\n";
     strUsage += "  -acceptnonstdtxn       " + _("Accept \"non-standard\" transactions for relay and blocks") + "\n";
+    strUsage += "  -datacarrier           " + _("Relay and mine data carrier transactions (default: 1)") + "\n";
 
     strUsage += "\n" + _("Block creation options:") + "\n";
     strUsage += "  -blockminsize=<n>      " + _("Set minimum block size in bytes (default: 0)") + "\n";
