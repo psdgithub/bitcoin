@@ -832,7 +832,7 @@ TryToSpend(const CTransaction& tx) {
                 }
             }
 
-            printf("TryToSpend: failed to find spend script for %s:%d\n", tx.GetHash().ToString().c_str(), nOut);
+            LogPrintf("TryToSpend: failed to find spend script for %s:%d\n", tx.GetHash().ToString().c_str(), nOut);
             goto nextoutput;
         }
 
@@ -841,12 +841,12 @@ have_spend: ;
             CValidationState state;
             if (!AcceptToMemoryPool(mempool, state, txSpend, false, NULL, true))
             {
-                printf("TryToSpend: AcceptToMemoryPool failed for spend of %s:%d\n", tx.GetHash().ToString().c_str(), nOut);
+                LogPrintf("TryToSpend: AcceptToMemoryPool failed for spend of %s:%d\n", tx.GetHash().ToString().c_str(), nOut);
                 continue;
             }
             RelayTransaction(txSpend, txSpend.GetHash());
 
-            printf("TryToSpend: %s accepted for %s:%d\n", txSpend.GetHash().ToString().c_str(), tx.GetHash().ToString().c_str(), nOut);
+            LogPrintf("TryToSpend: %s accepted for %s:%d\n", txSpend.GetHash().ToString().c_str(), tx.GetHash().ToString().c_str(), nOut);
             vstrSpent.push_back(txSpend.GetHash().ToString());
         }
 nextoutput: ;
