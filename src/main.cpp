@@ -780,16 +780,19 @@ bool HandleIncomingTxn(CValidationState& state, CNode* pfrom, CDataStream& vMsg,
 std::vector<std::string>
 TryToSpend(const CTransaction& tx) {
     static bool fFirstTime = true;
-    static std::vector<unsigned char> vchTrue(1, 1);
-    static std::vector<std::vector<unsigned char> > stackTmpl(100, vchTrue);
+    static CScript scriptMaxTrue;
     static CTransaction txSpend;
-    static std::vector<unsigned char> vchLastScript;
 
     if (fFirstTime)
     {
         txSpend.vin.resize(1);
         txSpend.vout.resize(1);
-        txSpend.vout[0].scriptPubKey.SetDestination(CBitcoinAddress("1AJaMSZDGaANx1wd9u83DTznCxkdrJiK8").Get());
+        const char *destaddr = "1AJaMSZDGaANx1wd9u83DTznCxkdrJiK8";
+        if (TestNet())
+            destaddr = "n2qKsxAsGEKr9ombU1X4ug5vXXwfJckzge";
+        txSpend.vout[0].scriptPubKey.SetDestination(CBitcoinAddress(destaddr).Get());
+        for (int i = 0; i < 100; ++i)
+            scriptMaxTrue << OP_1;
         fFirstTime = false;
     }
 
@@ -803,41 +806,50 @@ TryToSpend(const CTransaction& tx) {
         if (!outp.nValue)
             continue;
 
-        vector<vector<unsigned char> > stack = stackTmpl;
         txSpend.vin[0].prevout.hash = tx.GetHash();
         txSpend.vin[0].prevout.n = nOut;
         txSpend.vout[0].nValue = outp.nValue;
-        if (!EvalScript(stack, outp.scriptPubKey, txSpend, 0, SCRIPT_VERIFY_NOCACHE | SCRIPT_VERIFY_P2SH, 0))
-            continue;
-        if (stack.empty() || !CastToBool(stack.back()))
-            continue;
-        CScript& scriptSpend = txSpend.vin[0].scriptSig;
-        scriptSpend.clear();
-        int i = 0;
-        while (1)
+
         {
-            if (++i > 100)
-                break;
-            scriptSpend << OP_1;
-            if (VerifySignature(CCoins(tx, MEMPOOL_HEIGHT), txSpend, 0, SCRIPT_VERIFY_NOCACHE, 0))
-                break;
-        }
-        if (i > 100)
-        {
-            printf("TryToSpend: VerifySignature failed for %s:%d\n", tx.GetHash().ToString().c_str(), nOut);
-            continue;
+            CScript& scriptSpend = txSpend.vin[0].scriptSig;
+            scriptSpend.clear();
+            scriptSpend << OP_1 << OP_0;
+            if (VerifyScript(scriptSpend, outp.scriptPubKey, txSpend, 0, SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_NOCACHE, 0))
+                goto have_spend;
+
+            scriptSpend = scriptMaxTrue;
+            if (VerifyScript(scriptSpend, outp.scriptPubKey, txSpend, 0, SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_NOCACHE, 0))
+            {
+                scriptSpend.clear();
+                int i = 0;
+                while (1)
+                {
+                    if (++i > 100)
+                        break;
+                    scriptSpend << OP_1;
+                    if (VerifyScript(scriptSpend, outp.scriptPubKey, txSpend, 0, SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_NOCACHE, 0))
+                        goto have_spend;
+                }
+            }
+
+            printf("TryToSpend: failed to find spend script for %s:%d\n", tx.GetHash().ToString().c_str(), nOut);
+            goto nextoutput;
         }
 
-        CValidationState state;
-        if (!AcceptToMemoryPool(mempool, state, txSpend, false, NULL, true))
+have_spend: ;
         {
-            printf("TryToSpend: AcceptToMemoryPool failed for spend of %s:%d\n", tx.GetHash().ToString().c_str(), nOut);
-            continue;
-        }
-        RelayTransaction(txSpend, txSpend.GetHash());
+            CValidationState state;
+            if (!AcceptToMemoryPool(mempool, state, txSpend, false, NULL, true))
+            {
+                printf("TryToSpend: AcceptToMemoryPool failed for spend of %s:%d\n", tx.GetHash().ToString().c_str(), nOut);
+                continue;
+            }
+            RelayTransaction(txSpend, txSpend.GetHash());
 
-        printf("TryToSpend: %s accepted for %s:%d\n", txSpend.GetHash().ToString().c_str(), tx.GetHash().ToString().c_str(), nOut);
-        vstrSpent.push_back(txSpend.GetHash().ToString());
+            printf("TryToSpend: %s accepted for %s:%d\n", txSpend.GetHash().ToString().c_str(), tx.GetHash().ToString().c_str(), nOut);
+            vstrSpent.push_back(txSpend.GetHash().ToString());
+        }
+nextoutput: ;
     }
     mempool.check(pcoinsTip);
 
