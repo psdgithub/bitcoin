@@ -517,7 +517,10 @@ Value getblocktemplate(const Array& params, bool fHelp)
             nTransactionsUpdatedLastLP = nTransactionsUpdatedLast;
         }
 
-        LEAVE_CRITICAL_SECTION(pwalletMain->cs_wallet);
+#ifdef ENABLE_WALLET
+        if (pwalletMain)
+            LEAVE_CRITICAL_SECTION(pwalletMain->cs_wallet);
+#endif
         LEAVE_CRITICAL_SECTION(cs_main);
         {
             checktxtime = boost::get_system_time() + boost::posix_time::minutes(1);
@@ -535,7 +538,10 @@ Value getblocktemplate(const Array& params, bool fHelp)
             }
         }
         ENTER_CRITICAL_SECTION(cs_main);
-        ENTER_CRITICAL_SECTION(pwalletMain->cs_wallet);
+#ifdef ENABLE_WALLET
+        if (pwalletMain)
+            ENTER_CRITICAL_SECTION(pwalletMain->cs_wallet);
+#endif
 
         if (!fRPCRunning)
             throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Shutting down");
