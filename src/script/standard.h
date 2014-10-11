@@ -13,8 +13,6 @@
 
 class CScript;
 
-static const unsigned int MAX_OP_RETURN_RELAY = 40;      // bytes
-
 // Mandatory script verification flags that all new blocks must comply with for
 // them to be valid. (but old blocks may not comply with) Currently just P2SH,
 // but in the future other flags may be added, such as a soft-fork to enforce

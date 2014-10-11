@@ -23,15 +23,37 @@ bool CNodePolicy::IsStandardScript(const CScript& scriptPubKey, txnouttype& whic
     if (!Solver(scriptPubKey, whichType, vSolutions))
         return false;
 
-    if (whichType == TX_MULTISIG)
+    switch (whichType)
     {
-        unsigned char m = vSolutions.front()[0];
-        unsigned char n = vSolutions.back()[0];
-        // Support up to x-of-3 multisig txns as standard
-        if (n < 1 || n > 3)
-            return false;
-        if (m < 1 || m > n)
-            return false;
+        case TX_MULTISIG:
+        {
+            unsigned char m = vSolutions.front()[0];
+            unsigned char n = vSolutions.back()[0];
+            // Support up to x-of-3 multisig txns as standard
+            if (n < 1 || n > 3)
+                return false;
+            if (m < 1 || m > n)
+                return false;
+            break;
+        }
+
+        case TX_NULL_DATA:
+            // TX_NULL_DATA without any vSolutions is a lone OP_RETURN, which traditionally is accepted regardless of the -datacarrier option, so we skip the check.
+            // If you want to filter lone OP_RETURNs, be sure to handle vSolutions being empty below where vSolutions.front() is accessed!
+            if (vSolutions.size())
+            {
+                if (!nDataCarrierBytes)
+                    return false;
+
+                if (vSolutions.front().size() > nDataCarrierBytes)
+                    return false;
+            }
+
+            break;
+
+        default:
+            // no other restrictions on standard scripts
+            break;
     }
 
     return whichType != TX_NONSTANDARD;

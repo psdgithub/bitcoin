@@ -651,6 +651,8 @@ bool AppInit2(boost::thread_group& threadGroup)
     COINBASE_FLAGS << std::vector<unsigned char>(pszP2SH, pszP2SH+strlen(pszP2SH));
 
     policy.fRequireStandardTx = Params().RequireStandard();
+    if (!GetBoolArg("-datacarrier", true))
+        policy.nDataCarrierBytes = 0;
 
     // Fee-per-kilobyte amount considered the same as "free"
     // If you are mining, be careful setting this:

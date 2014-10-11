@@ -28,8 +28,9 @@ class CNodePolicy : CNodePolicyBase
 {
 public:
     bool fRequireStandardTx;
+    unsigned nDataCarrierBytes;
 
-    CNodePolicy() : fRequireStandardTx(true) { };
+    CNodePolicy() : fRequireStandardTx(true), nDataCarrierBytes(40) { };
 
     virtual bool IsStandardScript(const CScript& scriptPubKey, txnouttype& whichType);
 
