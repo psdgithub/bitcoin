@@ -8,6 +8,7 @@
 #include "amount.h"
 #include "core.h"
 #include "main.h"
+#include "script/standard.h"
 #include "sync.h"
 #include "txmempool.h"
 #include "uint256.h"
@@ -19,10 +20,6 @@
 bool CNodePolicy::IsStandardTx(const CTransaction& tx, std::string& reason)
 {
     AssertLockHeld(cs_main);
-    if (tx.nVersion > CTransaction::CURRENT_VERSION || tx.nVersion < 1) {
-        reason = "version";
-        return false;
-    }
 
     // Treat non-final transactions as non-standard to prevent a specific type
     // of double-spend attack, as well as DoS attacks. (if the transaction
@@ -102,6 +99,74 @@ bool CNodePolicy::IsStandardTx(const CTransaction& tx, std::string& reason)
     if (nDataOut > 1) {
         reason = "multi-op-return";
         return false;
+    }
+
+    return true;
+}
+
+//
+// Check transaction inputs to mitigate two
+// potential denial-of-service attacks:
+//
+// 1. scriptSigs with extra data stuffed into them,
+//    not consumed by scriptPubKey (or P2SH script)
+// 2. P2SH scripts with a crazy number of expensive
+//    CHECKSIG/CHECKMULTISIG operations
+//
+bool CNodePolicy::AreInputsStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs)
+{
+    if (tx.IsCoinBase())
+        return true; // Coinbases don't use vin normally
+
+    for (unsigned int i = 0; i < tx.vin.size(); i++)
+    {
+        const CTxOut& prev = mapInputs.GetOutputFor(tx.vin[i]);
+
+        std::vector<std::vector<unsigned char> > vSolutions;
+        txnouttype whichType;
+        // get the scriptPubKey corresponding to this input:
+        const CScript& prevScript = prev.scriptPubKey;
+        if (!Solver(prevScript, whichType, vSolutions))
+            return false;
+        int nArgsExpected = ScriptSigArgsExpected(whichType, vSolutions);
+        if (nArgsExpected < 0)
+            return false;
+
+        // Transactions with extra stuff in their scriptSigs are
+        // non-standard. Note that this EvalScript() call will
+        // be quick, because if there are any operations
+        // beside "push data" in the scriptSig
+        // IsStandard() will have already returned false
+        // and this method isn't called.
+        std::vector<std::vector<unsigned char> > stack;
+        if (!EvalScript(stack, tx.vin[i].scriptSig, false, BaseSignatureChecker()))
+            return false;
+
+        if (whichType == TX_SCRIPTHASH)
+        {
+            if (stack.empty())
+                return false;
+            CScript subscript(stack.back().begin(), stack.back().end());
+            std::vector<std::vector<unsigned char> > vSolutions2;
+            txnouttype whichType2;
+            if (Solver(subscript, whichType2, vSolutions2))
+            {
+                int tmpExpected = ScriptSigArgsExpected(whichType2, vSolutions2);
+                if (tmpExpected < 0)
+                    return false;
+                nArgsExpected += tmpExpected;
+            }
+            else
+            {
+                // Any other Script with less than 15 sigops OK:
+                unsigned int sigops = subscript.GetSigOpCount(true);
+                // ... extra data left on the stack after execution is OK, too:
+                return (sigops <= MAX_P2SH_SIGOPS);
+            }
+        }
+
+        if (stack.size() != (unsigned int)nArgsExpected)
+            return false;
     }
 
     return true;

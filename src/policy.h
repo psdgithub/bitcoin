@@ -34,6 +34,13 @@ public:
     @return True if all outputs (scriptPubKeys) use only standard transaction forms
     */
     virtual bool IsStandardTx(const CTransaction&, std::string& reason);
+
+    /** Check for standard transaction types
+        @param[in] mapInputs    Map of previous transactions that have outputs we're spending
+        @return True if all inputs (scriptSigs) use only standard transaction forms
+    */
+    virtual bool AreInputsStandard(const CTransaction&, const CCoinsViewCache& mapInputs);
+
     virtual CAmount GetMinRelayFee(const CTransaction&, unsigned int nBytes, bool fAllowFree);
 
     virtual bool AcceptTxPoolPreInputs(CTxMemPool&, CValidationState&, const CTransaction&);
