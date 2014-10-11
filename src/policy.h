@@ -7,6 +7,7 @@
 #define BITCOIN_POLICY_H
 
 #include "amount.h"
+#include "script/standard.h"
 
 class CCoinsViewCache;
 class CTransaction;
@@ -29,6 +30,8 @@ public:
     bool fRequireStandardTx;
 
     CNodePolicy() : fRequireStandardTx(true) { };
+
+    virtual bool IsStandardScript(const CScript& scriptPubKey, txnouttype& whichType);
 
     /** Check for standard transaction types
     @return True if all outputs (scriptPubKeys) use only standard transaction forms
