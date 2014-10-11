@@ -30,6 +30,10 @@ public:
 
     CNodePolicy() : fRequireStandardTx(true) { };
 
+    /** Check for standard transaction types
+    @return True if all outputs (scriptPubKeys) use only standard transaction forms
+    */
+    virtual bool IsStandardTx(const CTransaction&, std::string& reason);
     virtual CAmount GetMinRelayFee(const CTransaction&, unsigned int nBytes, bool fAllowFree);
 
     virtual bool AcceptTxPoolPreInputs(CTxMemPool&, CValidationState&, const CTransaction&);
