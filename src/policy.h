@@ -25,7 +25,7 @@ public:
     virtual bool AcceptMemPoolEntry(CTxMemPool&, CValidationState&, CTxMemPoolEntry&, CCoinsViewCache&, bool& fRateLimit) = 0;
     virtual bool RateLimitTx(CTxMemPool&, CValidationState&, CTxMemPoolEntry&, CCoinsViewCache&) = 0;
 
-    virtual CAmount BuildNewBlock(CBlockTemplate&, const CTxMemPool&, const CBlockIndex& indexPrev, CCoinsViewCache&) = 0;
+    virtual bool BuildNewBlock(CBlockTemplate&, const CTxMemPool&, const CBlockIndex& indexPrev, CCoinsViewCache&) = 0;
 };
 
 class CNodePolicy : CNodePolicyBase
@@ -59,7 +59,7 @@ public:
     /** Collect transactions (probably from the mempool) into a new block template
         @return Total amount of transaction fees collected by transactions
     */
-    virtual CAmount BuildNewBlock(CBlockTemplate&, const CTxMemPool&, const CBlockIndex& indexPrev, CCoinsViewCache&);
+    virtual bool BuildNewBlock(CBlockTemplate&, const CTxMemPool&, const CBlockIndex& indexPrev, CCoinsViewCache&);
 };
 
 #endif // BITCOIN_POLICY_H

@@ -61,7 +61,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         CCoinsViewCache view(pcoinsTip);
 
         // Collect memory pool transactions into the block
-        CAmount nFees = policy.BuildNewBlock(*pblocktemplate, mempool, *pindexPrev, view);
+        if (!policy.BuildNewBlock(*pblocktemplate, mempool, *pindexPrev, view))
+            throw std::runtime_error("CreateNewBlock() : BuildNewBlock failed");
 
         nLastBlockTx = pblock->vtx.size() - 1;
         unsigned nBlockSize = ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION);
@@ -69,6 +70,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         LogPrintf("CreateNewBlock(): total size %u\n", nBlockSize);
 
         // Compute final coinbase transaction.
+        CAmount nFees = pblocktemplate->nTotalTxFees;
         txNew.vout[0].nValue = GetBlockValue(pindexPrev->nHeight+1, nFees);
         txNew.vin[0].scriptSig = CScript() << OP_0 << OP_0;
         pblock->vtx[0] = txNew;
