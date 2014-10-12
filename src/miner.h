@@ -11,16 +11,23 @@
 #include <stdint.h>
 
 class CBlockIndex;
+class CCoinsViewCache;
 class CReserveKey;
 class CScript;
 class CWallet;
 
-struct CBlockTemplate
+class CBlockTemplate
 {
+public:
     CBlock block;
+    int nHeight;
+    uint64_t nBlockSize;
     CAmount nTotalTxFees;
     std::vector<CAmount> vTxFees;
+    int64_t nBlockSigOps;
     std::vector<int64_t> vTxSigOps;
+
+    bool AddTransaction(const CTransaction&, CCoinsViewCache&);
 };
 
 /** Run the miner threads */

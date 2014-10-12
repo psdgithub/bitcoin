@@ -25,6 +25,44 @@ using namespace std;
 // BitcoinMiner
 //
 
+bool CBlockTemplate::AddTransaction(const CTransaction& tx, CCoinsViewCache& view)
+{
+    if (!view.HaveInputs(tx))
+        return false;
+
+    // Size limit
+    unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
+    if (nBlockSize + nTxSize >= MAX_BLOCK_SIZE)
+        return false;
+
+    // SigOp limit
+    unsigned int nTxSigOps = GetLegacySigOpCount(tx) + GetP2SHSigOpCount(tx, view);
+    if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS)
+        return false;
+
+    // Note that flags: we don't want to set mempool/IsStandardScript()
+    // policy here, but we still have to ensure that the block we
+    // create only contains transactions that are valid in new blocks.
+    CValidationState state;
+    if (!CheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true))
+        return false;
+
+    CTxUndo txundo;
+    UpdateCoins(tx, state, view, txundo, nHeight);
+
+    CAmount nTxFees = view.GetTxFees(tx);
+
+    // Added
+    block.vtx.push_back(tx);
+    vTxFees.push_back(nTxFees);
+    vTxSigOps.push_back(nTxSigOps);
+    nBlockSize += nTxSize;
+    nBlockSigOps += nTxSigOps;
+    nTotalTxFees += nTxFees;
+
+    return true;
+}
+
 uint64_t nLastBlockTx = 0;
 uint64_t nLastBlockSize = 0;
 
@@ -61,6 +99,9 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         CCoinsViewCache view(pcoinsTip);
 
         // Collect memory pool transactions into the block
+        pblocktemplate->nBlockSize = 1000;
+        pblocktemplate->nBlockSigOps = 100;
+        pblocktemplate->nHeight = pindexPrev->nHeight + 1;
         if (!policy.BuildNewBlock(*pblocktemplate, mempool, *pindexPrev, view))
             throw std::runtime_error("CreateNewBlock() : BuildNewBlock failed");
 
@@ -85,7 +126,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
         CBlockIndex indexDummy(*pblock);
         indexDummy.pprev = pindexPrev;
-        indexDummy.nHeight = pindexPrev->nHeight + 1;
+        assert(pblocktemplate->nHeight == pindexPrev->nHeight + 1);
+        indexDummy.nHeight = pblocktemplate->nHeight;
         CCoinsViewCache viewNew(pcoinsTip);
         CValidationState state;
         if (!ConnectBlock(*pblock, state, &indexDummy, viewNew, true))

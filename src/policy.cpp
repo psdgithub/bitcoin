@@ -384,7 +384,8 @@ bool CNodePolicy::BuildNewBlock(CBlockTemplate& blocktemplate, const CTxMemPool&
     AssertLockHeld(cs_main);
     AssertLockHeld(pool.cs);
 
-    const int nNewBlockHeight = indexPrev.nHeight + 1;
+    const int nNewBlockHeight = blocktemplate.nHeight;
+    const uint64_t nBlockSize = blocktemplate.nBlockSize;
 
     // Largest block you're willing to create:
     unsigned int nBlockMaxSize = GetArg("-blockmaxsize", DEFAULT_BLOCK_MAX_SIZE);
@@ -481,9 +482,6 @@ bool CNodePolicy::BuildNewBlock(CBlockTemplate& blocktemplate, const CTxMemPool&
     }
 
     // Collect transactions into block
-    CAmount& nFees = blocktemplate.nTotalTxFees;
-    uint64_t nBlockSize = 1000;
-    int nBlockSigOps = 100;
     bool fSortedByFee = (nBlockPrioritySize <= 0);
 
     TxPriorityCompare comparer(fSortedByFee);
@@ -499,14 +497,9 @@ bool CNodePolicy::BuildNewBlock(CBlockTemplate& blocktemplate, const CTxMemPool&
         std::pop_heap(vecPriority.begin(), vecPriority.end(), comparer);
         vecPriority.pop_back();
 
-        // Size limits
+        // Policy size limit
         unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
         if (nBlockSize + nTxSize >= nBlockMaxSize)
-            continue;
-
-        // Legacy limits on sigOps:
-        unsigned int nTxSigOps = GetLegacySigOpCount(tx);
-        if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS)
             continue;
 
         // Skip free transactions if we're past the minimum block size:
@@ -517,42 +510,8 @@ bool CNodePolicy::BuildNewBlock(CBlockTemplate& blocktemplate, const CTxMemPool&
         if (fSortedByFee && (dPriorityDelta <= 0) && (nFeeDelta <= 0) && (feeRate < ::minRelayTxFee) && (nBlockSize + nTxSize >= nBlockMinSize))
             continue;
 
-        // Prioritise by fee once past the priority size or we run out of high-priority
-        // transactions:
-        if (!fSortedByFee &&
-            ((nBlockSize + nTxSize >= nBlockPrioritySize) || !AllowFree(dPriority)))
-        {
-            fSortedByFee = true;
-            comparer = TxPriorityCompare(fSortedByFee);
-            std::make_heap(vecPriority.begin(), vecPriority.end(), comparer);
-        }
-
-        if (!view.HaveInputs(tx))
+        if (!blocktemplate.AddTransaction(tx, view))
             continue;
-
-        CAmount nTxFees = view.GetValueIn(tx)-tx.GetValueOut();
-
-        nTxSigOps += GetP2SHSigOpCount(tx, view);
-        if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS)
-            continue;
-
-        // Note that flags: we don't want to set mempool/IsStandardScript()
-        // policy here, but we still have to ensure that the block we
-        // create only contains transactions that are valid in new blocks.
-        CValidationState state;
-        if (!CheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true))
-            continue;
-
-        CTxUndo txundo;
-        UpdateCoins(tx, state, view, txundo, nNewBlockHeight);
-
-        // Added
-        blocktemplate.block.vtx.push_back(tx);
-        blocktemplate.vTxFees.push_back(nTxFees);
-        blocktemplate.vTxSigOps.push_back(nTxSigOps);
-        nBlockSize += nTxSize;
-        nBlockSigOps += nTxSigOps;
-        nFees += nTxFees;
 
         if (fPrintPriority)
         {
@@ -575,6 +534,16 @@ bool CNodePolicy::BuildNewBlock(CBlockTemplate& blocktemplate, const CTxMemPool&
                     }
                 }
             }
+        }
+
+        // Prioritise by fee once past the priority size or we run out of high-priority
+        // transactions:
+        if (!fSortedByFee &&
+            ((nBlockSize + nTxSize >= nBlockPrioritySize) || !AllowFree(dPriority)))
+        {
+            fSortedByFee = true;
+            comparer = TxPriorityCompare(fSortedByFee);
+            std::make_heap(vecPriority.begin(), vecPriority.end(), comparer);
         }
     }
 
