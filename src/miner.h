@@ -6,15 +6,22 @@
 #ifndef BITCOIN_MINER_H
 #define BITCOIN_MINER_H
 
+#include "core.h"
+
 #include <stdint.h>
 
-class CBlock;
 class CBlockIndex;
 class CReserveKey;
 class CScript;
 class CWallet;
 
-struct CBlockTemplate;
+struct CBlockTemplate
+{
+    CBlock block;
+    CAmount nTotalTxFees;
+    std::vector<CAmount> vTxFees;
+    std::vector<int64_t> vTxSigOps;
+};
 
 /** Run the miner threads */
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads);

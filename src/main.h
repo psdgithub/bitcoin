@@ -123,8 +123,6 @@ class CValidationState;
 class CWalletInterface;
 struct CNodeStateStats;
 
-struct CBlockTemplate;
-
 /** Register a wallet to receive updates from core */
 void RegisterWallet(CWalletInterface* pwalletIn);
 /** Unregister a wallet from core */
@@ -578,14 +576,6 @@ extern CCoinsViewCache *pcoinsTip;
 
 /** Global variable that points to the active block tree (protected by cs_main) */
 extern CBlockTreeDB *pblocktree;
-
-struct CBlockTemplate
-{
-    CBlock block;
-    CAmount nTotalTxFees;
-    std::vector<CAmount> vTxFees;
-    std::vector<int64_t> vTxSigOps;
-};
 
 
 
