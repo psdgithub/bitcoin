@@ -121,7 +121,17 @@ extern bool fListen;
 extern uint64_t nLocalServices;
 extern uint64_t nLocalHostNonce;
 extern CAddrMan addrman;
+
+// Maximum number of connections to simultaneously allow (nMaxConnections)
+// Prioritized as follows:
+// 1st: Outbound connections (MAX_OUTBOUND_CONNECTIONS)
+// 2nd: Inbound connections from whitelisted peers (nWhiteConnections)
+// 3rd: Inbound connections from non-whitelisted peers
+// Thus, the number of connection slots for the general public to use is:
+// nMaxConnections - (MAX_OUTBOUND_CONNECTIONS + nWhiteConnections)
+// Any additional inbound connections beyond limits will be immediately closed
 extern int nMaxConnections;
+extern int nWhiteConnections;
 
 extern std::vector<CNode*> vNodes;
 extern CCriticalSection cs_vNodes;
