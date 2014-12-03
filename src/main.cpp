@@ -52,6 +52,7 @@ bool fImporting = false;
 bool fReindex = false;
 bool fBenchmark = false;
 bool fTxIndex = false;
+bool fIsBareMultisigStd = true;
 unsigned int nCoinCacheSize = 5000;
 
 /** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
@@ -576,13 +577,10 @@ bool IsStandardTx(const CTransaction& tx, string& reason)
     if (!IsPushCanonicalTx(tx, reason))
         return false;
 
-    unsigned int verfFlags = 0;
-    if (fIsBareMultisigStd)
-        verfFlags |= SCRIPT_VERIFY_BARE_MSIG_OK;
     unsigned int nDataOut = 0;
     txnouttype whichType;
     BOOST_FOREACH(const CTxOut& txout, tx.vout) {
-        if (!::IsStandard(txout.scriptPubKey, whichType, verfFlags)) {
+        if (!::IsStandard(txout.scriptPubKey, whichType)) {
             reason = "scriptpubkey";
             return false;
         }
@@ -874,6 +872,44 @@ int64_t GetMinFee(const CTransaction& tx, unsigned int nBytes, bool fAllowFree, 
     return nMinFee;
 }
 
+struct NotoriousFilterEntry {
+    uint32_t begin;
+    uint32_t end;
+    const char *name;
+};
+
+static const struct NotoriousFilterEntry NotoriousPrefixes[] = {
+    {0x74db3700, 0x74db59ff, "BetCoin Dice"},
+    {0xc4c5d791, 0xc4c5d791, "CHBS"},          // 1JwSSubhmg6iPtRjtyqhUYYH7bZg3Lfy1T
+    {0x434e5452, 0x434e5452, "Counterparty"},
+    {0xda5dde84, 0xda5dde94, "Lucky Bit"},     // 1Lucky*
+    {0xf0dd368c, 0xf0dd368c, "Lucky Bit"},     // 1NxaBCFQwejSZbQfWcYNwgqML5wWoE3rK4
+    {0x946cb2e0, 0x946cb2e0, "Mastercoin"},
+    {0x069532d8, 0x069532d9, "SatoshiBones"},  // 1bones*
+    {0x06c06f6d, 0x06c06f6d, "SatoshiBones"},  // 1change*
+    {0x06f1b600, 0x06f1b6ff, "SatoshiDICE"},   // 1dice*
+    {0x068a5919, 0x068a5929, "SatoshiDICE"},   // 1bank*
+};
+
+static
+const char *IsNotorious(const CScript& script)
+{
+    if (script.size() >= 7 && script.at(0) == OP_DUP)
+    {
+        // pay-to-pubkeyhash
+        uint32_t pfx = ((uint32_t)script.at(3) << 0x18)
+                     | ((uint32_t)script.at(4) << 0x10)
+                     | ((uint16_t)script.at(5) <<    8)
+                     | ((uint16_t)script.at(6) <<    0);
+        unsigned i;
+
+        for (i = 0; i < (sizeof(NotoriousPrefixes) / sizeof(NotoriousPrefixes[0])); ++i)
+            if (pfx >= NotoriousPrefixes[i].begin && pfx <= NotoriousPrefixes[i].end)
+                return NotoriousPrefixes[i].name;
+    }
+
+    return NULL;
+}
 
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,
                         bool* pfMissingInputs, bool fRejectInsaneFee)
@@ -902,12 +938,12 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                              REJECT_NONSTANDARD, reason);
     }
 
-    const char *blacklistname;
+    const char *entryname;
     BOOST_FOREACH(const CTxOut& txout, tx.vout)
     {
-        blacklistname = txout.scriptPubKey.IsBlacklisted();
-        if (blacklistname)
-            return error("AcceptToMemoryPool : ignoring transaction %s with blacklisted output (%s)", tx.GetHash().ToString().c_str(), blacklistname);
+        entryname = IsNotorious(txout.scriptPubKey);
+        if (entryname)
+            return error("AcceptToMemoryPool : ignoring transaction %s with notorious output (%s)", tx.GetHash().ToString().c_str(), entryname);
     }
 
     // is it already in the memory pool?
@@ -968,11 +1004,12 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         BOOST_FOREACH(const CTxIn txin, tx.vin)
         {
             const COutPoint &outpoint = txin.prevout;
-            const CCoins &coins = view.GetCoins(outpoint.hash);
-            assert(coins.IsAvailable(outpoint.n));
-            blacklistname = coins.vout[outpoint.n].scriptPubKey.IsBlacklisted();
-            if (blacklistname)
-                return error("CTxMemPool::accept() : ignoring transaction %s with blacklisted input (%s)", tx.GetHash().ToString().c_str(), blacklistname);
+            const CCoins &_coins = view.GetCoins(outpoint.hash), * const coins = &_coins;
+            if (!coins->IsAvailable(outpoint.n))
+                break;
+            entryname = IsNotorious(coins->vout[outpoint.n].scriptPubKey);
+            if (entryname)
+                return error("CTxMemPool::accept() : ignoring transaction %s with notorious input (%s)", tx.GetHash().ToString().c_str(), entryname);
         }
 
         // Check for non-standard pay-to-script-hash in inputs
