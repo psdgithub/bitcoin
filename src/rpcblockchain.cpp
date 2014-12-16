@@ -93,7 +93,6 @@ Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDe
     return result;
 }
 
-
 Value getblockcount(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
