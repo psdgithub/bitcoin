@@ -15,6 +15,7 @@ class OverviewPage;
 class ReceiveCoinsDialog;
 class SendCoinsDialog;
 class SendCoinsRecipient;
+class SignVerifyMessageDialog;
 class TransactionView;
 class WalletModel;
 
@@ -60,6 +61,7 @@ private:
     QWidget *transactionsPage;
     ReceiveCoinsDialog *receiveCoinsPage;
     SendCoinsDialog *sendCoinsPage;
+    SignVerifyMessageDialog *signVerifyMessageDialog;
 
     TransactionView *transactionView;
 
