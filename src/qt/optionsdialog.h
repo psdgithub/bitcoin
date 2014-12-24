@@ -46,6 +46,7 @@ private slots:
 
     void showRestartWarning(bool fPersistent = false);
     void clearStatusLabel();
+    void updateDisplayUnit();
     void doProxyIpChecks(QValidatedLineEdit *pUiProxyIp, int nProxyPort);
 
 signals:
