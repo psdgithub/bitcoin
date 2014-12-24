@@ -2644,6 +2644,8 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
         return state.Abort(std::string("System error: ") + e.what());
     }
 
+    uiInterface.NotifyAcceptBlock(block);
+
     return true;
 }
 
