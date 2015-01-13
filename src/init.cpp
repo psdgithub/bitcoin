@@ -112,7 +112,28 @@ bool ShutdownRequested()
     return fRequestShutdown;
 }
 
+class CCoinsViewErrorCatcher : public CCoinsViewBacked
+{
+public:
+    CCoinsViewErrorCatcher(CCoinsView* view) : CCoinsViewBacked(view) {}
+    bool GetCoins(const uint256 &txid, CCoins &coins) const {
+        try {
+            return CCoinsViewBacked::GetCoins(txid, coins);
+        } catch(const std::runtime_error& e) {
+            uiInterface.ThreadSafeMessageBox(_("Error reading from database, shutting down."), "", CClientUIInterface::MSG_ERROR);
+            LogPrintf("Error reading from database: %s\n", e.what());
+            // Starting the shutdown sequence and returning false to the caller would be
+            // interpreted as 'entry not found' (as opposed to unable to read data), and
+            // could lead to invalid interpration. Just exit immediately, as we can't
+            // continue anyway, and all writes should be atomic.
+            abort();
+        }
+    }
+    // Writes do not need similar protection, as failure to write is handled by the caller.
+};
+
 static CCoinsViewDB *pcoinsdbview = NULL;
+static CCoinsViewErrorCatcher *pcoinscatcher = NULL;
 
 void Shutdown()
 {
@@ -155,6 +176,8 @@ void Shutdown()
         }
         delete pcoinsTip;
         pcoinsTip = NULL;
+        delete pcoinscatcher;
+        pcoinscatcher = NULL;
         delete pcoinsdbview;
         pcoinsdbview = NULL;
         delete pblocktree;
@@ -290,7 +313,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += "  -salvagewallet         " + _("Attempt to recover private keys from a corrupt wallet.dat") + " " + _("on startup") + "\n";
     strUsage += "  -sendfreetransactions  " + strprintf(_("Send transactions as zero-fee transactions if possible (default: %u)"), 0) + "\n";
     strUsage += "  -spendzeroconfchange   " + strprintf(_("Spend unconfirmed change when sending transactions (default: %u)"), 1) + "\n";
-    strUsage += "  -txconfirmtarget=<n>   " + strprintf(_("If paytxfee is not set, include enough fee so transactions are confirmed on average within n blocks (default: %u)"), 1) + "\n";
+    strUsage += "  -txconfirmtarget=<n>   " + strprintf(_("If paytxfee is not set, include enough fee so transactions begin confirmation on average within n blocks (default: %u)"), 1) + "\n";
     strUsage += "  -maxtxfee=<amt>        " + strprintf(_("Maximum total fees to use in a single wallet transaction, setting too low may abort large transactions (default: %s)"), FormatMoney(maxTxFee)) + "\n";
     strUsage += "  -upgradewallet         " + _("Upgrade wallet to latest format") + " " + _("on startup") + "\n";
     strUsage += "  -wallet=<file>         " + _("Specify wallet file (within data directory)") + " " + strprintf(_("(default: %s)"), "wallet.dat") + "\n";
@@ -328,6 +351,7 @@ std::string HelpMessage(HelpMessageMode mode)
     if (GetBoolArg("-help-debug", false))
     {
         strUsage += "  -limitfreerelay=<n>    " + strprintf(_("Continuously rate-limit free transactions to <n>*1000 bytes per minute (default:%u)"), 15) + "\n";
+        strUsage += "  -relaypriority         " + strprintf(_("Require high priority for relaying free or low-fee transactions (default:%u)"), 1) + "\n";
         strUsage += "  -maxsigcachesize=<n>   " + strprintf(_("Limit size of signature cache to <n> entries (default: %u)"), 50000) + "\n";
     }
     strUsage += "  -minrelaytxfee=<amt>   " + strprintf(_("Fees (in BTC/Kb) smaller than this are considered zero fee for relaying (default: %s)"), FormatMoney(::minRelayTxFee.GetFeePerK())) + "\n";
@@ -1011,11 +1035,13 @@ bool AppInit2(boost::thread_group& threadGroup)
                 UnloadBlockIndex();
                 delete pcoinsTip;
                 delete pcoinsdbview;
+                delete pcoinscatcher;
                 delete pblocktree;
 
                 pblocktree = new CBlockTreeDB(nBlockTreeDBCache, false, fReindex);
                 pcoinsdbview = new CCoinsViewDB(nCoinDBCache, false, fReindex);
-                pcoinsTip = new CCoinsViewCache(pcoinsdbview);
+                pcoinscatcher = new CCoinsViewErrorCatcher(pcoinsdbview);
+                pcoinsTip = new CCoinsViewCache(pcoinscatcher);
 
                 if (fReindex)
                     pblocktree->WriteReindexing(true);

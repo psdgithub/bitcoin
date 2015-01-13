@@ -10,7 +10,7 @@ Please report bugs using the issue tracker at github:
   https://github.com/bitcoin/bitcoin/issues
 
 Upgrading and downgrading
-==========================
+=========================
 
 How to Upgrade
 --------------
@@ -20,16 +20,12 @@ shut down (which might take a few minutes for older versions), then run the
 installer (on Windows) or just copy over /Applications/Bitcoin-Qt (on Mac) or
 bitcoind/bitcoin-qt (on Linux).
 
-If you are upgrading from version 0.7.2 or earlier, the first time you run
-0.10.0 your blockchain files will be re-indexed, which will take anywhere from 
-30 minutes to several hours, depending on the speed of your machine.
-
 Downgrading warning
 ---------------------
 
 Because release 0.10.0 makes use of headers-first synchronization and parallel
-block download, the block files and databases are not backwards-compatible
-with older versions of Bitcoin Core:
+block download (see further), the block files and databases are not
+backwards-compatible with older versions of Bitcoin Core or other software:
 
 * Blocks will be stored on disk out of order (in the order they are
 received, really), which makes it incompatible with some tools or
@@ -41,12 +37,43 @@ stored on disk, which earlier versions won't support.
 
 If you want to be able to downgrade smoothly, make a backup of your entire data
 directory. Without this your node will need start syncing (or importing from
-bootstrap.dat) anew afterwards.
+bootstrap.dat) anew afterwards. It is possible that the data from a completely
+synchronised 0.10 node may be usable in older versions as-is, but this is not
+supported and may break as soon as the older version attempts to reindex.
 
 This does not affect wallet forward or backward compatibility.
 
+
+Notable changes
+===============
+
+Faster synchronization
+----------------------
+
+Bitcoin Core now uses 'headers-first synchronization'. This means that we first
+ask peers for block headers (a total of 27 megabytes, as of December 2014) and
+validate those. In a second stage, when the headers have been discovered, we
+download the blocks. However, as we already know about the whole chain in
+advance, the blocks can be downloaded in parallel from all available peers.
+
+In practice, this means a much faster and more robust synchronization. On
+recent hardware with a decent network link, it can be as little as 3 hours
+for an initial full synchronization. You may notice a slower progress in the
+very first few minutes, when headers are still being fetched and verified, but
+it should gain speed afterwards.
+
+A few RPCs were added/updated as a result of this:
+- `getblockchaininfo` now returns the number of validated headers in addition to
+the number of validated blocks.
+- `getpeerinfo` lists both the number of blocks and headers we know we have in
+common with each peer. While synchronizing, the heights of the blocks that we
+have requested from peers (but haven't received yet) are also listed as
+'inflight'.
+- A new RPC `getchaintips` lists all known branches of the block chain,
+including those we only have headers for.
+
 Transaction fee changes
-=======================
+-----------------------
 
 This release automatically estimates how high a transaction fee (or how
 high a priority) transactions require to be confirmed quickly. The default
@@ -61,27 +88,22 @@ Statistics used to estimate fees and priorities are saved in the
 data directory in the `fee_estimates.dat` file just before
 program shutdown, and are read in at startup.
 
-New Command Line Options
----------------------------
-
+New command line options for fee estimation:
 - `-txconfirmtarget=n` : create transactions that have enough fees (or priority)
-so they are likely to confirm within n blocks (default: 1). This setting
+so they are likely to begin confirmation within n blocks (default: 1). This setting
 is over-ridden by the -paytxfee option.
 
-New RPC methods
-----------------
-
+New RPC commands for fee estimation:
 - `estimatefee nblocks` : Returns approximate fee-per-1,000-bytes needed for
-a transaction to be confirmed within nblocks. Returns -1 if not enough
+a transaction to begin confirmation within nblocks. Returns -1 if not enough
 transactions have been observed to compute a good estimate.
-
 - `estimatepriority nblocks` : Returns approximate priority needed for
-a zero-fee transaction to confirm within nblocks. Returns -1 if not
+a zero-fee transaction to begin confirmation within nblocks. Returns -1 if not
 enough free transactions have been observed to compute a good
 estimate.
 
 RPC access control changes
-==========================================
+--------------------------
 
 Subnet matching for the purpose of access control is now done
 by matching the binary network address, instead of with string wildcard matching.
@@ -101,14 +123,34 @@ For example:
 | `-rpcallowip=192.168.1.1`                  | `-rpcallowip=192.168.1.1` (unchanged) |
 | `-rpcallowip=192.168.1.*`                  | `-rpcallowip=192.168.1.0/24`          |
 | `-rpcallowip=192.168.*`                    | `-rpcallowip=192.168.0.0/16`          |
-| `-rpcallowip=*` (dangerous!)               | `-rpcallowip=::/0`                    |
+| `-rpcallowip=*` (dangerous!)               | `-rpcallowip=::/0` (still dangerous!) |
 
 Using wildcards will result in the rule being rejected with the following error in debug.log:
 
     Error: Invalid -rpcallowip subnet specification: *. Valid are a single IP (e.g. 1.2.3.4), a network/netmask (e.g. 1.2.3.4/255.255.255.0) or a network/CIDR (e.g. 1.2.3.4/24).
 
+
+REST interface
+--------------
+
+A new HTTP API is exposed when running with the `-rest` flag, which allows
+unauthenticated access to public node data.
+
+It is served on the same port as RPC, but does not need a password, and uses
+plain HTTP instead of JSON-RPC.
+
+Assuming a local RPC server running on port 8332, it is possible to request:
+- Blocks: http://localhost:8332/rest/block/*HASH*.*EXT*
+- Blocks without transactions: http://localhost:8332/rest/block/notxdetails/*HASH*.*EXT*
+- Transactions (requires `-txindex`): http://localhost:8332/rest/tx/*HASH*.*EXT*
+
+In every case, *EXT* can be `bin` (for raw binary data), `hex` (for hex-encoded
+binary) or `json`.
+
+For more details, see the `doc/REST-interface.md` document in the repository.
+
 RPC Server "Warm-Up" Mode
-=========================
+-------------------------
 
 The RPC server is started earlier now, before most of the expensive
 intialisations like loading the block index.  It is available now almost
@@ -120,7 +162,7 @@ started and will be available soon (for instance, so that they do not
 have to start it themselves).
 
 Improved signing security
-=========================
+-------------------------
 
 For 0.10 the security of signing against unusual attacks has been
 improved by making the signatures constant time and deterministic.
@@ -137,8 +179,8 @@ of times. While using shared hosts and reusing keys are inadvisable
 for other reasons, it's a better practice to avoid the exposure.
 
 OpenSSL has code in their source repository for derandomization
-and reduction in timing leaks, and we've  eagerly wanted to use
-it for a long time but this functionality has still not made its
+and reduction in timing leaks that we've eagerly wanted to use for a
+long time, but this functionality has still not made its
 way into a released version of OpenSSL. Libsecp256k1 achieves
 significantly stronger protection: As far as we're aware this is
 the only deployed implementation of constant time signing for
@@ -148,11 +190,11 @@ than the implementation in OpenSSL.
 
 [1] https://eprint.iacr.org/2014/161.pdf
 
-Watch-only addresses in the wallet
-==================================
+Watch-only wallet support
+-------------------------
 
-The wallet can now track transactions to addresses (or scripts) for which you
-do not have the private keys.
+The wallet can now track transactions to and from wallets for which you know
+all addresses (or scripts), even without the private keys.
 
 This can be used to track payments without needing the private keys online on a
 possibly vulnerable system. In addition, it can help for (manual) construction
@@ -161,26 +203,27 @@ of multisig transactions where you are only one of the signers.
 One new RPC, `importaddress`, is added which functions similarly to
 `importprivkey`, but instead takes an address or script (in hexadecimal) as
 argument.  After using it, outputs credited to this address or script are
-considered to be yours.
+considered to be received, and transactions consuming these outputs will be
+considered to be sent.
 
-The following RPCs have optional support for watch-only addresses:
+The following RPCs have optional support for watch-only:
 `getbalance`, `listreceivedbyaddress`, `listreceivedbyaccount`,
 `listtransactions`, `listaccounts`, `listsinceblock`, `gettransaction`. See the
 RPC documentation for those methods for more information.
 
 Compared to using `getrawtransaction`, this mechanism does not require
 `-txindex`, scales better, integrates better with the wallet, and is compatible
-with future block chain pruning functionality. It does mean the address needs
-to added to the wallet before the payment, though.
+with future block chain pruning functionality. It does mean that all relevant
+addresses need to added to the wallet before the payment, though.
 
 Consensus library
-=================
+-----------------
 
 Starting from 0.10.0, the Bitcoin Core distribution includes a consensus library.
 
 The purpose of this library is to make the verification functionality that is
 critical to Bitcoin's consensus available to other applications, e.g. to language
-bindings such as [python_bitcoinlib](https://pypi.python.org/pypi/python-bitcoinlib) or
+bindings such as [python-bitcoinlib](https://pypi.python.org/pypi/python-bitcoinlib) or
 alternative node implementations.
 
 This library is called `libbitcoinconsensus.so` (or, `.dll` for Windows).
@@ -196,7 +239,7 @@ The functionality is planned to be extended to e.g. UTXO management in upcoming 
 for existing methods should remain stable.
 
 Standard script rules relaxed for P2SH addresses
-================================================
+------------------------------------------------
 
 The IsStandard() rules have been almost completely removed for P2SH
 redemption scripts, allowing applications to make use of any valid
@@ -207,7 +250,7 @@ standard Bitcoin Core nodes wouldn't relay them to miners, nor would
 most miners include them in blocks they mined.
 
 bitcoin-tx
-=============
+----------
 
 It has been observed that many of the RPC functions offered by bitcoind are
 "pure functions", and operate independently of the bitcoind wallet. This
@@ -230,8 +273,8 @@ server round-trip to execute.
 Other utilities "bitcoin-key" and "bitcoin-script" have been proposed, making
 key and script operations easily accessible via command line.
 
-0.10.0 Release notes
-=======================
+0.10.0 Change log
+=================
 
 Detailed release notes follow. This overview includes changes that affect external
 behavior, not code moves, refactors or string updates.
@@ -335,6 +378,7 @@ Block and transaction handling:
 - `723d12c` Remove txn which are invalidated by coinbase maturity during reorg
 - `0cb8763` Check against MANDATORY flags prior to accepting to mempool
 - `8446262` Reject headers that build on an invalid parent
+- `008138c` Bugfix: only track UTXO modification after lookup
 
 P2P protocol and network code:
 - `f80cffa` Do not trigger a DoS ban if SCRIPT_VERIFY_NULLDUMMY fails
@@ -362,6 +406,10 @@ P2P protocol and network code:
 - `845c86d` Do not use third party services for IP detection
 - `12a49ca` Limit the number of new addressses to accumulate
 - `35e408f` Regard connection failures as attempt for addrman
+- `a3a7317` Introduce 10 minute block download timeout
+- `3022e7d` Require sufficent priority for relay of free transactions
+- `58fda4d` Update seed IPs, based on bitcoin.sipa.be crawler data
+- `18021d0` Remove bitnodes.io from dnsseeds.
 
 Validation:
 - `6fd7ef2` Also switch the (unused) verification code to low-s instead of even-s
@@ -376,6 +424,9 @@ Validation:
 - `0391423` Discourage NOPs reserved for soft-fork upgrades
 - `98b135f` Make STRICTENC invalid pubkeys fail the script rather than the opcode
 - `307f7d4` Report script evaluation failures in log and reject messages
+- `ace39db` consensus: guard against openssl's new strict DER checks
+- `12b7c44` Improve robustness of DER recoding code
+- `76ce5c8` fail immediately on an empty signature
 
 Build system:
 - `f25e3ad` Fix build in OS X 10.9
@@ -392,6 +443,8 @@ Build system:
 - `d5fd094` build: fix qt test build when libprotobuf is in a non-standard path
 - `2cf5f16` Add libbitcoinconsensus library
 - `914868a` build: add a deterministic dmg signer 
+- `2d375fe` depends: bump openssl to 1.0.1k
+- `b7a4ecc` Build: Only check for boost when building code that requires it
 
 Wallet:
 - `b33d1f5` Use fee/priority estimates in wallet CreateTransaction
@@ -447,6 +500,9 @@ GUI:
 - `e7876b2` [Wallet] Prevent user from paying a non-sense fee
 - `c1c9d5b` Add Smartfee to GUI
 - `e0a25c5` Make askpassphrase dialog behave more sanely
+- `94b362d` On close of splashscreen interrupt verifyDB
+- `b790d13` English translation update
+- `8543b0d` Correct tooltip on address book page
 
 Tests:
 - `b41e594` Fix script test handling of empty scripts
@@ -505,6 +561,8 @@ Tests:
 - `34318d7` RPC-test based on invalidateblock for mempool coinbase spends
 - `76ec867` Use actually valid transactions for script tests
 - `c8589bf` Add actual signature tests
+- `e2677d7` Fix smartfees test for change to relay policy
+- `263b65e` tests: run sanity checks in tests too
 
 Miscellaneous:
 - `122549f` Fix incorrect checkpoint data for testnet3
@@ -532,9 +590,13 @@ Miscellaneous:
 - `772ab0e` contrib: use batched JSON-RPC in linarize-hashes (optimization)
 - `7ab4358` Update bash-completion for v0.10
 - `6e6a36c` contrib: show pull # in prompt for github-merge script
+- `5b9f842` Upgrade leveldb to 1.18, make chainstate databases compatible between ARM and x86 (issue #2293)
+- `4e7c219` Catch UTXO set read errors and shutdown
+- `867c600` Catch LevelDB errors during flush
+- `06ca065` Fix CScriptID(const CScript& in) in empty script case
 
 Credits
---------
+=======
 
 Thanks to everyone who contributed to this release:
 
