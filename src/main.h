@@ -475,4 +475,7 @@ extern CCoinsViewCache *pcoinsTip;
 /** Global variable that points to the active block tree (protected by cs_main) */
 extern CBlockTreeDB *pblocktree;
 
+/** local "reject" message codes for RPC which can not be triggered by p2p trasactions */
+static const unsigned int REJECT_HIGHFEE = 0x100;
+
 #endif // BITCOIN_MAIN_H
