@@ -281,6 +281,63 @@ static bool rest_chaininfo(AcceptedConnection* conn,
     return true; // continue to process further HTTP reqs on this cxn
 }
 
+static bool rest_mempool_info(AcceptedConnection* conn,
+                              const std::string& strURIPart,
+                              const std::string& strRequest,
+                              const std::map<std::string, std::string>& mapHeaders,
+                              bool fRun)
+{
+    vector<string> params;
+    const RetFormat rf = ParseDataFormat(params, strURIPart);
+
+    switch (rf) {
+    case RF_JSON: {
+        Array rpcParams;
+        Value mempoolInfoObject = getmempoolinfo(rpcParams, false);
+
+        string strJSON = write_string(mempoolInfoObject, false) + "\n";
+        conn->stream() << HTTPReply(HTTP_OK, strJSON, fRun) << std::flush;
+        return true;
+    }
+    default: {
+        throw RESTERR(HTTP_NOT_FOUND, "output format not found (available: json)");
+    }
+    }
+
+    // not reached
+    return true; // continue to process further HTTP reqs on this cxn
+}
+
+static bool rest_mempool_contents(AcceptedConnection* conn,
+                                  const std::string& strURIPart,
+                                  const std::string& strRequest,
+                                  const std::map<std::string, std::string>& mapHeaders,
+                                  bool fRun)
+{
+    vector<string> params;
+    const RetFormat rf = ParseDataFormat(params, strURIPart);
+
+    switch (rf) {
+    case RF_JSON: {
+        Array rpcParams;
+        // get mempool contents with details
+        rpcParams.push_back(true);
+
+        Value mempoolObject = getrawmempool(rpcParams, false);
+
+        string strJSON = write_string(mempoolObject, false) + "\n";
+        conn->stream() << HTTPReply(HTTP_OK, strJSON, fRun) << std::flush;
+        return true;
+    }
+    default: {
+        throw RESTERR(HTTP_NOT_FOUND, "output format not found (available: json)");
+    }
+    }
+
+    // not reached
+    return true; // continue to process further HTTP reqs on this cxn
+}
+
 static bool rest_tx(AcceptedConnection* conn,
                     const std::string& strURIPart,
                     const std::string& strRequest,
@@ -541,6 +598,8 @@ static const struct {
       {"/rest/block/notxdetails/", rest_block_notxdetails},
       {"/rest/block/", rest_block_extended},
       {"/rest/chaininfo", rest_chaininfo},
+      {"/rest/mempool/info", rest_mempool_info},
+      {"/rest/mempool/contents", rest_mempool_contents},
       {"/rest/headers/", rest_headers},
       {"/rest/getutxos", rest_getutxos},
 };
