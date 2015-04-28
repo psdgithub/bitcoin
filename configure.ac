@@ -2,7 +2,7 @@ dnl require autoconf 2.60 (AS_ECHO/AS_ECHO_N)
 AC_PREREQ([2.60])
 define(_CLIENT_VERSION_MAJOR, 0)
 define(_CLIENT_VERSION_MINOR, 10)
-define(_CLIENT_VERSION_REVISION, 0)
+define(_CLIENT_VERSION_REVISION, 1)
 define(_CLIENT_VERSION_BUILD, 0)
 define(_CLIENT_VERSION_IS_RELEASE, true)
 define(_COPYRIGHT_YEAR, 2015)
@@ -533,6 +533,17 @@ if test x$system_leveldb != xno; then
     AC_MSG_ERROR([LevelDB's memenv library not found; using --with-system-leveldb is not supported anyway])
   ])
   LIBS="$TEMP_LIBS"
+  AC_CHECK_HEADER([leveldb/filter_policy.h],[],[
+    AC_MSG_ERROR([LevelDB headers not found; using --with-system-leveldb is not supported anyway])
+  ])
+  AC_CHECK_HEADER([leveldb/helpers/memenv.h],[
+    AC_MSG_CHECKING([for memenv.h path])
+    BITCOIN_SUBDIR_TO_INCLUDE([LEVELDB_CPPFLAGS],[leveldb/helpers/],[memenv])
+  ],[
+    AC_CHECK_HEADER([memenv.h],[],[
+      AC_MSG_ERROR([LevelDB headers not found; using --with-system-leveldb is not supported anyway])
+    ])
+  ])
 fi
 AM_CONDITIONAL([EMBEDDED_LEVELDB],[test x$system_leveldb = xno])
 AC_SUBST(LEVELDB_CPPFLAGS)
