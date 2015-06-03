@@ -680,3 +680,99 @@ Value reconsiderblock(const Array& params, bool fHelp)
 
     return Value::null;
 }
+
+extern const char *IsNotorious(const CScript&);
+
+enum category_flags {
+    FLAG_NONE,
+    FLAG_SPAM,
+    FLAG_MICRO,
+    FLAG_ALL,
+};
+
+typedef std::map<COutPoint, enum category_flags> mapFlagged_t;
+
+enum category_flags CheckTxFlags(const CTransaction& tx, mapFlagged_t& mapFlagged)
+{
+    enum category_flags rv = FLAG_NONE;
+    int micro_out = 0;
+
+    BOOST_FOREACH(const CTxIn& txin, tx.vin) {
+        const COutPoint &outpoint = txin.prevout;
+        mapFlagged_t::iterator iter = mapFlagged.find(outpoint);
+        if (iter != mapFlagged.end()) {
+            enum category_flags rv = iter->second;
+            mapFlagged.erase(iter);
+            return rv;
+        }
+    }
+
+    for (int i = tx.vout.size(); --i >= 0; ) {
+        const CTxOut& txout = tx.vout[i];
+        if (txout.nValue <= 10000)
+            return FLAG_SPAM;
+        if (IsNotorious(txout.scriptPubKey)) {
+            COutPoint outpoint;
+            outpoint.hash = tx.GetHash();
+            outpoint.n = i;
+            mapFlagged.insert(mapFlagged_t::value_type(outpoint, FLAG_SPAM));
+            return FLAG_SPAM;
+        }
+        if (txout.nValue < 500000)
+            ++micro_out;
+    }
+
+    if (micro_out > 1)
+        rv = FLAG_MICRO;
+
+    return rv;
+}
+
+Value measureblockchain(const Array& params, bool fHelp)
+{
+    mapFlagged_t mapFlagged;
+    int64_t nTotals[FLAG_ALL + 1];
+    for (int i = 0; i <= FLAG_ALL; ++i)
+        nTotals[i] = 0;
+    int64_t nPrevBlockTime = 0;
+    for (int nHeight = 0; true; ++nHeight)
+    {
+        CBlock block;
+        {
+            LOCK(cs_main);
+            if (nHeight > chainActive.Height())
+                break;
+
+            CBlockIndex* pblockindex = chainActive[nHeight];
+
+            if(!ReadBlockFromDisk(block, pblockindex))
+                throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
+        }
+
+        size_t nBlockSizes[FLAG_ALL + 1];
+        for (int i = 1; i < FLAG_ALL; ++i)
+            nBlockSizes[i] = 0;
+        nBlockSizes[FLAG_ALL] = ::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION);
+        nBlockSizes[FLAG_NONE] = nBlockSizes[FLAG_ALL];
+
+        for (int i = block.vtx.size(); --i >= 0; ) {
+            const CTransaction& tx = block.vtx[i];
+            const enum category_flags flag = CheckTxFlags(tx, mapFlagged);
+            if (flag != FLAG_NONE) {
+                const size_t nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
+                nBlockSizes[FLAG_NONE] -= nTxSize;
+                nBlockSizes[flag] += nTxSize;
+            }
+        }
+
+        std::cerr << nHeight << "," << block.nTime << "," << (block.nTime - nPrevBlockTime);
+        for (int i = 0; i <= FLAG_ALL; ++i) {
+            nTotals[i] += nBlockSizes[i];
+            std::cerr << "," << nBlockSizes[i] << "," << nTotals[i];
+        }
+        std::cerr << "\n";
+        nPrevBlockTime = block.nTime;
+    }
+
+    return 0;
+}

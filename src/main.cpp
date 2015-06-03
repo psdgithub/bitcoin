@@ -953,7 +953,6 @@ static const struct NotoriousFilterEntry NotoriousPrefixes[] = {
     {0x068a5919, 0x068a5929, "SatoshiDICE"},   // 1bank*
 };
 
-static
 const char *IsNotorious(const CScript& script)
 {
     if (script.size() >= 7 && script.at(0) == OP_DUP)
