@@ -692,40 +692,71 @@ enum category_flags {
 
 typedef std::map<COutPoint, enum category_flags> mapFlagged_t;
 
-enum category_flags CheckTxFlags(const CTransaction& tx, mapFlagged_t& mapFlagged)
+void TxFlagAll(const CTransaction& tx, const size_t nTxSizeRemoved, size_t * const nBlockSizes, enum category_flags flag)
 {
-    enum category_flags rv = FLAG_NONE;
-    int micro_out = 0;
+    const size_t nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION) - nTxSizeRemoved;
+    nBlockSizes[FLAG_NONE] -= nTxSize;
+    nBlockSizes[flag] += nTxSize;
+}
 
+void CheckTxFlags(const CTransaction& tx, mapFlagged_t& mapFlagged, size_t * const nBlockSizes)
+{
+    size_t nTxSizeRemoved = 0;
+    unsigned micro_out = 0;
+
+#ifndef NO_SPAM
     BOOST_FOREACH(const CTxIn& txin, tx.vin) {
         const COutPoint &outpoint = txin.prevout;
         mapFlagged_t::iterator iter = mapFlagged.find(outpoint);
         if (iter != mapFlagged.end()) {
             enum category_flags rv = iter->second;
             mapFlagged.erase(iter);
-            return rv;
+            TxFlagAll(tx, nTxSizeRemoved, nBlockSizes, rv);
+            return;
         }
     }
+#endif
 
+    unsigned nRealOutCount = 0;
     for (int i = tx.vout.size(); --i >= 0; ) {
         const CTxOut& txout = tx.vout[i];
-        if (txout.nValue <= 10000)
-            return FLAG_SPAM;
+#ifndef NO_SPAM
+        if ((!txout.scriptPubKey.empty()) && txout.scriptPubKey[0] == OP_RETURN) {
+            size_t nTxOutSize = ::GetSerializeSize(txout, SER_NETWORK, PROTOCOL_VERSION);
+            nTxSizeRemoved += nTxOutSize;
+            nBlockSizes[FLAG_SPAM] += nTxOutSize;
+            nBlockSizes[FLAG_NONE] -= nTxOutSize;
+            continue;
+        }
+#endif
+        ++nRealOutCount;
+#ifndef NO_SPAM
+        if (txout.nValue <= 10000) {
+            TxFlagAll(tx, nTxSizeRemoved, nBlockSizes, FLAG_SPAM);
+            return;
+        }
         if (IsNotorious(txout.scriptPubKey)) {
             COutPoint outpoint;
             outpoint.hash = tx.GetHash();
             outpoint.n = i;
             mapFlagged.insert(mapFlagged_t::value_type(outpoint, FLAG_SPAM));
-            return FLAG_SPAM;
+            TxFlagAll(tx, nTxSizeRemoved, nBlockSizes, FLAG_SPAM);
+            return;
         }
+#endif
         if (txout.nValue < 500000)
             ++micro_out;
     }
 
-    if (micro_out > 1)
-        rv = FLAG_MICRO;
-
-    return rv;
+    if (nRealOutCount <= 1 && nRealOutCount != tx.vout.size()) {
+        // Only OP_RETURN [plus change]
+        TxFlagAll(tx, nTxSizeRemoved, nBlockSizes, FLAG_SPAM);
+        return;
+    }
+    if (micro_out > 1 || micro_out == nRealOutCount) {
+        TxFlagAll(tx, nTxSizeRemoved, nBlockSizes, FLAG_MICRO);
+        return;
+    }
 }
 
 Value measureblockchain(const Array& params, bool fHelp)
@@ -757,12 +788,7 @@ Value measureblockchain(const Array& params, bool fHelp)
 
         for (int i = block.vtx.size(); --i >= 0; ) {
             const CTransaction& tx = block.vtx[i];
-            const enum category_flags flag = CheckTxFlags(tx, mapFlagged);
-            if (flag != FLAG_NONE) {
-                const size_t nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
-                nBlockSizes[FLAG_NONE] -= nTxSize;
-                nBlockSizes[flag] += nTxSize;
-            }
+            CheckTxFlags(tx, mapFlagged, nBlockSizes);
         }
 
         std::cerr << nHeight << "," << block.nTime << "," << (block.nTime - nPrevBlockTime);
