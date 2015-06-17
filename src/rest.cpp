@@ -63,6 +63,8 @@ public:
 
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry);
 extern Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDetails = false);
+extern Value mempoolInfoToJSON();
+extern Value mempoolToJSON(bool fVerbose = false);
 extern void ScriptPubKeyToJSON(const CScript& scriptPubKey, Object& out, bool fIncludeHex);
 
 static RestErr RESTERR(enum HTTPStatusCode status, string message)
@@ -292,8 +294,7 @@ static bool rest_mempool_info(AcceptedConnection* conn,
 
     switch (rf) {
     case RF_JSON: {
-        Array rpcParams;
-        Value mempoolInfoObject = getmempoolinfo(rpcParams, false);
+        Value mempoolInfoObject = mempoolInfoToJSON();
 
         string strJSON = write_string(mempoolInfoObject, false) + "\n";
         conn->stream() << HTTPReply(HTTP_OK, strJSON, fRun) << std::flush;
@@ -319,11 +320,7 @@ static bool rest_mempool_contents(AcceptedConnection* conn,
 
     switch (rf) {
     case RF_JSON: {
-        Array rpcParams;
-        // get mempool contents with details
-        rpcParams.push_back(true);
-
-        Value mempoolObject = getrawmempool(rpcParams, false);
+        Value mempoolObject = mempoolToJSON(true);
 
         string strJSON = write_string(mempoolObject, false) + "\n";
         conn->stream() << HTTPReply(HTTP_OK, strJSON, fRun) << std::flush;
