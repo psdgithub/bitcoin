@@ -577,7 +577,6 @@ Value clearbanned(const Array& params, bool fHelp)
 
     CNode::ClearBanned();
     DumpBanlist(); //store banlist to disk
-    
     uiInterface.BannedListChanged();
 
     return Value::null;
