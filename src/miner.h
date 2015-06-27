@@ -16,6 +16,8 @@ class CScript;
 class CWallet;
 namespace Consensus { struct Params; };
 
+static const int DEFAULT_GENERATE_THREADS = 1;
+
 struct CBlockTemplate
 {
     CBlock block;
