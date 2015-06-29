@@ -331,7 +331,7 @@ Value createrawtransaction(const Array& params, bool fHelp)
             "     ]\n"
             "2. \"outputs\"             (string, required) a json object with outputs\n"
             "    {\n"
-            "      \"address\": x.xxx,  (numeric, required) The key is the bitcoin address, the value is the btc amount\n"
+            "      \"address\": x.xxx   (numeric, required) The key is the bitcoin address, the value is the btc amount\n"
             "      \"data\": \"hex\",     (string, required) The key is \"data\", the value is hex encoded data\n"
             "      ...\n"
             "    }\n"
