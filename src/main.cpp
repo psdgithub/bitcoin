@@ -65,6 +65,8 @@ bool fAlerts = DEFAULT_ALERTS;
 
 /** Fees smaller than this (in satoshi) are considered zero fee (for relaying and mining) */
 CFeeRate minRelayTxFee = CFeeRate(1000);
+CAmount nDustLimit = 0;
+std::set<CBitcoinAddress> filteredAddresses;
 
 CTxMemPool mempool(::minRelayTxFee);
 
@@ -910,6 +912,25 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     if (!CheckFinalTx(tx))
         return state.DoS(0, error("AcceptToMemoryPool: non-final"),
                          REJECT_NONSTANDARD, "non-final");
+
+    // Further user defined acceptance tests
+    BOOST_FOREACH(const CTxOut& txout, tx.vout) {
+        if (txout.nValue <= nDustLimit)
+            return error("CTxMemPool::accept() : transaction output smaller than user defined limit");
+
+        txnouttype type;
+        vector<CTxDestination> addresses;
+        int nRequired;
+        if (!ExtractDestinations(txout.scriptPubKey, type, addresses, nRequired)) {
+            return error("CTxMemPool::accept() : unable to check transaction destinations");
+        }
+
+        BOOST_FOREACH(const CTxDestination& addr, addresses) {
+            if (filteredAddresses.find(CBitcoinAddress(addr)) != filteredAddresses.end()) {
+                return error("CTxMemPool::accept() : transaction destination filtered");
+            }
+        }
+    }
 
     // is it already in the memory pool?
     uint256 hash = tx.GetHash();
