@@ -1268,9 +1268,7 @@ void DumpAddresses()
 void DumpData()
 {
     DumpAddresses();
-
-    if (CNode::BannedSetIsDirty())
-        DumpBanlist();
+    DumpBanlist();
 }
 
 void static ProcessOneShot()
@@ -2277,29 +2275,31 @@ bool CBanDB::Read(banmap_t& banSet)
         // ... verify the network matches ours
         if (memcmp(pchMsgTmp, Params().MessageStart(), sizeof(pchMsgTmp)))
             return error("%s: Invalid network magic number", __func__);
-        
+
         // de-serialize address data into one CAddrMan object
         ssBanlist >> banSet;
     }
     catch (const std::exception& e) {
         return error("%s: Deserialize or I/O error - %s", __func__, e.what());
     }
-    
+
     return true;
 }
 
 void DumpBanlist()
 {
-    int64_t nStart = GetTimeMillis();
-
     CNode::SweepBanned(); // clean unused entires (if bantime has expired)
 
-    CBanDB bandb;
-    banmap_t banmap;
-    CNode::GetBanned(banmap);
-    if (bandb.Write(banmap))
-        CNode::SetBannedSetDirty(false);
+    if (CNode::BannedSetIsDirty()) {
+        int64_t nStart = GetTimeMillis();
 
-    LogPrint("net", "Flushed %d banned node ips/subnets to banlist.dat  %dms\n",
-        banmap.size(), GetTimeMillis() - nStart);
+        CBanDB bandb;
+        banmap_t banmap;
+        CNode::GetBanned(banmap);
+        if (bandb.Write(banmap))
+            CNode::SetBannedSetDirty(false);
+
+        LogPrint("net", "Flushed %d banned node ips/subnets to banlist.dat  %dms\n",
+            banmap.size(), GetTimeMillis() - nStart);
+    }
 }
