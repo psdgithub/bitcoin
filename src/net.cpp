@@ -1268,10 +1268,7 @@ void DumpData()
     DumpAddresses();
 
     if (CNode::BannedSetIsDirty())
-    {
         DumpBanlist();
-        CNode::SetBannedSetDirty(false);
-    }
 }
 
 void static ProcessOneShot()
@@ -2287,13 +2284,14 @@ void DumpBanlist()
 {
     int64_t nStart = GetTimeMillis();
 
-    CNode::SweepBanned(); //clean unused entires (if bantime has expired)
+    CNode::SweepBanned(); // clean unused entires (if bantime has expired)
 
     CBanDB bandb;
     banmap_t banmap;
     CNode::GetBanned(banmap);
-    bandb.Write(banmap);
+    if (bandb.Write(banmap))
+        CNode::SetBannedSetDirty(false);
 
     LogPrint("net", "Flushed %d banned node ips/subnets to banlist.dat  %dms\n",
-             banmap.size(), GetTimeMillis() - nStart);
+        banmap.size(), GetTimeMillis() - nStart);
 }
