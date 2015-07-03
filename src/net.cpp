@@ -1707,10 +1707,10 @@ void StartNode(boost::thread_group& threadGroup, CScheduler& scheduler)
     int64_t nStart = GetTimeMillis();
     {
         CAddrDB adb;
-        if (!adb.Read(addrman))
-            LogPrintf("Invalid or missing peers.dat; recreating\n");
-        else
+        if (adb.Read(addrman))
             LogPrintf("Loaded %i addresses from peers.dat  %dms\n", addrman.size(), GetTimeMillis() - nStart);
+        else
+            LogPrintf("Invalid or missing peers.dat; recreating\n");
     }
 
     uiInterface.InitMessage(_("Loading banlist..."));
@@ -1718,16 +1718,15 @@ void StartNode(boost::thread_group& threadGroup, CScheduler& scheduler)
     nStart = GetTimeMillis();
     CBanDB bandb;
     banmap_t banmap;
-    if (!bandb.Read(banmap)) {
-        LogPrintf("Invalid or missing banlist.dat; recreating\n");
-    } else {
+    if (bandb.Read(banmap)) {
         CNode::SetBanned(banmap); // thread save setter
         CNode::SetBannedSetDirty(false); // no need to write down, just read data
         CNode::SweepBanned(); // sweep out unused entries
 
         LogPrint("net", "Loaded %d banned node ips/subnets from banlist.dat  %dms\n",
             banmap.size(), GetTimeMillis() - nStart);
-    }
+    } else
+        LogPrintf("Invalid or missing banlist.dat; recreating\n");
 
     fAddressesInitialized = true;
 
@@ -2290,16 +2289,17 @@ void DumpBanlist()
 {
     CNode::SweepBanned(); // clean unused entires (if bantime has expired)
 
-    if (CNode::BannedSetIsDirty()) {
-        int64_t nStart = GetTimeMillis();
+    if (!CNode::BannedSetIsDirty())
+        return;
 
-        CBanDB bandb;
-        banmap_t banmap;
-        CNode::GetBanned(banmap);
-        if (bandb.Write(banmap))
-            CNode::SetBannedSetDirty(false);
+    int64_t nStart = GetTimeMillis();
 
-        LogPrint("net", "Flushed %d banned node ips/subnets to banlist.dat  %dms\n",
-            banmap.size(), GetTimeMillis() - nStart);
-    }
+    CBanDB bandb;
+    banmap_t banmap;
+    CNode::GetBanned(banmap);
+    if (bandb.Write(banmap))
+        CNode::SetBannedSetDirty(false);
+
+    LogPrint("net", "Flushed %d banned node ips/subnets to banlist.dat  %dms\n",
+        banmap.size(), GetTimeMillis() - nStart);
 }
