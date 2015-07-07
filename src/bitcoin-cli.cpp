@@ -96,11 +96,19 @@ static bool AppInitRPC(int argc, char* argv[])
 
 Object CallRPC(const string& strMethod, const Array& params)
 {
-    if (mapArgs["-rpcuser"] == "" && mapArgs["-rpcpassword"] == "")
-        throw runtime_error(strprintf(
-            _("You must set rpcpassword=<password> in the configuration file:\n%s\n"
-              "If the file does not exist, create it with owner-readable-only file permissions."),
-                GetConfigFile().string().c_str()));
+    std::string strRPCUserColonPass;
+    if (mapArgs["-rpcpassword"] == "") {
+        /* Try fall back to cookie-based authentication if no password is provided */
+        if (!GetAuthCookie(&strRPCUserColonPass)) {
+            throw runtime_error(strprintf(
+                _("You must set rpcpassword=<password> in the configuration file:\n%s\n"
+                  "If the file does not exist, create it with owner-readable-only file permissions."),
+                    GetConfigFile().string().c_str()));
+
+        }
+    } else {
+        strRPCUserColonPass = mapArgs["-rpcuser"] + ":" + mapArgs["-rpcpassword"];
+    }
 
     // Connect to localhost
     bool fUseSSL = GetBoolArg("-rpcssl", false);
@@ -116,9 +124,8 @@ Object CallRPC(const string& strMethod, const Array& params)
         throw CConnectionFailed("couldn't connect to server");
 
     // HTTP basic authentication
-    string strUserPass64 = EncodeBase64(mapArgs["-rpcuser"] + ":" + mapArgs["-rpcpassword"]);
     map<string, string> mapRequestHeaders;
-    mapRequestHeaders["Authorization"] = string("Basic ") + strUserPass64;
+    mapRequestHeaders["Authorization"] = string("Basic ") + EncodeBase64(strRPCUserColonPass);
 
     // Send request
     string strRequest = JSONRPCRequest(strMethod, params, 1);
