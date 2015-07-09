@@ -761,6 +761,10 @@ void CheckTxFlags(const CTransaction& tx, mapFlagged_t& mapFlagged, size_t * con
 
 Value measureblockchain(const Array& params, bool fHelp)
 {
+    if (fHelp || params.size() > 0)
+        throw runtime_error(
+            "measureblockchain\n"
+        );
     mapFlagged_t mapFlagged;
     int64_t nTotals[FLAG_ALL + 1];
     for (int i = 0; i <= FLAG_ALL; ++i)
