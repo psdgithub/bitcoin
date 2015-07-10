@@ -1156,6 +1156,22 @@ Value ListReceived(const Array& params, bool fByAccounts)
             fIsWatchonly = (*it).second.fIsWatchonly;
         }
 
+        // convert keyflags into a string
+        CKeyID keyID;
+        uint8_t keyFlags = 0;
+        if (address.GetKeyID(keyID))
+            keyFlags = pwalletMain->mapKeyMetadata[keyID].keyFlags;
+
+        std::string keyOrigin;
+        if (keyFlags & CKeyMetadata::KEY_ORIGIN_UNKNOWN)
+            keyOrigin = "unknown";
+        if (keyFlags & CKeyMetadata::KEY_ORIGIN_ENC_WALLET)
+            keyOrigin = "encrypted";
+        else if (keyFlags & CKeyMetadata::KEY_ORIGIN_UNENC_WALLET)
+            keyOrigin = "unencrypted";
+        if (keyFlags & CKeyMetadata::KEY_ORIGIN_IMPORTED)
+            keyOrigin = "imported";
+
         if (fByAccounts)
         {
             tallyitem& item = mapAccountTally[strAccount];
@@ -1171,6 +1187,7 @@ Value ListReceived(const Array& params, bool fByAccounts)
             obj.push_back(Pair("address",       address.ToString()));
             obj.push_back(Pair("account",       strAccount));
             obj.push_back(Pair("amount",        ValueFromAmount(nAmount)));
+            obj.push_back(Pair("key_origin", keyOrigin));
             obj.push_back(Pair("confirmations", (nConf == std::numeric_limits<int>::max() ? 0 : nConf)));
             Array transactions;
             if (it != mapTally.end())
