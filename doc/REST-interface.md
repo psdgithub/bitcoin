@@ -77,6 +77,19 @@ $ curl localhost:18332/rest/getutxos/checkmempool/b2cdfd7b89def827ff8af7cd9bff76
 }
 ```
 
+####Memory pool
+`GET /rest/mempool/info.json`
+
+Returns various informations about the TX mempool.
+Only supports JSON as output format.
+* bytes : (numeric) size of the TX mempool in bytes
+* size : (numeric) the number of transactions in the TX mempool
+
+`GET /rest/mempool/contents.json`
+
+Returns transactions in the TX mempool.
+Only supports JSON as output format.
+
 Risks
 -------------
 Running a webbrowser on the same node with a REST enabled bitcoind can be a risk. Accessing prepared XSS websites could read out tx/block data of your node by placing links like `<script src="http://127.0.0.1:8332/rest/tx/1234567890.json">` which might break the nodes privacy.
