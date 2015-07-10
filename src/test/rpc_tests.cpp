@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE(rpc_ban)
     Array ar = r.get_array();
     Object o1 = ar[0].get_obj();
     Value adr = find_value(o1, "address");
-    BOOST_CHECK_EQUAL(adr.get_str(), "127.0.0.0/255.255.255.255");
+    BOOST_CHECK_EQUAL(adr.get_str(), "127.0.0.0/32");
     BOOST_CHECK_NO_THROW(CallRPC(string("setban 127.0.0.0 remove")));;
     BOOST_CHECK_NO_THROW(r = CallRPC(string("listbanned")));
     ar = r.get_array();
@@ -196,7 +196,7 @@ BOOST_AUTO_TEST_CASE(rpc_ban)
     o1 = ar[0].get_obj();
     adr = find_value(o1, "address");
     Value banned_until = find_value(o1, "banned_until");
-    BOOST_CHECK_EQUAL(adr.get_str(), "127.0.0.0/255.255.255.0");
+    BOOST_CHECK_EQUAL(adr.get_str(), "127.0.0.0/24");
     BOOST_CHECK_EQUAL(banned_until.get_int64(), 1607731200); // absolute time check
 
     BOOST_CHECK_NO_THROW(CallRPC(string("clearbanned")));
@@ -207,7 +207,7 @@ BOOST_AUTO_TEST_CASE(rpc_ban)
     o1 = ar[0].get_obj();
     adr = find_value(o1, "address");
     banned_until = find_value(o1, "banned_until");
-    BOOST_CHECK_EQUAL(adr.get_str(), "127.0.0.0/255.255.255.0");
+    BOOST_CHECK_EQUAL(adr.get_str(), "127.0.0.0/24");
     int64_t now = GetTime();    
     BOOST_CHECK(banned_until.get_int64() > now);
     BOOST_CHECK(banned_until.get_int64()-now <= 200);
@@ -237,15 +237,15 @@ BOOST_AUTO_TEST_CASE(rpc_ban)
     ar = r.get_array();
     o1 = ar[0].get_obj();
     adr = find_value(o1, "address");
-    BOOST_CHECK_EQUAL(adr.get_str(), "fe80::202:b3ff:fe1e:8329/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
+    BOOST_CHECK_EQUAL(adr.get_str(), "fe80::202:b3ff:fe1e:8329/128");
 
     BOOST_CHECK_NO_THROW(CallRPC(string("clearbanned")));
-    BOOST_CHECK_NO_THROW(r = CallRPC(string("setban 2001:db8::/30 add")));
+    BOOST_CHECK_NO_THROW(r = CallRPC(string("setban 2001:db8::/ffff:fffc:0:0:0:0:0:0 add")));
     BOOST_CHECK_NO_THROW(r = CallRPC(string("listbanned")));
     ar = r.get_array();
     o1 = ar[0].get_obj();
     adr = find_value(o1, "address");
-    BOOST_CHECK_EQUAL(adr.get_str(), "2001:db8::/ffff:fffc:0:0:0:0:0:0");
+    BOOST_CHECK_EQUAL(adr.get_str(), "2001:db8::/30");
 
     BOOST_CHECK_NO_THROW(CallRPC(string("clearbanned")));
     BOOST_CHECK_NO_THROW(r = CallRPC(string("setban 2001:4d48:ac57:400:cacf:e9ff:fe1d:9c63/128 add")));
@@ -253,7 +253,7 @@ BOOST_AUTO_TEST_CASE(rpc_ban)
     ar = r.get_array();
     o1 = ar[0].get_obj();
     adr = find_value(o1, "address");
-    BOOST_CHECK_EQUAL(adr.get_str(), "2001:4d48:ac57:400:cacf:e9ff:fe1d:9c63/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
+    BOOST_CHECK_EQUAL(adr.get_str(), "2001:4d48:ac57:400:cacf:e9ff:fe1d:9c63/128");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
