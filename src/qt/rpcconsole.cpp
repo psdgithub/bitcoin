@@ -808,3 +808,21 @@ void RPCConsole::showOrHideBanTableIfRequired()
     ui->banlistWidget->setVisible(visible);
     ui->banHeading->setVisible(visible);
 }
+
+void RPCConsole::showNormalIfMinimized()
+{
+    if(!clientModel)
+        return;
+
+    // activateWindow() (sometimes) helps with keyboard focus on Windows
+    if (isHidden()) {
+        show();
+        activateWindow();
+    } else if (isMinimized()) {
+        showNormal();
+        activateWindow();
+    } else if (GUIUtil::isObscured(this)) {
+        raise();
+        activateWindow();
+    }
+}

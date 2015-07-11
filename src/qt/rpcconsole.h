@@ -66,6 +66,8 @@ private slots:
     void showOrHideBanTableIfRequired();
     /** clear the selected node */
     void clearSelectedNode();
+    /** Show window if hidden, unminimize when minimized, rise when obscured */
+    void showNormalIfMinimized();
 
 public slots:
     void clear();
