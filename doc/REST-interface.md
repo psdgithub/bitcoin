@@ -82,10 +82,10 @@ $ curl localhost:18332/rest/getutxos/checkmempool/b2cdfd7b89def827ff8af7cd9bff76
 ####Memory pool
 `GET /rest/mempool/info.json`
 
-Returns various informations about the TX mempool.
+Returns various information about the TX mempool.
 Only supports JSON as output format.
-* bytes : (numeric) size of the TX mempool in bytes
 * size : (numeric) the number of transactions in the TX mempool
+* bytes : (numeric) size of the TX mempool in bytes
 
 `GET /rest/mempool/contents.json`
 
