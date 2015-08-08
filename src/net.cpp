@@ -2297,7 +2297,7 @@ bool CBanDB::Read(banmap_t& banSet)
 
 void DumpBanlist()
 {
-    CNode::SweepBanned(); // clean unused entires (if bantime has expired)
+    CNode::SweepBanned(); // clean unused entries (if bantime has expired)
 
     if (!CNode::BannedSetIsDirty())
         return;
