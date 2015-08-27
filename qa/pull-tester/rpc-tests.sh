@@ -12,6 +12,7 @@ export BITCOIND=${REAL_BITCOIND}
 
 testScripts=(
     'disablewallet.py'
+    'mempool_reorg.py'
     'wallet.py'
     'listtransactions.py'
     'mempool_resurrect_test.py'
@@ -21,7 +22,6 @@ testScripts=(
     'rawtransactions.py'
     'rest.py'
     'mempool_spendcoinbase.py'
-    'mempool_coinbase_spends.py'
     'httpbasics.py'
     'zapwallettxes.py'
     'proxy_test.py'
