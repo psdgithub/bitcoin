@@ -1,5 +1,4 @@
-// Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -10,9 +9,6 @@
 #include "main.h"
 #include "streams.h"
 #include "util.h"
-#include "netbase.h"
-
-#include <zmq.h>
 
 void zmqError(const char *str)
 {
@@ -88,11 +84,11 @@ bool CZMQNotificationInterface::Initialize()
         CZMQAbstractNotifier *notifier = *i;
         if (notifier->Initialize(pcontext))
         {
-            LogPrint("zmq", "  Notifier %s ready (address = %s)\n", notifier->GetType().c_str(), notifier->GetAddress().c_str());
+            LogPrint("zmq", "  Notifier %s ready (address = %s)\n", notifier->GetType(), notifier->GetAddress());
         }
         else
         {
-            LogPrint("zmq", "  Notifier %s failed (address = %s)\n", notifier->GetType().c_str(), notifier->GetAddress().c_str());
+            LogPrint("zmq", "  Notifier %s failed (address = %s)\n", notifier->GetType(), notifier->GetAddress());
             break;
         }
     }
@@ -115,7 +111,7 @@ void CZMQNotificationInterface::Shutdown()
         for (std::list<CZMQAbstractNotifier*>::iterator i=notifiers.begin(); i!=notifiers.end(); ++i)
         {
             CZMQAbstractNotifier *notifier = *i;
-            LogPrint("zmq", "   Shutdown notifier %s at %s\n", notifier->GetType().c_str(), notifier->GetAddress().c_str());
+            LogPrint("zmq", "   Shutdown notifier %s at %s\n", notifier->GetType(), notifier->GetAddress());
             notifier->Shutdown();
         }
         zmq_ctx_destroy(pcontext);
@@ -126,12 +122,12 @@ void CZMQNotificationInterface::Shutdown()
 
 void CZMQNotificationInterface::UpdatedBlockTip(const uint256 &hash)
 {
-    for (std::list<CZMQAbstractNotifier*>::iterator i = notifiers.begin(); i!=notifiers.end(); ++i)
+    for (std::list<CZMQAbstractNotifier*>::iterator i = notifiers.begin(); i!=notifiers.end(); )
     {
         CZMQAbstractNotifier *notifier = *i;
         if (notifier->NotifyBlock(hash))
         {
-            i ++;
+            i++;
         }
         else
         {
@@ -148,7 +144,7 @@ void CZMQNotificationInterface::SyncTransaction(const CTransaction &tx, const CB
         CZMQAbstractNotifier *notifier = *i;
         if (notifier->NotifyTransaction(tx))
         {
-            i ++;
+            i++;
         }
         else
         {

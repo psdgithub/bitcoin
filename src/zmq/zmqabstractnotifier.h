@@ -1,10 +1,9 @@
-// Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_ZMQABSTRACTNOTIFIER_H
-#define BITCOIN_ZMQABSTRACTNOTIFIER_H
+#ifndef BITCOIN_ZMQ_ZMQABSTRACTNOTIFIER_H
+#define BITCOIN_ZMQ_ZMQABSTRACTNOTIFIER_H
 
 #include "zmqconfig.h"
 
@@ -40,4 +39,4 @@ protected:
     std::string address;
 };
 
-#endif // BITCOIN_ZMQABSTRACTNOTIFIER_H
+#endif // BITCOIN_ZMQ_ZMQABSTRACTNOTIFIER_H

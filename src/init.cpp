@@ -30,9 +30,6 @@
 #include "wallet/wallet.h"
 #include "wallet/walletdb.h"
 #endif
-#if ENABLE_ZMQ
-#include "zmq/zmqnotificationinterface.h"
-#endif
 #include <stdint.h>
 #include <stdio.h>
 
@@ -48,6 +45,10 @@
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <boost/thread.hpp>
 #include <openssl/crypto.h>
+
+#if ENABLE_ZMQ
+#include "zmq/zmqnotificationinterface.h"
+#endif
 
 using namespace std;
 
@@ -198,8 +199,7 @@ void Shutdown()
 #endif
 
 #if ENABLE_ZMQ
-    if (pzmqNotificationInterface)
-    {
+    if (pzmqNotificationInterface) {
         UnregisterValidationInterface(pzmqNotificationInterface);
         pzmqNotificationInterface->Shutdown();
         delete pzmqNotificationInterface;
@@ -370,7 +370,7 @@ std::string HelpMessage(HelpMessageMode mode)
 #endif
 
 #if ENABLE_ZMQ
-    strUsage += HelpMessageGroup(_("ZeroMQ notification options"));
+    strUsage += HelpMessageGroup(_("ZeroMQ notification options:"));
     strUsage += HelpMessageOpt("-zmqpubhashblock=<address>", _("Enable publish hash block in <address>"));
     strUsage += HelpMessageOpt("-zmqpubhashtransaction=<address>", _("Enable publish hash transaction in <address>"));
     strUsage += HelpMessageOpt("-zmqpubrawblock=<address>", _("Enable publish raw block in <address>"));
@@ -1074,10 +1074,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 #if ENABLE_ZMQ
     pzmqNotificationInterface = CZMQNotificationInterface::CreateWithArguments(mapArgs);
 
-    if (pzmqNotificationInterface)
-    {
+    if (pzmqNotificationInterface) {
         pzmqNotificationInterface->Initialize();
-
         RegisterValidationInterface(pzmqNotificationInterface);
     }
 #endif

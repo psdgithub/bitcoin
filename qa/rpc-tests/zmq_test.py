@@ -7,12 +7,11 @@
 # Test ZMQ interface
 #
 
-from test_framework import BitcoinTestFramework
-from util import *
-import json
+from test_framework.test_framework import BitcoinTestFramework
+from test_framework.util import *
 import zmq
 import binascii
-from mininode import hash256
+from test_framework.mininode import hash256
 
 try:
     import http.client as httplib
@@ -27,49 +26,52 @@ class ZMQTest (BitcoinTestFramework):
 
     port = 28332
 
-    def handleBLK(self, blk):
-        return binascii.hexlify(hash256(blk[:80])[::-1])
-
-
-    def handleTX(self, tx):
-        return binascii.hexlify(hash256(tx)[::-1])
-
     def setup_nodes(self):
         self.zmqContext = zmq.Context()
         self.zmqSubSocket = self.zmqContext.socket(zmq.SUB)
-        self.zmqSubSocket.setsockopt(zmq.SUBSCRIBE, "BLK")
-        self.zmqSubSocket.setsockopt(zmq.SUBSCRIBE, "TXN")
+        self.zmqSubSocket.setsockopt(zmq.SUBSCRIBE, "hashblock")
+        self.zmqSubSocket.setsockopt(zmq.SUBSCRIBE, "hashtx")
         self.zmqSubSocket.connect("tcp://127.0.0.1:%i" % self.port)
-
         # Note: proxies are not used to connect to local nodes
         # this is because the proxy to use is based on CService.GetNetwork(), which return NET_UNROUTABLE for localhost
         return start_nodes(4, self.options.tmpdir, extra_args=[
-            ['-zmqpub=tcp://127.0.0.1:'+str(self.port)],
+            ['-zmqpubhashtx=tcp://127.0.0.1:'+str(self.port), '-zmqpubhashblock=tcp://127.0.0.1:'+str(self.port)],
             [],
             [],
             []
             ])
 
     def run_test(self):
+        self.sync_all()
 
         genhashes = self.nodes[0].generate(1);
+        self.sync_all()
 
-        msg = self.zmqSubSocket.recv()
-        blkhash = self.handleBLK(msg[3:])
+        print "listen..."
+        msg = self.zmqSubSocket.recv_multipart()
+        topic = str(msg[0])
+        body = msg[1]
+
+        msg = self.zmqSubSocket.recv_multipart()
+        topic = str(msg[0])
+        body = msg[1]
+        blkhash = binascii.hexlify(body)
+
         assert_equal(genhashes[0], blkhash) #blockhash from generate must be equal to the hash received over zmq
 
-        genhashes = self.nodes[1].generate(10);
+        n = 10
+        genhashes = self.nodes[1].generate(n);
         self.sync_all()
 
         zmqHashes = []
-        for x in range(0,10):
-            msg = self.zmqSubSocket.recv()
-            zmqHashes.append(self.handleBLK(msg[3:]))
+        for x in range(0,n*2):
+            msg = self.zmqSubSocket.recv_multipart()
+            topic = str(msg[0])
+            body = msg[1]
+            if topic == "hashblock":
+                zmqHashes.append(binascii.hexlify(body))
 
-        #sort hashes
-        genhashes.sort()
-        zmqHashes.sort()
-        for x in range(0,9):
+        for x in range(0,n):
             assert_equal(genhashes[x], zmqHashes[x]) #blockhash from generate must be equal to the hash received over zmq
 
         #test tx from a second node
@@ -77,8 +79,13 @@ class ZMQTest (BitcoinTestFramework):
         self.sync_all()
 
         #now we should receive a zmq msg because the tx was broadcastet
-        msg = self.zmqSubSocket.recv()
-        hashZMQ = self.handleTX(msg[3:])
+        msg = self.zmqSubSocket.recv_multipart()
+        topic = str(msg[0])
+        body = msg[1]
+        hashZMQ = ""
+        if topic == "hashtx":
+            hashZMQ = binascii.hexlify(body)
+
         assert_equal(hashRPC, hashZMQ) #blockhash from generate must be equal to the hash received over zmq
 
 
