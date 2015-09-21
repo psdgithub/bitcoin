@@ -21,13 +21,13 @@ try:
         body = msg[1]
 
         if topic == "hashblock":
-            print "- HASH BLOK -"
+            print "- HASH BLOCK -"
             print binascii.hexlify(body)
         elif topic == "hashtx":
             print '- HASH TX -'
             print binascii.hexlify(body)
         elif topic == "rawblock":
-            print "- RAW BLOK HEADER -"
+            print "- RAW BLOCK HEADER -"
             print binascii.hexlify(body[:80])
         elif topic == "rawtx":
             print '- RAW TX -'

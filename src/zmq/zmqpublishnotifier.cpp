@@ -1,14 +1,10 @@
-// Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "zmqpublishnotifier.h"
 #include "main.h"
-#include "net.h"
 #include "util.h"
-
-#include <zmq.h>
 
 static std::multimap<std::string, CZMQAbstractPublishNotifier*> mapPublishNotifiers;
 
@@ -81,7 +77,7 @@ bool CZMQAbstractPublishNotifier::Initialize(void *pcontext)
     }
     else
     {
-        LogPrint("zmq", "  Reuse socket for address %s\n", address.c_str());
+        LogPrint("zmq", "  Reuse socket for address %s\n", address);
 
         psocket = i->second->psocket;
         mapPublishNotifiers.insert(std::make_pair(address, this));
@@ -111,7 +107,7 @@ void CZMQAbstractPublishNotifier::Shutdown()
 
     if (count == 1)
     {
-        LogPrint("zmq", "Close socket at address %s\n", address.c_str());
+        LogPrint("zmq", "Close socket at address %s\n", address);
         int linger = 0;
         zmq_setsockopt(psocket, ZMQ_LINGER, &linger, sizeof(linger));
         zmq_close(psocket);
@@ -122,7 +118,7 @@ void CZMQAbstractPublishNotifier::Shutdown()
 
 bool CZMQPublishHashBlockNotifier::NotifyBlock(const uint256 &hash)
 {
-    LogPrint("zmq", "Publish hash block %s\n", hash.GetHex().c_str());
+    LogPrint("zmq", "Publish hash block %s\n", hash.GetHex());
     char data[32];
     for (unsigned int i = 0; i < 32; i++)
         data[31 - i] = hash.begin()[i];
@@ -133,7 +129,7 @@ bool CZMQPublishHashBlockNotifier::NotifyBlock(const uint256 &hash)
 bool CZMQPublishHashTransactionNotifier::NotifyTransaction(const CTransaction &transaction)
 {
     uint256 hash = transaction.GetHash();
-    LogPrint("zmq", "Publish hash transaction %s\n", hash.GetHex().c_str());
+    LogPrint("zmq", "Publish hash transaction %s\n", hash.GetHex());
     char data[32];
     for (unsigned int i = 0; i < 32; i++)
         data[31 - i] = hash.begin()[i];
@@ -143,18 +139,24 @@ bool CZMQPublishHashTransactionNotifier::NotifyTransaction(const CTransaction &t
 
 bool CZMQPublishRawBlockNotifier::NotifyBlock(const uint256 &hash)
 {
-    LogPrint("zmq", "Publish raw block %s\n", hash.GetHex().c_str());
-    CBlock block;
-    CBlockIndex* pblockindex = mapBlockIndex[hash];
-
-    if(!ReadBlockFromDisk(block, pblockindex))
-    {
-        zmqError("Can't read block from disk");
-        return false;
-    }
+    LogPrint("zmq", "Publish raw block %s\n", hash.GetHex());
 
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << block;
+    {
+        LOCK(cs_main);
+
+        CBlock block;
+        CBlockIndex* pblockindex = mapBlockIndex[hash];
+
+        if(!ReadBlockFromDisk(block, pblockindex))
+        {
+            zmqError("Can't read block from disk");
+            return false;
+        }
+
+        ss << block;
+    }
+
     int rc = zmq_send_multipart(psocket, "rawblock", 8, &(*ss.begin()), ss.size(), 0);
     return rc == 0;
 }
@@ -162,7 +164,7 @@ bool CZMQPublishRawBlockNotifier::NotifyBlock(const uint256 &hash)
 bool CZMQPublishRawTransactionNotifier::NotifyTransaction(const CTransaction &transaction)
 {
     uint256 hash = transaction.GetHash();
-    LogPrint("zmq", "Publish raw transaction %s\n", hash.GetHex().c_str());
+    LogPrint("zmq", "Publish raw transaction %s\n", hash.GetHex());
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << transaction;
     int rc = zmq_send_multipart(psocket, "rawtx", 5, &(*ss.begin()), ss.size(), 0);
