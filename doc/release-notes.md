@@ -140,6 +140,21 @@ UTXO but where its block file has been pruned.
 
 Pruning is disabled by default.
 
+Random-cookie RPC authentication
+---------------------------------
+
+When no `-rpcpassword` is specified, the daemon now uses a special 'cookie'
+file for authentication. This file is generated with random content when the
+daemon starts, and deleted when it exits. Its contents are used as
+authentication token. Read access to this file controls who can access through
+RPC. By default it is stored in the data directory but its location can be
+overridden with the option `-rpccookiefile`.
+
+This is similar to Tor's CookieAuthentication: see
+https://www.torproject.org/docs/tor-manual.html.en
+
+This allows running bitcoind without having to do any manual configuration.
+
 Big endian support
 --------------------
 
