@@ -301,3 +301,12 @@ git merge commit are mentioned.
 - #6159 `e1412d3` Catch errors on datadir lock and pidfile delete
 
 [up to date until #5976]
+
+Addition of ZMQ-based Notifcations
+==================================
+
+Bitcoind can now (optionally) asynchronously notify clients through a
+ZMQ-based PUB socket of the arrival of new transactions and blocks.
+This feature requires installation of the ZMQ C API library 4.x and
+configuring its use through the command line or configuration file.
+Please see docs/zmq.md for details of operation.
