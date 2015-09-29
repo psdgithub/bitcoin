@@ -811,10 +811,10 @@ fi
 AC_MSG_CHECKING([whether to build ZMQ support])
 if test "x$use_zmq" = "xyes"; then
   AC_MSG_RESULT([yes])
-  PKG_CHECK_MODULES([ZMQ],[libzmq],
+  PKG_CHECK_MODULES([ZMQ],[libzmq >= 4],
     [AC_DEFINE([ENABLE_ZMQ],[1],[Define to 1 to enable ZMQ functions])],
     [AC_DEFINE([ENABLE_ZMQ],[0],[Define to 1 to enable ZMQ functions])
-     AC_MSG_WARN([libzmq not found, disabling])
+     AC_MSG_WARN([libzmq version 4.x or greater not found, disabling])
      use_zmq=no])
 else
   AC_MSG_RESULT([no, --disable-zmq used])
