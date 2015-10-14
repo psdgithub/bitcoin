@@ -126,6 +126,15 @@ https://www.torproject.org/docs/tor-manual.html.en
 
 This allows running bitcoind without having to do any manual configuration.
 
+Addition of ZMQ-based Notifcations
+----------------------------------
+
+Bitcoind can now (optionally) asynchronously notify clients through a
+ZMQ-based PUB socket of the arrival of new transactions and blocks.
+This feature requires installation of the ZMQ C API library 4.x and
+configuring its use through the command line or configuration file.
+Please see docs/zmq.md for details of operation.
+
 0.11.1 Change log
 =================
 
