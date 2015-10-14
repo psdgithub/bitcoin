@@ -57,6 +57,8 @@ bool fTxIndex = false;
 bool fHavePruned = false;
 bool fPruneMode = false;
 bool fIsBareMultisigStd = true;
+bool fRequireStandard = true;
+unsigned nBytesPerSigOp = 0;
 bool fCheckBlockIndex = false;
 bool fCheckpointsEnabled = true;
 size_t nCoinCacheUsage = 5000 * 300;
@@ -65,6 +67,8 @@ bool fAlerts = DEFAULT_ALERTS;
 
 /** Fees smaller than this (in satoshi) are considered zero fee (for relaying and mining) */
 CFeeRate minRelayTxFee = CFeeRate(5000);
+CAmount nDustLimit = 0;
+std::set<CBitcoinAddress> filteredAddresses;
 
 CTxMemPool mempool(::minRelayTxFee);
 
@@ -906,6 +910,31 @@ CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowF
 }
 
 
+static unsigned int TxSearchForLongChain(const CTransaction& tx, const CTxMemPool& pool, unsigned int nDepthLimit, unsigned int nDepth = 0)
+{
+    unsigned int nMaxDepth = nDepth;
+    for (size_t i = 0; i < tx.vin.size(); ++i)
+    {
+        COutPoint outpoint = tx.vin[i].prevout;
+        std::map<uint256, CTxMemPoolEntry>::const_iterator it = pool.mapTx.find(outpoint.hash);
+        if (it == pool.mapTx.end())
+            // Already confirmed
+            continue;
+
+        const unsigned int nParentDepth = nDepth + 1;
+        if (nParentDepth == nDepthLimit)
+            return nParentDepth;
+
+        const CTransaction& txParent = it->second.GetTx();
+        const unsigned int nMaxParentDepth = TxSearchForLongChain(txParent, pool, nDepthLimit, nParentDepth);
+        if (nMaxParentDepth == nDepthLimit)
+            return nMaxParentDepth;
+        if (nMaxParentDepth > nMaxDepth)
+            nMaxDepth = nMaxParentDepth;
+    }
+    return nMaxDepth;
+}
+
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,
                         bool* pfMissingInputs, bool fRejectAbsurdFee)
 {
@@ -923,7 +952,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 
     // Rather not work on nonstandard transactions (unless -testnet/-regtest)
     string reason;
-    if (Params().RequireStandard() && !IsStandardTx(tx, reason))
+    if (fRequireStandard && !IsStandardTx(tx, reason))
         return state.DoS(0,
                          error("AcceptToMemoryPool: nonstandard transaction: %s", reason),
                          REJECT_NONSTANDARD, reason);
@@ -934,6 +963,25 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     if (!CheckFinalTx(tx))
         return state.DoS(0, error("AcceptToMemoryPool: non-final"),
                          REJECT_NONSTANDARD, "non-final");
+
+    // Further user defined acceptance tests
+    BOOST_FOREACH(const CTxOut& txout, tx.vout) {
+        if (txout.nValue <= nDustLimit)
+            return error("CTxMemPool::accept() : transaction output smaller than user defined limit");
+
+        txnouttype type;
+        vector<CTxDestination> addresses;
+        int nRequired;
+        if (!ExtractDestinations(txout.scriptPubKey, type, addresses, nRequired)) {
+            return error("CTxMemPool::accept() : unable to check transaction destinations");
+        }
+
+        BOOST_FOREACH(const CTxDestination& addr, addresses) {
+            if (filteredAddresses.find(CBitcoinAddress(addr)) != filteredAddresses.end()) {
+                return error("CTxMemPool::accept() : transaction destination filtered");
+            }
+        }
+    }
 
     // is it already in the memory pool?
     uint256 hash = tx.GetHash();
@@ -961,6 +1009,15 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         CAmount nValueIn = 0;
         {
         LOCK(pool.cs);
+
+        const int nDepthLimit = GetArg("-limitunconfdepth", DEFAULT_LIMIT_UNCONF_DEPTH);
+        if (nDepthLimit > 0) {
+            const unsigned int nMaxDepth = TxSearchForLongChain(tx, pool, nDepthLimit);
+            if (nMaxDepth >= (unsigned int)nDepthLimit) {
+                return error("AcceptToMemoryPool : rejecting transaction with long unconfirmed chain: %s", tx.GetHash().ToString());
+            }
+        }
+
         CCoinsViewMemPool viewMemPool(pcoinsTip, pool);
         view.SetBackend(viewMemPool);
 
@@ -994,8 +1051,15 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         }
 
         // Check for non-standard pay-to-script-hash in inputs
-        if (Params().RequireStandard() && !AreInputsStandard(tx, view))
+        if (fRequireStandard && !AreInputsStandard(tx, view))
             return error("AcceptToMemoryPool: nonstandard transaction input");
+
+        CAmount nValueOut = tx.GetValueOut();
+        CAmount nFees = nValueIn-nValueOut;
+        double dPriority = view.GetPriority(tx, chainActive.Height());
+
+        CTxMemPoolEntry entry(tx, nFees, GetTime(), dPriority, chainActive.Height(), mempool.HasNoInputsOf(tx));
+        unsigned int nSize = entry.GetTxSize();
 
         // Check that the transaction doesn't have an excessive number of
         // sigops, making it impossible to mine. Since the coinbase transaction
@@ -1004,18 +1068,11 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         // merely non-standard transaction.
         unsigned int nSigOps = GetLegacySigOpCount(tx);
         nSigOps += GetP2SHSigOpCount(tx, view);
-        if (nSigOps > MAX_STANDARD_TX_SIGOPS)
+        if ((nSigOps > MAX_STANDARD_TX_SIGOPS) || (nBytesPerSigOp && nSigOps > nSize / nBytesPerSigOp))
             return state.DoS(0,
-                             error("AcceptToMemoryPool: too many sigops %s, %d > %d",
-                                   hash.ToString(), nSigOps, MAX_STANDARD_TX_SIGOPS),
+                             error("AcceptToMemoryPool: too many sigops %s (%d)",
+                                   hash.ToString(), nSigOps),
                              REJECT_NONSTANDARD, "bad-txns-too-many-sigops");
-
-        CAmount nValueOut = tx.GetValueOut();
-        CAmount nFees = nValueIn-nValueOut;
-        double dPriority = view.GetPriority(tx, chainActive.Height());
-
-        CTxMemPoolEntry entry(tx, nFees, GetTime(), dPriority, chainActive.Height(), mempool.HasNoInputsOf(tx));
-        unsigned int nSize = entry.GetTxSize();
 
         // Don't accept it if it can't get into a block
         CAmount txMinFee = GetMinRelayFee(tx, nSize, true);
@@ -1054,9 +1111,10 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         }
 
         if (fRejectAbsurdFee && nFees > ::minRelayTxFee.GetFee(nSize) * 10000)
-            return error("AcceptToMemoryPool: absurdly high fees %s, %d > %d",
-                         hash.ToString(),
-                         nFees, ::minRelayTxFee.GetFee(nSize) * 10000);
+            return state.Invalid(error("AcceptToMemoryPool: absurdly high fees %s, %d > %d",
+                                       hash.ToString(),
+                                       nFees, ::minRelayTxFee.GetFee(nSize) * 10000),
+                                 REJECT_HIGHFEE, "absurdly-high-fee");
 
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
@@ -1241,7 +1299,7 @@ bool IsInitialBlockDownload()
     if (lockIBDState)
         return false;
     bool state = (chainActive.Height() < pindexBestHeader->nHeight - 24 * 6 ||
-            pindexBestHeader->GetBlockTime() < GetTime() - 24 * 60 * 60);
+            pindexBestHeader->GetBlockTime() < GetTime() - chainParams.MaxTipAge());
     if (!state)
         lockIBDState = true;
     return state;
@@ -1367,7 +1425,7 @@ void static InvalidBlockFound(CBlockIndex *pindex, const CValidationState &state
     if (state.IsInvalid(nDoS)) {
         std::map<uint256, NodeId>::iterator it = mapBlockSource.find(pindex->GetBlockHash());
         if (it != mapBlockSource.end() && State(it->second)) {
-            CBlockReject reject = {state.GetRejectCode(), state.GetRejectReason().substr(0, MAX_REJECT_MESSAGE_LENGTH), pindex->GetBlockHash()};
+            CBlockReject reject = {(unsigned char)state.GetRejectCode(), state.GetRejectReason().substr(0, MAX_REJECT_MESSAGE_LENGTH), pindex->GetBlockHash()};
             State(it->second)->rejects.push_back(reject);
             if (nDoS > 0)
                 Misbehaving(it->second, nDoS);
@@ -1821,7 +1879,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         return true;
     }
 
-    bool fScriptChecks = (!fCheckpointsEnabled || pindex->nHeight >= Checkpoints::GetTotalBlocksEstimate(chainparams.Checkpoints()));
+    bool fScriptChecks = true;
+    if (fCheckpointsEnabled) {
+        CBlockIndex *pindexLastCheckpoint = Checkpoints::GetLastCheckpoint(chainparams.Checkpoints());
+        if (pindexLastCheckpoint && pindexLastCheckpoint->GetAncestor(pindex->nHeight) == pindex) {
+            // This block is an ancestor of a checkpoint: disable script checks
+            fScriptChecks = false;
+        }
+    }
 
     // Do not allow blocks that contain transactions which 'overwrite' older transactions,
     // unless those are already completely spent.
@@ -2765,13 +2830,8 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
         return state.Invalid(error("%s: block's timestamp is too early", __func__),
                              REJECT_INVALID, "time-too-old");
 
-    if(fCheckpointsEnabled)
+    if (fCheckpointsEnabled)
     {
-        // Check that the block chain matches the known block chain up to a checkpoint
-        if (!Checkpoints::CheckBlock(chainParams.Checkpoints(), nHeight, hash))
-            return state.DoS(100, error("%s: rejected by checkpoint lock-in at %d", __func__, nHeight),
-                             REJECT_CHECKPOINT, "checkpoint mismatch");
-
         // Don't accept any forks from the main chain prior to last checkpoint
         CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(chainParams.Checkpoints());
         if (pcheckpoint && nHeight < pcheckpoint->nHeight)
@@ -4077,6 +4137,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             }
         }
 
+        // Trigger download of remote node's memory pool
+        if (!IsInitialBlockDownload() && !pfrom->fInbound &&
+            pfrom->nVersion >= MEMPOOL_GD_VERSION)
+            pfrom->PushMessage("mempool");
+
         // Relay alerts
         {
             LOCK(cs_mapAlerts);
@@ -4207,7 +4272,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             const CInv &inv = vInv[nInv];
 
             boost::this_thread::interruption_point();
-            pfrom->AddInventoryKnown(inv);
+            if (!pfrom->AddInventoryKnown(inv))
+                continue;
 
             bool fAlreadyHave = AlreadyHave(inv);
             LogPrint("net", "got inv: %s  %s peer=%d\n", inv.ToString(), fAlreadyHave ? "have" : "new", pfrom->id);
@@ -4295,6 +4361,14 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             if (pindex->GetBlockHash() == hashStop)
             {
                 LogPrint("net", "  getblocks stopping at %d %s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
+                break;
+            }
+            // If pruning, don't inv blocks unless we have on disk and are likely to still have
+            // for some reasonable time window that block relay might require.
+            const int nPrunedBlocksLikelyToHave = MIN_BLOCKS_TO_KEEP - 6;
+            if (fPruneMode && (!(pindex->nStatus & BLOCK_HAVE_DATA) || pindex->nHeight <= chainActive.Tip()->nHeight - nPrunedBlocksLikelyToHave))
+            {
+                LogPrint("net", " getblocks stopping, pruned or too old block at %d %s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
                 break;
             }
             pfrom->PushInventory(CInv(MSG_BLOCK, pindex->GetBlockHash()));
@@ -4560,13 +4634,16 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
     }
 
 
-    // This asymmetric behavior for inbound and outbound connections was introduced
-    // to prevent a fingerprinting attack: an attacker can send specific fake addresses
-    // to users' AddrMan and later request them by sending getaddr messages.
-    // Making nodes which are behind NAT and can only make outgoing connections ignore
-    // the getaddr message mitigates the attack.
-    else if ((strCommand == "getaddr") && (pfrom->fInbound))
+    else if (strCommand == "getaddr")
     {
+        // This asymmetric behavior for inbound and outbound connections was introduced
+        // to prevent a fingerprinting attack: an attacker can send specific fake addresses
+        // to users' AddrMan and later request them by sending getaddr messages.
+        // Making nodes which are behind NAT and can only make outgoing connections ignore
+        // the getaddr message mitigates the attack.
+        if (!pfrom->fInbound)
+            return true;
+
         pfrom->vAddrToSend.clear();
         vector<CAddress> vAddr = addrman.GetAddr();
         BOOST_FOREACH(const CAddress &addr, vAddr)
@@ -5008,7 +5085,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
                     LogPrintf("Warning: not banning local peer %s!\n", pto->addr.ToString());
                 else
                 {
-                    CNode::Ban(pto->addr);
+                    CNode::Ban(pto->addr, BanReasonNodeMisbehaving);
                 }
             }
             state.fShouldBan = false;

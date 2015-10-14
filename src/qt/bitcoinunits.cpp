@@ -8,6 +8,8 @@
 
 #include <QStringList>
 
+#include "tonalutils.h"
+
 BitcoinUnits::BitcoinUnits(QObject *parent):
         QAbstractListModel(parent),
         unitlist(availableUnits())
@@ -16,10 +18,19 @@ BitcoinUnits::BitcoinUnits(QObject *parent):
 
 QList<BitcoinUnits::Unit> BitcoinUnits::availableUnits()
 {
-    QList<BitcoinUnits::Unit> unitlist;
-    unitlist.append(BTC);
-    unitlist.append(mBTC);
-    unitlist.append(uBTC);
+    static QList<BitcoinUnits::Unit> unitlist;
+    if (unitlist.empty())
+    {
+        unitlist.append(BTC);
+        unitlist.append(mBTC);
+        unitlist.append(uBTC);
+        if (TonalUtils::Supported())
+        {
+            unitlist.append(bTBC);
+            unitlist.append(sTBC);
+            unitlist.append(TBC);
+        }
+    }
     return unitlist;
 }
 
@@ -30,6 +41,9 @@ bool BitcoinUnits::valid(int unit)
     case BTC:
     case mBTC:
     case uBTC:
+    case bTBC:
+    case sTBC:
+    case TBC:
         return true;
     default:
         return false;
@@ -43,6 +57,9 @@ QString BitcoinUnits::name(int unit)
     case BTC: return QString("BTC");
     case mBTC: return QString("mBTC");
     case uBTC: return QString::fromUtf8("μBTC");
+    case bTBC: return QString::fromUtf8("ᵇTBC");
+    case sTBC: return QString::fromUtf8("ˢTBC");
+    case TBC: return QString("TBC");
     default: return QString("???");
     }
 }
@@ -51,9 +68,12 @@ QString BitcoinUnits::description(int unit)
 {
     switch(unit)
     {
-    case BTC: return QString("Bitcoins");
+    case BTC: return QString("Bitcoins (decimal)");
     case mBTC: return QString("Milli-Bitcoins (1 / 1" THIN_SP_UTF8 "000)");
     case uBTC: return QString("Micro-Bitcoins (1 / 1" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
+    case bTBC: return QString("Bong-Bitcoins (1,0000 tonal)");
+    case sTBC: return QString("San-Bitcoins (100 tonal)");
+    case TBC: return QString("Bitcoins (tonal)");
     default: return QString("???");
     }
 }
@@ -65,6 +85,9 @@ qint64 BitcoinUnits::factor(int unit)
     case BTC:  return 100000000;
     case mBTC: return 100000;
     case uBTC: return 100;
+    case bTBC: return 0x100000000LL;
+    case sTBC: return 0x1000000;
+    case TBC:  return 0x10000;
     default:   return 100000000;
     }
 }
@@ -76,7 +99,36 @@ int BitcoinUnits::decimals(int unit)
     case BTC: return 8;
     case mBTC: return 5;
     case uBTC: return 2;
+    case bTBC: return 8;
+    case sTBC: return 6;
+    case TBC: return 4;
     default: return 0;
+    }
+}
+
+int BitcoinUnits::radix(int unit)
+{
+    switch(unit)
+    {
+    case bTBC:
+    case sTBC:
+    case TBC:
+        return 0x10;
+    default:
+        return 10;
+    }
+}
+
+int BitcoinUnits::numsys(int unit)
+{
+    switch(unit)
+    {
+    case bTBC:
+    case sTBC:
+    case TBC:
+        return TBC;
+    default:
+        return BTC;
     }
 }
 
@@ -92,8 +144,14 @@ QString BitcoinUnits::format(int unit, const CAmount& nIn, bool fPlus, Separator
     qint64 n_abs = (n > 0 ? n : -n);
     qint64 quotient = n_abs / coin;
     qint64 remainder = n_abs % coin;
-    QString quotient_str = QString::number(quotient);
-    QString remainder_str = QString::number(remainder).rightJustified(num_decimals, '0');
+    int uradix = radix(unit);
+    QString quotient_str = QString::number(quotient, uradix);
+    QString remainder_str = QString::number(remainder, uradix).rightJustified(num_decimals, '0');
+
+    switch (numsys(unit))
+    {
+    case BTC:
+    {
 
     // Use SI-style thin space separators as these are locale independent and can't be
     // confused with the decimal marker.
@@ -103,11 +161,26 @@ QString BitcoinUnits::format(int unit, const CAmount& nIn, bool fPlus, Separator
         for (int i = 3; i < q_size; i += 3)
             quotient_str.insert(q_size - i, thin_sp);
 
+        break;
+    }
+    case TBC:
+    {
+        // Right-trim excess zeros after the decimal point
+        static const QRegExp tail_zeros("0+$");
+        remainder_str.remove(tail_zeros);
+        TonalUtils::ConvertFromHex(quotient_str);
+        TonalUtils::ConvertFromHex(remainder_str);
+        break;
+    }
+    }
+
     if (n < 0)
         quotient_str.insert(0, '-');
     else if (fPlus && n > 0)
         quotient_str.insert(0, '+');
-    return quotient_str + QString(".") + remainder_str;
+    if (!remainder_str.isEmpty())
+        quotient_str += QString(".") + remainder_str;
+    return quotient_str;
 }
 
 
@@ -166,11 +239,22 @@ bool BitcoinUnits::parse(int unit, const QString &value, CAmount *val_out)
     bool ok = false;
     QString str = whole + decimals.leftJustified(num_decimals, '0');
 
+    int unumsys = numsys(unit);
+    if (unumsys == TBC)
+    {
+        if (str.size() > 15)
+            return false; // Longer numbers may exceed 63 bits
+        TonalUtils::ConvertToHex(str);
+    }
+    else
+    {
     if(str.size() > 18)
     {
         return false; // Longer numbers will exceed 63 bits
     }
-    CAmount retvalue(str.toLongLong(&ok));
+    }
+
+    CAmount retvalue(str.toLongLong(&ok, radix(unit)));
     if(val_out)
     {
         *val_out = retvalue;

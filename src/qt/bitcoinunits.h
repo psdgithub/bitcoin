@@ -58,7 +58,10 @@ public:
     {
         BTC,
         mBTC,
-        uBTC
+        uBTC,
+        bTBC,
+        sTBC,
+        TBC,
     };
 
     enum SeparatorStyle
@@ -82,8 +85,12 @@ public:
     static QString description(int unit);
     //! Number of Satoshis (1e-8) per unit
     static qint64 factor(int unit);
-    //! Number of decimals left
+    //! Number of fractional places
     static int decimals(int unit);
+    //! Radix
+    static int radix(int unit);
+    //! Number system
+    static int numsys(int unit);
     //! Format as string
     static QString format(int unit, const CAmount& amount, bool plussign=false, SeparatorStyle separators=separatorStandard);
     //! Format as string (with unit)
