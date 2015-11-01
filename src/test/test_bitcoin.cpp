@@ -31,6 +31,7 @@ BasicTestingSetup::BasicTestingSetup()
 {
         ECC_Start();
         SetupEnvironment();
+        SetupNetworking();
         fPrintToDebugLog = false; // don't want to write to debug.log file
         fCheckBlockIndex = true;
         SelectParams(CBaseChainParams::MAIN);
