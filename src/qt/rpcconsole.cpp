@@ -851,3 +851,8 @@ void RPCConsole::showOrHideBanTableIfRequired()
     ui->banlistWidget->setVisible(visible);
     ui->banHeading->setVisible(visible);
 }
+
+void RPCConsole::setTabFocus(enum TabTypes tabType)
+{
+    ui->tabWidget->setCurrentIndex(tabType);
+}
