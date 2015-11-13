@@ -2384,6 +2384,9 @@ Value fundrawtransaction(const Array& params, bool fHelp)
     if (!DecodeHexTx(origTx, params[0].get_str()))
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
 
+    if (origTx.vout.size() == 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "TX must have at least one output");
+
     CMutableTransaction tx(origTx);
     CAmount nFee;
     string strFailReason;
