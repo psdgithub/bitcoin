@@ -170,6 +170,18 @@ AC_ARG_WITH([utils],
   [build_bitcoin_utils=$withval],
   [build_bitcoin_utils=yes])
 
+AC_ARG_ENABLE([util-cli],
+  [AS_HELP_STRING([--enable-util-cli],
+  [build bitcoin-cli])],
+  [build_bitcoin_cli=$enableval],
+  [build_bitcoin_cli=$build_bitcoin_utils])
+
+AC_ARG_ENABLE([util-tx],
+  [AS_HELP_STRING([--enable-util-tx],
+  [build bitcoin-tx])],
+  [build_bitcoin_tx=$enableval],
+  [build_bitcoin_tx=$build_bitcoin_utils])
+
 AC_ARG_WITH([libs],
   [AS_HELP_STRING([--with-libs],
   [build libraries (default=yes)])],
@@ -488,13 +500,64 @@ if test x$use_reduce_exports = xyes; then
   [AC_MSG_ERROR([Cannot set default symbol visibility. Use --disable-reduce-exports.])])
 fi
 
+dnl Check for leveldb, only if explicitly requested
 LEVELDB_CPPFLAGS=
 LIBLEVELDB=
 LIBMEMENV=
-AM_CONDITIONAL([EMBEDDED_LEVELDB],[true])
+AC_ARG_WITH([system-leveldb],
+  [AS_HELP_STRING([--with-system-leveldb],
+  [Build with system LevelDB (default is no; DANGEROUS; NOT SUPPORTED)])],
+  [system_leveldb=$withval],
+  [system_leveldb=no]
+)
+if test x$system_leveldb != xno; then
+  LEVELDB_CPPFLAGS=
+  AC_CHECK_LIB([leveldb],[main],[
+    LIBLEVELDB=-lleveldb
+  ],[
+    AC_MSG_ERROR([leveldb library not found; using --with-system-leveldb is not supported anyway])
+  ])
+  TEMP_LIBS="$LIBS"
+  LIBS="$LIBS $LIBLEVELDB"
+  AC_CHECK_LIB([memenv],[main],[
+    LIBMEMENV=-lmemenv
+  ],[
+    AC_MSG_ERROR([LevelDB's memenv library not found; using --with-system-leveldb is not supported anyway])
+  ])
+  LIBS="$TEMP_LIBS"
+  AC_CHECK_HEADER([leveldb/filter_policy.h],[],[
+    AC_MSG_ERROR([LevelDB headers not found; using --with-system-leveldb is not supported anyway])
+  ])
+  AC_CHECK_HEADER([leveldb/helpers/memenv.h],[
+    AC_MSG_CHECKING([for memenv.h path])
+    BITCOIN_SUBDIR_TO_INCLUDE([LEVELDB_CPPFLAGS],[leveldb/helpers/],[memenv])
+  ],[
+    AC_CHECK_HEADER([memenv.h],[],[
+      AC_MSG_ERROR([LevelDB headers not found; using --with-system-leveldb is not supported anyway])
+    ])
+  ])
+fi
+AM_CONDITIONAL([EMBEDDED_LEVELDB],[test x$system_leveldb = xno])
 AC_SUBST(LEVELDB_CPPFLAGS)
 AC_SUBST(LIBLEVELDB)
 AC_SUBST(LIBMEMENV)
+
+dnl Check for libsecp256k1, only if explicitly requested
+AC_ARG_WITH([system-libsecp256k1],
+  [AS_HELP_STRING([--with-system-libsecp256k1],
+  [Build with system libsecp256k1 (default is no; DANGEROUS; NOT SUPPORTED)])],
+  [system_libsecp256k1=$withval],
+  [system_libsecp256k1=no]
+)
+if test x$system_libsecp256k1 != xno; then
+  PKG_CHECK_MODULES([libsecp256k1],[libsecp256k1],,[true])
+else
+  libsecp256k1_CFLAGS='-I$(srcdir)/secp256k1/include'
+  libsecp256k1_LIBS='secp256k1/libsecp256k1.la'
+fi
+AM_CONDITIONAL([EMBEDDED_LIBSECP256K1],[test x$system_libsecp256k1 = xno])
+AC_SUBST(libsecp256k1_CFLAGS)
+AC_SUBST(libsecp256k1_LIBS)
 
 if test x$enable_wallet != xno; then
     dnl Check for libdb_cxx only if wallet enabled
@@ -515,7 +578,7 @@ BITCOIN_QT_INIT
 dnl sets $bitcoin_enable_qt, $bitcoin_enable_qt_test, $bitcoin_enable_qt_dbus
 BITCOIN_QT_CONFIGURE([$use_pkgconfig], [qt4])
 
-if test x$build_bitcoin_utils$build_bitcoind$bitcoin_enable_qt$use_tests = xnononono; then
+if test x$build_bitcoin_cli$build_bitcoin_tx$build_bitcoind$bitcoin_enable_qt$use_tests = xnonononono; then
     use_boost=no
 else
     use_boost=yes
@@ -716,9 +779,13 @@ AC_MSG_CHECKING([whether to build bitcoind])
 AM_CONDITIONAL([BUILD_BITCOIND], [test x$build_bitcoind = xyes])
 AC_MSG_RESULT($build_bitcoind)
 
-AC_MSG_CHECKING([whether to build utils (bitcoin-cli bitcoin-tx)])
-AM_CONDITIONAL([BUILD_BITCOIN_UTILS], [test x$build_bitcoin_utils = xyes])
-AC_MSG_RESULT($build_bitcoin_utils)
+AC_MSG_CHECKING([whether to build bitcoin-cli])
+AM_CONDITIONAL([BUILD_BITCOIN_CLI], [test x$build_bitcoin_cli = xyes])
+AC_MSG_RESULT($build_bitcoin_cli)
+
+AC_MSG_CHECKING([whether to build bitcoin-tx])
+AM_CONDITIONAL([BUILD_BITCOIN_TX], [test x$build_bitcoin_tx = xyes])
+AC_MSG_RESULT($build_bitcoin_tx)
 
 AC_MSG_CHECKING([whether to build libraries])
 AM_CONDITIONAL([BUILD_BITCOIN_LIBS], [test x$build_bitcoin_libs = xyes])
@@ -841,7 +908,7 @@ else
   AC_MSG_RESULT([no])
 fi
 
-if test x$build_bitcoin_utils$build_bitcoin_libs$build_bitcoind$bitcoin_enable_qt$use_tests = xnonononono; then
+if test x$build_bitcoin_cli$build_bitcoin_tx$build_bitcoin_libs$build_bitcoind$bitcoin_enable_qt$use_tests = xnononononono; then
   AC_MSG_ERROR([No targets! Please specify at least one of: --with-utils --with-libs --with-daemon --with-gui or --enable-tests])
 fi
 
@@ -910,8 +977,10 @@ PKGCONFIG_LIBDIR_TEMP="$PKG_CONFIG_LIBDIR"
 unset PKG_CONFIG_LIBDIR
 PKG_CONFIG_LIBDIR="$PKGCONFIG_LIBDIR_TEMP"
 
+if test x$system_libsecp256k1 = xno; then
 ac_configure_args="${ac_configure_args} --disable-shared --with-pic --with-bignum=no"
 AC_CONFIG_SUBDIRS([src/secp256k1])
+fi
 
 AC_OUTPUT
 
