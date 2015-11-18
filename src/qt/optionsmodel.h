@@ -35,10 +35,13 @@ public:
         ProxyIP,                // QString
         ProxyPort,              // int
         DisplayUnit,            // BitcoinUnits::Unit
+        DisplayAddresses,       // bool
         ThirdPartyTxUrls,       // QString
         Language,               // QString
         CoinControlFeatures,    // bool
         ThreadsScriptVerif,     // int
+        DustLimit,              // qint64
+        FilteredAddresses,      // QString
         DatabaseCache,          // int
         SpendZeroConfChange,    // bool
         Listen,                 // bool
@@ -58,9 +61,11 @@ public:
     bool getMinimizeToTray() { return fMinimizeToTray; }
     bool getMinimizeOnClose() { return fMinimizeOnClose; }
     int getDisplayUnit() { return nDisplayUnit; }
+    bool getDisplayAddresses() { return bDisplayAddresses; }
     QString getThirdPartyTxUrls() { return strThirdPartyTxUrls; }
     bool getProxySettings(QNetworkProxy& proxy) const;
     bool getCoinControlFeatures() { return fCoinControlFeatures; }
+    qint64 getDustLimit();
     const QString& getOverriddenByCommandLine() { return strOverriddenByCommandLine; }
 
     /* Restart flag helper */
@@ -73,6 +78,7 @@ private:
     bool fMinimizeOnClose;
     QString language;
     int nDisplayUnit;
+    bool bDisplayAddresses;
     QString strThirdPartyTxUrls;
     bool fCoinControlFeatures;
     /* settings that were overriden by command-line */

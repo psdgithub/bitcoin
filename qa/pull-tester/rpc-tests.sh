@@ -26,9 +26,11 @@ testScripts=(
     'zapwallettxes.py'
     'proxy_test.py'
     'merkle_blocks.py'
+    'fundrawtransaction.py'
     'signrawtransactions.py'
     'walletbackup.py'
     'p2p-fullblocktest.py'
+    'nodehandling.py'
 );
 testScriptsExt=(
     'bipdersig-p2p.py'
@@ -46,7 +48,6 @@ testScriptsExt=(
     'smartfees.py'
     'maxblocksinflight.py'
     'invalidblockrequest.py'
-    'rawtransactions.py'
 #    'forknotify.py'
     'p2p-acceptblock.py'
 );

@@ -42,7 +42,7 @@ OptionsDialog::OptionsDialog(QWidget *parent, bool enableWallet) :
     /* Main elements init */
     ui->databaseCache->setMinimum(nMinDbCache);
     ui->databaseCache->setMaximum(nMaxDbCache);
-    ui->threadsScriptVerif->setMinimum(-(int)boost::thread::hardware_concurrency());
+    ui->threadsScriptVerif->setMinimum(-GetNumCores());
     ui->threadsScriptVerif->setMaximum(MAX_SCRIPTCHECK_THREADS);
 
     /* Network elements init */
@@ -134,10 +134,15 @@ void OptionsDialog::setModel(OptionsModel *model)
             strLabel = tr("none");
         ui->overriddenByCommandLineLabel->setText(strLabel);
 
+        connect(model, SIGNAL(displayUnitChanged(int)), this, SLOT(updateDisplayUnit()));
+
         mapper->setModel(model);
         setMapper();
         mapper->toFirst();
     }
+
+    /* update the display unit, to not use the default ("BTC") */
+    updateDisplayUnit();
 
     /* warn when one of the following settings changes by user action (placed here so init via mapper doesn't trigger them) */
 
@@ -182,7 +187,12 @@ void OptionsDialog::setMapper()
     /* Display */
     mapper->addMapping(ui->lang, OptionsModel::Language);
     mapper->addMapping(ui->unit, OptionsModel::DisplayUnit);
+    mapper->addMapping(ui->displayAddresses, OptionsModel::DisplayAddresses);
     mapper->addMapping(ui->thirdPartyTxUrls, OptionsModel::ThirdPartyTxUrls);
+
+    /* Advanced */
+    mapper->addMapping(ui->dustLimit, OptionsModel::DustLimit);
+    mapper->addMapping(ui->filteredAddresses, OptionsModel::FilteredAddresses);
 }
 
 void OptionsDialog::enableOkButton()
@@ -251,6 +261,15 @@ void OptionsDialog::showRestartWarning(bool fPersistent)
 void OptionsDialog::clearStatusLabel()
 {
     ui->statusLabel->clear();
+}
+
+void OptionsDialog::updateDisplayUnit()
+{
+    if(model)
+    {
+        /* Update dustLimit with the current unit */
+        ui->dustLimit->setDisplayUnit(model->getDisplayUnit());
+    }
 }
 
 void OptionsDialog::doProxyIpChecks(QValidatedLineEdit *pUiProxyIp, int nProxyPort)

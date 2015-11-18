@@ -181,9 +181,9 @@ public:
 
         checkpointData = (Checkpoints::CCheckpointData) {
             boost::assign::map_list_of
-            ( 546, uint256S("000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70")),
-            1337966069,
-            1488,
+            ( 0, uint256S("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943")),
+            1296688602,
+            0,
             300
         };
 
