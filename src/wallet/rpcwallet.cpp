@@ -2391,7 +2391,7 @@ Value fundrawtransaction(const Array& params, bool fHelp)
                             "\nResult:\n"
                             "{\n"
                             "  \"hex\":       \"value\", (string)  The resulting raw transaction (hex-encoded string)\n"
-                            "  \"fee\":       n,         (numeric) The fee added to the transaction\n"
+                            "  \"fee\":       n,         (numeric) Fee the resulting transaction pays\n"
                             "  \"changepos\": n          (numeric) The position of the added change output, or -1\n"
                             "}\n"
                             "\"hex\"             \n"
@@ -2412,6 +2412,9 @@ Value fundrawtransaction(const Array& params, bool fHelp)
     CTransaction origTx;
     if (!DecodeHexTx(origTx, params[0].get_str()))
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
+
+    if (origTx.vout.size() == 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "TX must have at least one output");
 
     CMutableTransaction tx(origTx);
     CAmount nFee;
