@@ -990,19 +990,19 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 
     // Further user defined acceptance tests
     BOOST_FOREACH(const CTxOut& txout, tx.vout) {
-        if (txout.nValue <= nDustLimit)
-            return error("CTxMemPool::accept() : transaction output smaller than user defined limit");
+        if (txout.nValue <= nDustLimit && txout.scriptPubKey[0] != OP_RETURN)
+            return state.DoS(0, error("AcceptToMemoryPool: transaction output smaller than user defined limit"), REJECT_NONSTANDARD, "dust");
 
         txnouttype type;
         vector<CTxDestination> addresses;
         int nRequired;
         if (!ExtractDestinations(txout.scriptPubKey, type, addresses, nRequired)) {
-            return error("CTxMemPool::accept() : unable to check transaction destinations");
+            continue;
         }
 
         BOOST_FOREACH(const CTxDestination& addr, addresses) {
             if (filteredAddresses.find(CBitcoinAddress(addr)) != filteredAddresses.end()) {
-                return error("CTxMemPool::accept() : transaction destination filtered");
+                return error("AcceptToMemoryPool: transaction destination filtered");
             }
         }
     }
