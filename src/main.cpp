@@ -2634,7 +2634,7 @@ bool FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAdd
         pos.nPos = vinfoBlockFile[nFile].nSize;
     }
 
-    if (nFile != nLastBlockFile) {
+    if ((int)nFile != nLastBlockFile) {
         if (!fKnown) {
             LogPrintf("Leaving block file %i: %s\n", nFile, vinfoBlockFile[nFile].ToString());
         }
@@ -4361,10 +4361,10 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         vRecv >> locator >> hashStop;
 
         LOCK(cs_main);
-
-        if (IsInitialBlockDownload())
+        if (IsInitialBlockDownload() && !pfrom->fWhitelisted) {
+            LogPrint("net", "Ignoring getheaders from peer=%d because node is in initial block download\n", pfrom->id);
             return true;
-
+        }
         CBlockIndex* pindex = NULL;
         if (locator.IsNull())
         {

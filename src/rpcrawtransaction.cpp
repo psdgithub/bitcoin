@@ -476,7 +476,6 @@ Value decodescript(const Array& params, bool fHelp)
             + HelpExampleRpc("decodescript", "\"hexstring\"")
         );
 
-    LOCK(cs_main);
     RPCTypeCheck(params, boost::assign::list_of(str_type));
 
     Object r;

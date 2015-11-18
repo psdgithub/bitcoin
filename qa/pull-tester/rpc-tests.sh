@@ -11,6 +11,7 @@ export BITCOIND=${REAL_BITCOIND}
 #Run the tests
 
 testScripts=(
+    'disablewallet.py'
     'wallet.py'
     'listtransactions.py'
     'mempool_resurrect_test.py'
@@ -27,6 +28,7 @@ testScripts=(
     'merkle_blocks.py'
     'signrawtransactions.py'
     'walletbackup.py'
+    'p2p-fullblocktest.py'
 );
 testScriptsExt=(
     'bipdersig-p2p.py'
