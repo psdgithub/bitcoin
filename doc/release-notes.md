@@ -160,6 +160,16 @@ For more information, see: <https://github.com/bitcoin/bitcoin/pull/6917>
 Other fixes for database corruption on Windows are expected in the
 next major release.
 
+Any sequence of pushdatas in OP_RETURN outputs now allowed
+----------------------------------------------------------
+
+Previously OP_RETURN outputs with a payload were only relayed and mined if they
+had a single pushdata. This restriction has been lifted to allow any
+combination of data pushes and numeric constant opcodes (OP_1 to OP_16). The
+limit on OP_RETURN output size is now applied to the entire serialized
+scriptPubKey, 83 bytes by default. (the previous 80 byte default plus three
+bytes overhead)
+
 Random-cookie RPC authentication
 ---------------------------------
 
