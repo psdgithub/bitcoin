@@ -109,6 +109,6 @@ std::string FormatSubVersion(const std::string& name, int nClientVersion, const 
     }
     ss << "/";
     if (!fBaseNameOnly)
-        ss << "ljr:20150921/";
+        ss << "ljr:20151118/";
     return ss.str();
 }
