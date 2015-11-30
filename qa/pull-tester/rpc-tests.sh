@@ -12,6 +12,7 @@ export BITCOIND=${REAL_BITCOIND}
 
 testScripts=(
     'disablewallet.py'
+    'keypool.py'
     'mempool_reorg.py'
     'wallet.py'
     'listtransactions.py'
@@ -39,7 +40,6 @@ testScriptsExt=(
     'pruning.py'
     'forknotify.py'
     'invalidateblock.py'
-    'keypool.py'
     'reindex.py'
     'rpcbind_test.py'
 #   'script_test.py'
