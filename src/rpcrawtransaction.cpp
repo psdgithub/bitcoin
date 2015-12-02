@@ -342,7 +342,6 @@ Value createrawtransaction(const Array& params, bool fHelp)
             + HelpExampleRpc("createrawtransaction", "\"[{\\\"txid\\\":\\\"myid\\\",\\\"vout\\\":0}]\", \"{\\\"address\\\":0.01}\"")
         );
 
-    LOCK(cs_main);
     RPCTypeCheck(params, boost::assign::list_of(array_type)(obj_type));
 
     Array inputs = params[0].get_array();
