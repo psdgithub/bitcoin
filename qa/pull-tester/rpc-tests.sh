@@ -31,6 +31,8 @@ testScripts=(
     'signrawtransactions.py'
     'walletbackup.py'
     'p2p-fullblocktest.py'
+    'invalidblockrequest.py'
+    'invalidtxrequest.py'
 );
 testScriptsExt=(
     'bipdersig-p2p.py'
@@ -45,7 +47,6 @@ testScriptsExt=(
 #   'script_test.py'
     'smartfees.py'
     'maxblocksinflight.py'
-    'invalidblockrequest.py'
     'rawtransactions.py'
 #    'forknotify.py'
     'p2p-acceptblock.py'
