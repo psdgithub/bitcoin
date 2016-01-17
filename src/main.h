@@ -281,7 +281,22 @@ void PruneAndFlush();
 
 /** (try to) add transaction to memory pool **/
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,
-                        bool* pfMissingInputs, bool fOverrideMempoolLimit=false, const CAmount nAbsurdFee=0);
+                        bool* pfMissingInputs, const CAmount nAbsurdFee, const std::set<std::string>& setIgnoreRejects);
+
+// Previously, the signature was ATMP(pool, state, tx, limitfree,
+// missinginputs, overridemempoollimit, absurdfee) so calls could in theory
+// satisfy absurdfee with `true` which would be broken. To avoid the risk,
+// absurdfee is only optional if ignorerejects is also provided (which cannot
+// be cast implicitly from CAmount).
+static inline bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,
+                        bool* pfMissingInputs) {
+    return AcceptToMemoryPool(pool, state, tx, fLimitFree, pfMissingInputs, 0, std::set<std::string>());
+}
+
+static const std::string strRejectMsg_AbsurdFee = "absurdly-high-fee";
+
+static const std::string setIgnoreRejects_mempool_full_[] = {"mempool full"};
+static const std::set<std::string> setIgnoreRejects_mempool_full(setIgnoreRejects_mempool_full_, setIgnoreRejects_mempool_full_ + (sizeof(setIgnoreRejects_mempool_full_)/sizeof(setIgnoreRejects_mempool_full_[0])));
 
 /** Convert CValidationState to a human-readable message for logging */
 std::string FormatStateMessage(const CValidationState &state);
