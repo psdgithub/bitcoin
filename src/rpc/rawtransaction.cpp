@@ -782,12 +782,12 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
-            "sendrawtransaction \"hexstring\" ( allowhighfees )\n"
+            "sendrawtransaction \"hexstring\" ( [\"ignoreReject\",...] )\n"
             "\nSubmits raw transaction (serialized, hex-encoded) to local node and network.\n"
             "\nAlso see createrawtransaction and signrawtransaction calls.\n"
             "\nArguments:\n"
             "1. \"hexstring\"    (string, required) The hex string of the raw transaction)\n"
-            "2. allowhighfees    (boolean, optional, default=false) Allow high fees\n"
+            "2. \"ignoreReject\" (string, optional) Rejection conditions to ignore, eg 'absurdly-high-fee'\n"
             "\nResult:\n"
             "\"hex\"             (string) The transaction hash in hex\n"
             "\nExamples:\n"
@@ -802,7 +802,7 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
         );
 
     LOCK(cs_main);
-    RPCTypeCheck(params, boost::assign::list_of(UniValue::VSTR)(UniValue::VBOOL));
+    RPCTypeCheck(params, boost::assign::list_of(UniValue::VSTR));
 
     // parse hex string from parameter
     CTransaction tx;
@@ -811,8 +811,20 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
     uint256 hashTx = tx.GetHash();
 
     CAmount nMaxRawTxFee = maxTxFee;
-    if (params.size() > 1 && params[1].get_bool())
-        nMaxRawTxFee = 0;
+
+    std::set<std::string> setIgnoreRejects;
+    if (params.size() > 1) {
+        if (params[1].type() == UniValue::VBOOL) {
+            // This parameter used to be boolean allowhighfees
+            setIgnoreRejects.insert(strRejectMsg_AbsurdFee);
+        } else {
+            UniValue ignRejs = params[1].get_array();
+            for (unsigned int i = 0; i < ignRejs.size(); ++i) {
+                const UniValue& ignRej = ignRejs[i];
+                setIgnoreRejects.insert(ignRej.get_str());
+            }
+        }
+    }
 
     CCoinsViewCache &view = *pcoinsTip;
     const CCoins* existingCoins = view.AccessCoins(hashTx);
@@ -822,7 +834,6 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
         // push to local node and sync with wallets
         CValidationState state;
         bool fMissingInputs;
-        std::set<std::string> setIgnoreRejects;
         if (!AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, nMaxRawTxFee, setIgnoreRejects)) {
             if (state.IsInvalid()) {
                 throw JSONRPCError(RPC_TRANSACTION_REJECTED, strprintf("%i: %s", state.GetRejectCode(), state.GetRejectReason()));
