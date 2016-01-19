@@ -131,7 +131,9 @@ check-local:
 if EMBEDDED_LIBSECP256K1
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C secp256k1 check
 endif
+if EMBEDDED_UNIVALUE
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C univalue check
+endif
 
 %.json.h: %.json
 	@$(MKDIR_P) $(@D)
