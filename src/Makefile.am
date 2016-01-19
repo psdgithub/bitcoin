@@ -121,8 +121,6 @@ BITCOIN_CORE_H = \
   core_io.h \
   core_memusage.h \
   hash.h \
-  httprpc.h \
-  httpserver.h \
   init.h \
   key.h \
   keystore.h \
@@ -165,7 +163,6 @@ BITCOIN_CORE_H = \
   threadsafety.h \
   timedata.h \
   tinyformat.h \
-  torcontrol.h \
   txdb.h \
   txmempool.h \
   ui_interface.h \
@@ -203,8 +200,6 @@ libbitcoin_server_a_SOURCES = \
   bloom.cpp \
   chain.cpp \
   checkpoints.cpp \
-  httprpc.cpp \
-  httpserver.cpp \
   init.cpp \
   dbwrapper.cpp \
   main.cpp \
@@ -215,7 +210,6 @@ libbitcoin_server_a_SOURCES = \
   policy/fees.cpp \
   policy/policy.cpp \
   pow.cpp \
-  rest.cpp \
   rpcblockchain.cpp \
   rpcmining.cpp \
   rpcmisc.cpp \
@@ -224,11 +218,22 @@ libbitcoin_server_a_SOURCES = \
   rpcserver.cpp \
   script/sigcache.cpp \
   timedata.cpp \
-  torcontrol.cpp \
   txdb.cpp \
   txmempool.cpp \
   validationinterface.cpp \
   $(BITCOIN_CORE_H)
+
+if USE_LIBEVENT
+BITCOIN_CORE_H += \
+  httprpc.h \
+  httpserver.h \
+  torcontrol.h
+libbitcoin_server_a_SOURCES += \
+  httprpc.cpp \
+  httpserver.cpp \
+  rest.cpp \
+  torcontrol.cpp
+endif
 
 if ENABLE_ZMQ
 LIBBITCOIN_ZMQ=libbitcoin_zmq.a
