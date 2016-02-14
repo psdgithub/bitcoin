@@ -95,6 +95,7 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
         return creator.KeyStore().GetCScript(uint160(vSolutions[0]), scriptSigRet);
 
     case TX_MULTISIG:
+    case TX_MULTISIG_CLTV:
         scriptSigRet << OP_0; // workaround CHECKMULTISIG bug
         return (SignN(vSolutions, creator, scriptPubKey, scriptSigRet));
     }
@@ -249,6 +250,7 @@ static CScript CombineSignatures(const CScript& scriptPubKey, const BaseSignatur
             return result;
         }
     case TX_MULTISIG:
+    case TX_MULTISIG_CLTV:
         return CombineMultisig(scriptPubKey, checker, vSolutions, sigs1, sigs2);
     }
 

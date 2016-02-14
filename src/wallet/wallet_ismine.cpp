@@ -73,6 +73,7 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& scriptPubKey)
         break;
     }
     case TX_MULTISIG:
+    case TX_MULTISIG_CLTV:
     {
         // Only consider transactions "mine" if we own ALL the
         // keys involved. Multi-signature transactions that are
