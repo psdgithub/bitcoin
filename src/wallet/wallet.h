@@ -409,14 +409,17 @@ public:
     const CWalletTx *tx;
     int i;
     int nDepth;
-    bool fSpendable;
+    bool fMaybeSpendable;
 
     COutput(const CWalletTx *txIn, int iIn, int nDepthIn, bool fSpendableIn)
     {
-        tx = txIn; i = iIn; nDepth = nDepthIn; fSpendable = fSpendableIn;
+        tx = txIn; i = iIn; nDepth = nDepthIn; fMaybeSpendable = fSpendableIn;
     }
 
     std::string ToString() const;
+
+    bool IsSpendableAt(int nBlockHeight, int64_t nBlockTime) const;
+    bool IsSpendableAfter(const CBlockIndex& blockindex) const;
 };
 
 

@@ -74,6 +74,22 @@ std::string COutput::ToString() const
     return strprintf("COutput(%s, %d, %d) [%s]", tx->GetHash().ToString(), i, nDepth, FormatMoney(tx->vout[i].nValue));
 }
 
+bool COutput::IsSpendableAt(int nBlockHeight, int64_t nBlockTime) const
+{
+    if (!fMaybeSpendable) {
+        return false;
+    }
+    if (!IsFinalTx(*tx, nBlockHeight, nBlockTime)) {
+        return false;
+    }
+    return true;
+}
+
+bool COutput::IsSpendableAfter(const CBlockIndex& blockindex) const {
+    // This is extra conservative about the time, in expectation of BIP 113
+    return IsSpendableAt(blockindex.nHeight + 1, blockindex.GetMedianTimePast());
+}
+
 const CWalletTx* CWallet::GetWalletTx(const uint256& hash) const
 {
     LOCK(cs_wallet);
@@ -1753,7 +1769,7 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
 
     BOOST_FOREACH(const COutput &output, vCoins)
     {
-        if (!output.fSpendable)
+        if (!output.IsSpendableAfter(*chainActive.Tip()))
             continue;
 
         const CWalletTx *pcoin = output.tx;
@@ -1848,7 +1864,7 @@ bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*
     {
         BOOST_FOREACH(const COutput& out, vCoins)
         {
-            if (!out.fSpendable)
+            if (!out.IsSpendableAfter(*chainActive.Tip()))
                  continue;
             nValueRet += out.tx->vout[out.i].nValue;
             setCoinsRet.insert(make_pair(out.tx, out.i));

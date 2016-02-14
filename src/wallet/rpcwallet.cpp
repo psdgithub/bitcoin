@@ -2424,7 +2424,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
         }
         entry.push_back(Pair("amount",ValueFromAmount(nValue)));
         entry.push_back(Pair("confirmations",out.nDepth));
-        entry.push_back(Pair("spendable", out.fSpendable));
+        entry.push_back(Pair("spendable", out.IsSpendableAfter(*chainActive.Tip())));
         results.push_back(entry);
     }
 
