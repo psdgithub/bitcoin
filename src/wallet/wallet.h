@@ -418,8 +418,8 @@ public:
 
     std::string ToString() const;
 
-    bool IsSpendableAt(int nBlockHeight, int64_t nBlockTime) const;
-    bool IsSpendableAfter(const CBlockIndex& blockindex) const;
+    bool IsSpendableAt(int nBlockHeight, int64_t nBlockTime, const CKeyStore& keystore) const;
+    bool IsSpendableAfter(const CBlockIndex& blockindex, const CKeyStore& keystore) const;
 };
 
 
