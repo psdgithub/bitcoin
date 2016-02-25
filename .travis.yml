@@ -38,6 +38,8 @@ matrix:
       env: HOST=arm-linux-gnueabihf PACKAGES="g++-arm-linux-gnueabihf" DEP_OPTS="NO_QT=1" GOAL="install" BITCOIN_CONFIG="--enable-glibc-back-compat --enable-reduce-exports"
     - compiler: ": Win32"
       env: HOST=i686-w64-mingw32 PPA="ppa:ubuntu-wine/ppa" PACKAGES="nsis gcc-mingw-w64-i686 g++-mingw-w64-i686 binutils-mingw-w64-i686 mingw-w64-dev wine1.7 bc" RUN_TESTS=true GOAL="deploy" BITCOIN_CONFIG="--enable-gui --enable-reduce-exports" MAKEJOBS="-j2"
+    - compiler: ": Qt4 w/o libevent"
+      env: HOST=x86_64-unknown-linux-gnu PACKAGES="bc python-zmq qt4-dev-tools" PPA="ppa:chris-lea/zeromq" DEP_OPTS="NO_QT=1" RUN_TESTS=false GOAL="install" BITCOIN_CONFIG="--with-qt=qt4 --enable-zmq --without-libevent --enable-glibc-back-compat --enable-reduce-exports CPPFLAGS=-DDEBUG_LOCKORDER"
     - compiler: ": 32-bit + dash"
       env: HOST=i686-pc-linux-gnu PACKAGES="g++-multilib bc python-zmq" PPA="ppa:chris-lea/zeromq" RUN_TESTS=true GOAL="install" BITCOIN_CONFIG="--enable-zmq --enable-glibc-back-compat --enable-reduce-exports LDFLAGS=-static-libstdc++" USE_SHELL="/bin/dash"
     - compiler: ": Win64"
